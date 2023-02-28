@@ -1,0 +1,1 @@
+D:\Github\Mods\zygiskpg-paid\module\src\main\cpp\CMakeLists.txt

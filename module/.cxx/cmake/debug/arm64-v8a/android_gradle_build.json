@@ -1,0 +1,38 @@
+{
+  "buildFiles": [
+    "D:\\Github\\Mods\\copsmenu\\module\\src\\main\\cpp\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+      "-C",
+      "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+    "-C",
+    "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "ZyCheatsC::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "arm64-v8a",
+      "artifactName": "ZyCheatsC",
+      "output": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\\libZyCheatsC.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

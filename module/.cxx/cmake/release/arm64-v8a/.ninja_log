@@ -1,0 +1,19 @@
+# ninja log v5
+29	532	699214306	CMakeFiles/ZygiskPG.dir/main.cpp.o	c830d8d7a7bf0b6a
+8	584	699214306	CMakeFiles/ZygiskPG.dir/ImGui/backends/imgui_impl_opengl3.cpp.o	2e626be5a3fe9286
+23	1194	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/KittyArm64.cpp.o	9a936a91eae8be01
+32	1805	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/MemoryPatch.cpp.o	a2f23d9cc28aefb5
+533	1829	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/MemoryBackup.cpp.o	ea034245c7873c29
+21	1858	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/KittyMemory.cpp.o	f8077aa659620b1a
+15	1920	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/KittyUtils.cpp.o	b0117e48e3b99531
+10	1976	699214307	CMakeFiles/ZygiskPG.dir/ImGui/backends/imgui_impl_android.cpp.o	785c621840589321
+18	2022	699214307	CMakeFiles/ZygiskPG.dir/KittyMemory/KittyScanner.cpp.o	6cd0a88327aa7eeb
+13	2529	699214308	CMakeFiles/ZygiskPG.dir/ImGui/imgui_tables.cpp.o	cc786e8f077ef7aa
+4	3501	699214309	CMakeFiles/ZygiskPG.dir/ImGui/imgui_demo.cpp.o	3353e7c4fada01ad
+26	4180	699214310	CMakeFiles/ZygiskPG.dir/hook.cpp.o	ffe7837815d60bbb
+6	5443	699214311	CMakeFiles/ZygiskPG.dir/ImGui/imgui_draw.cpp.o	cc38af9c45c09203
+11	5664	699214311	CMakeFiles/ZygiskPG.dir/ImGui/imgui_widgets.cpp.o	c10b598c9d05d06d
+2	7845	699214313	CMakeFiles/ZygiskPG.dir/ImGui/imgui.cpp.o	8d295c6ef1ab815b
+7846	8019	699214313	D:/Github/Mods/zygiskpg-paid/module/build/intermediates/cmake/release/obj/arm64-v8a/libZygiskPG.so	aff2bf31b60951b8
+3	2653	699216531	CMakeFiles/ZygiskPG.dir/hook.cpp.o	ffe7837815d60bbb
+2653	3800	699216532	D:/Github/Mods/zygiskpg-paid/module/build/intermediates/cmake/release/obj/arm64-v8a/libZygiskPG.so	aff2bf31b60951b8

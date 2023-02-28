@@ -1,0 +1,1 @@
+D:\Github\Mods\copsmenu\module\src\main\cpp\CMakeLists.txt

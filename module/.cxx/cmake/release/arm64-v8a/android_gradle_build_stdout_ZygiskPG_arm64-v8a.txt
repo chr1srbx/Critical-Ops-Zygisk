@@ -1,0 +1,15 @@
+ninja: Entering directory `D:\Github\Mods\zygiskpg-paid\module\.cxx\cmake\release\arm64-v8a'
+[1/2] Building CXX object CMakeFiles/ZygiskPG.dir/hook.cpp.o
+In file included from D:/Github/Mods/zygiskpg-paid/module/src/main/cpp/hook.cpp:24:
+D:/Github/Mods/zygiskpg-paid/module/src/main/cpp/Include/Unity.h:605:16: warning: returning address of local temporary object [-Wreturn-stack-address]
+        return getString().c_str();
+               ^~~~~~~~~~~
+D:/Github/Mods/zygiskpg-paid/module/src/main/cpp/hook.cpp:73:19: warning: comparison between NULL and non-pointer ('float' and NULL) [-Wnull-arithmetic]
+        if(damage != NULL){
+           ~~~~~~ ^  ~~~~
+D:/Github/Mods/zygiskpg-paid/module/src/main/cpp/hook.cpp:73:22: warning: implicit conversion of NULL constant to 'float' [-Wnull-conversion]
+        if(damage != NULL){
+                  ~~ ^~~~
+                     0.0
+3 warnings generated.
+[2/2] Linking CXX shared library D:\Github\Mods\zygiskpg-paid\module\build\intermediates\cmake\release\obj\arm64-v8a\libZygiskPG.so
