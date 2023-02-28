@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "D:/Github/Mods/copsmenu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so"
+			"path" : "D:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so"
 		}
 	],
 	"backtrace" : 1,
@@ -83,19 +83,19 @@
 			[
 				{
 					"backtrace" : 3,
-					"path" : "D:/Github/Mods/copsmenu/module/src/main/cpp/KittyMemory"
+					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory"
 				},
 				{
 					"backtrace" : 4,
-					"path" : "D:/Github/Mods/copsmenu/module/src/main/cpp/Includes"
+					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "D:/Github/Mods/copsmenu/module/src/main/cpp/ImGui"
+					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "D:/Github/Mods/copsmenu/module/src/main/cpp/ImGui/backends"
+					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends"
 				}
 			],
 			"language" : "CXX",
@@ -139,7 +139,7 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "D:\\Github\\Mods\\copsmenu\\module\\src\\main\\cpp\\libs\\arm64-v8a\\libdobby.a",
+				"fragment" : "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\libs\\arm64-v8a\\libdobby.a",
 				"role" : "libraries"
 			},
 			{

@@ -6,7 +6,6 @@
 
 static int enable_hack;
 static char *game_data_dir = NULL;
-
 int isGame(JNIEnv *env, jstring appDataDir);
 
 void *hack_thread(void *arg);

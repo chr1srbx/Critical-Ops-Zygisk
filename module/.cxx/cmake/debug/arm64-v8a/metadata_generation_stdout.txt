@@ -10,4 +10,4 @@
 -- Detecting CXX compile features - done
 -- Configuring done
 -- Generating done
--- Build files have been written to: D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a
+-- Build files have been written to: D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a

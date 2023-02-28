@@ -1,2 +1,14 @@
-ninja: Entering directory `D:\Github\Mods\copsmenu\module\.cxx\cmake\debug\arm64-v8a'
-ninja: no work to do.
+ninja: Entering directory `D:\Github\Mods\copsmenu\cops-menu\module\.cxx\cmake\debug\arm64-v8a'
+[1/2] Building CXX object CMakeFiles/ZyCheatsC.dir/hook.cpp.o
+In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:24:
+D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Unity.h:605:16: warning: returning address of local temporary object [-Wreturn-stack-address]
+        return getString().c_str();
+               ^~~~~~~~~~~
+D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:194:22: warning: implicit conversion from 'unsigned long' to 'int' changes value from 18446744073709551615 to -1 [-Wconstant-conversion]
+        int lowest = ULONG_MAX;
+            ~~~~~~   ^~~~~~~~~
+C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/lib64/clang/14.0.6/include/limits.h:57:37: note: expanded from macro 'ULONG_MAX'
+#define ULONG_MAX (__LONG_MAX__ *2UL+1UL)
+                   ~~~~~~~~~~~~~~~~~^~~~
+2 warnings generated.
+[2/2] Linking CXX shared library D:\Github\Mods\copsmenu\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libZyCheatsC.so

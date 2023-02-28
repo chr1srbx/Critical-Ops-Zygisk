@@ -38,7 +38,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ZyCheatsC::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZyCheatsC-Debug-6a705a274ec07c5f782a.json",
+					"jsonFile" : "target-ZyCheatsC-Debug-df8ca4d4ad982686dbfe.json",
 					"name" : "ZyCheatsC",
 					"projectIndex" : 0
 				}
@@ -48,8 +48,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a",
-		"source" : "D:/Github/Mods/copsmenu/module/src/main/cpp"
+		"build" : "D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a",
+		"source" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp"
 	},
 	"version" : 
 	{

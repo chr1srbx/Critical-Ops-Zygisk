@@ -10,6 +10,7 @@
 #include "KittyMemory/KittyScanner.h"
 #include "KittyMemory/MemoryPatch.h"
 #include "Include/obfuscate.h"
+#include "hook.h"
 
 using KittyMemory::ProcMap;
 using KittyScanner::RegisterNativeFn;
@@ -68,8 +69,7 @@ uintptr_t string2Offset(const char *c) {
     // All other options exhausted, sizeof(uintptr_t) == sizeof(unsigned long long))
     return strtoull(c, nullptr, base);
 }
-
-#define HOOK(offset, ptr, orig) hook((void *)(g_il2cppBaseMap.startAddress + string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
+#define HOOK(offset, ptr, orig) hook((void *)(libBaseAdress + string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
 #define PATCH(offset, hex) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), true)
 #define PATCH_SWITCH(offset, hex, boolean) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), boolean)
 #define RESTORE(offset) patchOffset(string2Offset(OBFUSCATE(offset)), "", false)

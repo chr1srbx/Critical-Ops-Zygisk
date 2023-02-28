@@ -16,8 +16,8 @@ CMake Warning at C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build
   CMake's built-in compiler identification.
 Call Stack (most recent call first):
   C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake:54 (include)
-  D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake:6 (include)
-  D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:2 (project)
+  D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake:6 (include)
+  D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:2 (project)
 
 
 CMake Warning at C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android-legacy.toolchain.cmake:415 (message):
@@ -27,8 +27,8 @@ CMake Warning at C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build
   CMake's built-in compiler identification.
 Call Stack (most recent call first):
   C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake:54 (include)
-  D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake:6 (include)
-  D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:2 (project)
+  D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake:6 (include)
+  D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:2 (project)
 
 
 Build type: Debug

@@ -6,12 +6,12 @@
     "deprecated": false,
     "default": true
   },
-  "originalCxxBuildFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
-  "cxxBuildFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+  "originalCxxBuildFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+  "cxxBuildFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
   "abiPlatformVersion": 23,
   "cmake": {
-    "cmakeWrappingBaseFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cxx\\debug\\arm64-v8a",
-    "cmakeArtifactsBaseFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+    "cmakeWrappingBaseFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cxx\\debug\\arm64-v8a",
+    "cmakeArtifactsBaseFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
     "effectiveConfiguration": {
       "name": "traditional-android-studio-cmake-environment",
       "description": "Composite reified CMakeSettings configuration",
@@ -19,7 +19,7 @@
       "inheritEnvironments": [
         "ndk"
       ],
-      "buildRoot": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
+      "buildRoot": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a",
       "cmakeToolchain": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\\build\\cmake\\android.toolchain.cmake",
       "cmakeExecutable": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\cmake.exe",
       "variables": [
@@ -57,11 +57,11 @@
         },
         {
           "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
+          "value": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
         },
         {
           "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
+          "value": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
         },
         {
           "name": "CMAKE_MAKE_PROGRAM",
@@ -77,7 +77,7 @@
         },
         {
           "name": "CMAKE_FIND_ROOT_PATH",
-          "value": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab"
+          "value": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab"
         },
         {
           "name": "MODULE_NAME:STRING",
@@ -85,7 +85,7 @@
         }
       ]
     },
-    "cmakeServerLogFile": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\arm64-v8a\\cmake_server_log.txt"
+    "cmakeServerLogFile": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\\cmake_server_log.txt"
   },
   "variant": {
     "buildSystemArgumentList": [
@@ -94,8 +94,8 @@
     "cFlagsList": [],
     "cppFlagsList": [],
     "variantName": "debug",
-    "objFolder": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj",
-    "soFolder": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\lib",
+    "objFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj",
+    "soFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\lib",
     "isDebuggableEnabled": true,
     "validAbiList": [
       "ARM64_V8A"
@@ -104,13 +104,13 @@
     "implicitBuildTargetSet": [],
     "cmakeSettingsConfiguration": "android-gradle-plugin-predetermined-name",
     "module": {
-      "cxxFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx",
+      "cxxFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx",
       "splitsAbiFilterSet": [],
-      "intermediatesFolder": "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates",
+      "intermediatesFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates",
       "gradleModulePathName": ":module",
-      "moduleRootFolder": "D:\\Github\\Mods\\copsmenu\\module",
-      "moduleBuildFile": "D:\\Github\\Mods\\copsmenu\\module\\build.gradle",
-      "makeFile": "D:\\Github\\Mods\\copsmenu\\module\\src\\main\\cpp\\CMakeLists.txt",
+      "moduleRootFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module",
+      "moduleBuildFile": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build.gradle",
+      "makeFile": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
       "buildSystem": "CMAKE",
       "ndkFolder": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105",
       "ndkVersion": "25.0.8775105",
@@ -199,9 +199,9 @@
         "SYSTEM": {}
       },
       "project": {
-        "rootBuildGradleFolder": "D:\\Github\\Mods\\copsmenu",
-        "cxxFolder": "D:\\Github\\Mods\\copsmenu\\.cxx",
-        "compilerSettingsCacheFolder": "D:\\Github\\Mods\\copsmenu\\.cxx",
+        "rootBuildGradleFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu",
+        "cxxFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\.cxx",
+        "compilerSettingsCacheFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\.cxx",
         "sdkFolder": "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk",
         "isNativeCompilerSettingsCacheEnabled": false,
         "isBuildOnlyTargetAbiEnabled": true,
@@ -215,10 +215,10 @@
       "C:\\Users\\chris\\.gradle\\caches\\modules-2\\files-2.1\\com.google.prefab\\cli\\1.1.1\\14bf8c448be4794ff2454576d538c7e3e0da91c9\\cli-1.1.1-all.jar"
     ],
     "prefabPackageDirectoryListFileCollection": [],
-    "prefabDirectory": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\prefab"
+    "prefabDirectory": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab"
   },
   "buildSettings": {
     "environmentVariables": []
   },
-  "prefabFolder": "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a"
+  "prefabFolder": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a"
 }

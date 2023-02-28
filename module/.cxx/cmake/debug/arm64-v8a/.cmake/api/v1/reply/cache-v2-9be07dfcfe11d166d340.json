@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "d:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a"
+			"value" : "d:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -611,7 +611,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "D:\\Github\\Mods\\copsmenu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab"
+			"value" : "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -671,7 +671,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "D:/Github/Mods/copsmenu/module/src/main/cpp"
+			"value" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -707,7 +707,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
+			"value" : "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -979,7 +979,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "D:\\Github\\Mods\\copsmenu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
+			"value" : "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1287,7 +1287,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "D:/Github/Mods/copsmenu/module/.cxx/cmake/debug/arm64-v8a"
+			"value" : "D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a"
 		},
 		{
 			"name" : "ZyCheatsC_SOURCE_DIR",
@@ -1299,7 +1299,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "D:/Github/Mods/copsmenu/module/src/main/cpp"
+			"value" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp"
 		},
 		{
 			"name" : "android",
