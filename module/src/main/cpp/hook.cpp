@@ -28,18 +28,6 @@
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
-/*
- *
- * LIST OF NOTES:
- * GAMEMODES LIST: 丂丛万世丝七丒与丈, GameMode.cs << DONT TRUST THIS, ITS 丈下东与三丆下丛丄
- * 丒丘丁丄丂丑丛丄东, ItemReward.cs (Scripts\\Store\\MainStore\\ItemReward.cs)
- * 丒下丗丈丕三丌丏不, ProgressUpdater.Currency.cs (Scripts\\ServerProgressSync\\ProgressUpdater.Currency.cs)
- * 丐三丐丄丝丅丈丄丞, OfferData.cs (Scripts/OfferPacks/OfferData.cs)
- * SCENEINFO IS SceneInfo, FULLY OBFUSCATED
- * SCENEINFO 且与丒与丈下丈丁一 = AddMode(GameMode)
- *
- */
-
 monoString* CreateIl2cppString(const char* str)
 {
     static monoString* (*CreateIl2cppString)(const char* str, int *startIndex, int *length) =
@@ -49,7 +37,7 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
-bool recoil, radar, flash, smoke;
+bool recoil, radar, flash, smoke, scope;
 float recoilVal;
 int(*get_Width)();
 int(*get_Height)();
@@ -86,8 +74,23 @@ int isGame(JNIEnv *env, jstring appDataDir) {
 void(*oldGameLogic)(void* obj);
 void GameLogic(void* obj){
     if(obj != nullptr){
-
+        LOGE("GAME LOGIC");
+        void* GameData = *(void**)((uint64_t) obj + 0xE8);
+        if(GameData != nullptr){
+            LOGE("GAME DATA");
+            monoArray<void **> *weaponDefsData = *(monoArray<void **> **)((uint64_t)GameData + 0x28);
+            if(weaponDefsData != nullptr){
+                LOGE("WDD");
+                if(recoil){
+                    *(float*)((uint64_t) weaponDefsData + 0x104) = recoilVal;
+                    *(float*)((uint64_t) weaponDefsData + 0x108) = recoilVal;
+                    *(float*)((uint64_t) weaponDefsData + 0x100) = recoilVal;
+                    *(float*)((uint64_t) weaponDefsData + 0xF0) = recoilVal;
+                }
+            }
+        }
     }
+    oldGameLogic(obj);
 }
 
 void(*oldUpdateCameraEffects)(void* obj);
@@ -95,7 +98,7 @@ void UpdateCameraEffects(void* obj){
     if(obj != nullptr){
         LOGE("UPDATE CAMERA FX");
         if(radar){
-            *(int*)((uint64_t) obj + 0x6C) = -1;//m_currentTeamIndex
+            *(int*)((uint64_t) obj + 0x6C) = 1;//m_currentTeamIndex
         }
     }
     oldUpdateCameraEffects(obj);
@@ -115,6 +118,7 @@ void set_Spread(void* obj){
         *(float*)((uint64_t) obj + 0x24) = 0;//m_maxSpread
         *(float*)((uint64_t) obj + 0x20) = 0;//m_spreadFactor
     }
+    oldset_Spread(obj);
 }
 
 void(*oldRenderOverlaySmoke)(void* obj);
@@ -136,15 +140,15 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
 
 
 void Hooks() {
-    DobbyHook((void*) get_absolute_address(0x10CE734), (void*) GameLogic, (void**) &oldGameLogic);
     DobbyHook((void*) get_absolute_address(0x10BE384), (void*) UpdateCameraEffects, (void**) &oldUpdateCameraEffects);
     DobbyHook((void*) get_absolute_address(0x19AFC90), (void*) RenderOverlayFlashbang, (void**) &oldRenderOverlayFlashbang);
     DobbyHook((void*) get_absolute_address(0x19AFED8), (void*) set_Spread, (void**) &oldset_Spread);
     DobbyHook((void*) get_absolute_address(0x19B6090), (void*) RenderOverlaySmoke, (void**) &oldRenderOverlaySmoke);
+    DobbyHook((void*) get_absolute_address(0x1D7005C), (void*) GameLogic, (void**) &oldGameLogic);
 }
 
 void Patches(){
-    PATCH("0xA8AC30", )
+   // PATCH("0xA8AC30", "")
 }
 
 void DrawMenu(){
@@ -168,6 +172,8 @@ void DrawMenu(){
         if (ImGui::CollapsingHeader(OBFUSCATE("Visual Mods"))) {
             ImGui::Checkbox(OBFUSCATE("Radar"), &radar);
             ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
+            ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
+            ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
         }
         Patches();
         ImGui::End();

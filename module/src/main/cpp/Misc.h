@@ -15,8 +15,13 @@
 using KittyMemory::ProcMap;
 using KittyScanner::RegisterNativeFn;
 
-ProcMap g_il2cppBaseMap;
 
+uint64_t libBaseAddress;
+uintptr_t get_absolute_address(uintptr_t relative_addr){
+    return (reinterpret_cast<uintptr_t>(libBaseAddress) + relative_addr);
+}
+
+ProcMap g_il2cppBaseMap ;
 void hook(void *offset, void* ptr, void **orig)
 {
     DobbyHook(offset, ptr, orig);
@@ -41,9 +46,6 @@ void patchOffset(uint64_t offset, std::string hexBytes, bool isOn) {
         //LOGI(OBFUSCATE("Added"));
     }
 
-    if (!patch.isValid()) {
-        return;
-    }
     if (isOn && patch.get_CurrBytes() == patch.get_OrigBytes()) {
         patch.Modify();
     } else if (!isOn && patch.get_CurrBytes() != patch.get_OrigBytes()) {
@@ -69,8 +71,8 @@ uintptr_t string2Offset(const char *c) {
     // All other options exhausted, sizeof(uintptr_t) == sizeof(unsigned long long))
     return strtoull(c, nullptr, base);
 }
-#define HOOK(offset, ptr, orig) hook((void *)(libBaseAdress + string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
-#define PATCH(offset, hex) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), true)
+#define HOOK(offset, ptr, orig) hook(get_absolute_address(string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
+#define PATCH(offset, hex) patchOffset((string2Offset(OBFUSCATE(offset))), OBFUSCATE(hex), true)
 #define PATCH_SWITCH(offset, hex, boolean) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), boolean)
 #define RESTORE(offset) patchOffset(string2Offset(OBFUSCATE(offset)), "", false)
 

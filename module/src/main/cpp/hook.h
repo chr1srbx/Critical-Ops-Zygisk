@@ -7,14 +7,10 @@
 static int enable_hack;
 static char *game_data_dir = NULL;
 int isGame(JNIEnv *env, jstring appDataDir);
-uint64_t libBaseAddress;
 void *hack_thread(void *arg);
 
 #include <android/log.h>
 
-uintptr_t get_absolute_address(uintptr_t relative_addr){
-    return (reinterpret_cast<uintptr_t>(libBaseAddress) + relative_addr);
-}
 
 #define LOG_TAG "ZygiskPG"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)

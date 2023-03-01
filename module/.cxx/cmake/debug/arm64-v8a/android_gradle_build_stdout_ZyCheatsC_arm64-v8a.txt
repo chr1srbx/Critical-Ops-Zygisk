@@ -4,7 +4,7 @@ In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook
 D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Unity.h:605:16: warning: returning address of local temporary object [-Wreturn-stack-address]
         return getString().c_str();
                ^~~~~~~~~~~
-D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:237:22: warning: implicit conversion from 'unsigned long' to 'int' changes value from 18446744073709551615 to -1 [-Wconstant-conversion]
+D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:223:22: warning: implicit conversion from 'unsigned long' to 'int' changes value from 18446744073709551615 to -1 [-Wconstant-conversion]
         int lowest = ULONG_MAX;
             ~~~~~~   ^~~~~~~~~
 C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/lib64/clang/14.0.6/include/limits.h:57:37: note: expanded from macro 'ULONG_MAX'
