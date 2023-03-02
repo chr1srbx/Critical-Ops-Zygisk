@@ -37,12 +37,28 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
+int (*get_Width)();
+int (*get_Height)();
+void* (*getAllCharacters)(void* pSys);
+int (*getLocalId)(void* pSys);
+void* (*getPlayer)(void* pSys, int id);
+void* (*getLocalPlayer)(void* pSys, int64_t a2, int64_t a3, int64_t a4, int64_t a5, int64_t a6, int64_t a7, int64_t a8, int64_t a9, int64_t a10);
+int (*getCharacterCount)(void* pSys);
+
+
 bool recoil, radar, flash, smoke, scope;
 float recoilVal;
-int(*get_Width)();
-int(*get_Height)();
-void Pointers() {
 
+
+void Pointers()
+{
+    get_Width = (int(*)()) get_absolute_address(0x1A0BF90);
+    get_Height = (int(*)()) get_absolute_address(0x1A0BFB8);
+    getAllCharacters = (void*(*)(void*)) get_absolute_address(0x1128D88);
+    getLocalId= (int(*)(void*)) (void*) get_absolute_address( 0x111D1DC);
+    getPlayer = (void*(*)(void*,int)) (void*) get_absolute_address( 0x112BFE4);
+    getLocalPlayer = (void*(*)(void*,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t)) get_absolute_address(0x111CC4C);
+    getCharacterCount = (int(*)(void*)) get_absolute_address(0x1128D98);
 }
 
 
@@ -93,6 +109,28 @@ void GameLogic(void* obj){
     oldGameLogic(obj);
 }
 
+void(*oldGameSystemUpdate)(void* pSys, float deltaTime);
+void GameSystemUpdate(void* pSys, float deltaTime)
+{
+    LOGE("GameSystemUpdate called");
+
+    if(pSys)
+    {
+        int id = getLocalId(pSys);
+        LOGE("Player Id is: %d", id);
+        void* localPlayer = getPlayer(pSys, id);
+        LOGE("Player class is at: %p", localPlayer);
+        void* boxedValueName = *(void**)((uint64_t)localPlayer + 0x70);
+        LOGE("Player Boxed Value is at: %p: ", boxedValueName);
+        uint8_t realValue = *(uint8_t *)((uint64_t)boxedValueName + 0x19); // NOTE the get value offset from the boxed data type depends on the boxed datatype refer to dump.cs for more info
+        LOGE("Player team is: %d", realValue);
+    }
+    return oldGameSystemUpdate(pSys, deltaTime);
+}
+
+
+
+
 void(*oldUpdateCameraEffects)(void* obj);
 void UpdateCameraEffects(void* obj){
     if(obj != nullptr){
@@ -141,10 +179,14 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
 
 void Hooks() {
     DobbyHook((void*) get_absolute_address(0x10BE384), (void*) UpdateCameraEffects, (void**) &oldUpdateCameraEffects);
+    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "FF 03 01 D1 E9 23 01 6D F5 53 02 A9 F3 7B 03 A9 F5", "xxxxxxxxxxxxxxxxx"))
     DobbyHook((void*) get_absolute_address(0x19AFC90), (void*) RenderOverlayFlashbang, (void**) &oldRenderOverlayFlashbang);
+    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "", ""))
     DobbyHook((void*) get_absolute_address(0x19AFED8), (void*) set_Spread, (void**) &oldset_Spread);
     DobbyHook((void*) get_absolute_address(0x19B6090), (void*) RenderOverlaySmoke, (void**) &oldRenderOverlaySmoke);
     DobbyHook((void*) get_absolute_address(0x1D7005C), (void*) GameLogic, (void**) &oldGameLogic);
+    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "F8 0F 1C F8 F7 5B 01 A9 F5 53 02 A9 F3 7B 03 A9 95 85", "xxxxxxxxxxxxxxxxxx"))
+    DobbyHook((void*) get_absolute_address(0x10CE734), (void*) GameSystemUpdate, (void**) &oldGameSystemUpdate);
 }
 
 void Patches(){
@@ -154,7 +196,7 @@ void Patches(){
 void DrawMenu(){
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     {
-        ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (23.1) - chr1s#4191 && networkCommand()#7611 && ohmyfajett#3500"));
+        ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (23.1) - chr1s#4191 && 077 Icemods && networkCommand()#7611 && ohmyfajett#3500"));
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
             //isDiscordPressed = true;
@@ -184,7 +226,9 @@ void SetupImgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float) 2560.0, (float) 1440.0);
+    int width = get_Width();
+    int height = get_Height();
+    io.DisplaySize = ImVec2((float)width , (float)height);
     ImGui_ImplOpenGL3_Init("#version 100");
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(6.0f);

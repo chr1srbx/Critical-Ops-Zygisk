@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "D:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so"
+			"path" : "D:/Documents/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so"
 		}
 	],
 	"backtrace" : 1,
@@ -83,19 +83,19 @@
 			[
 				{
 					"backtrace" : 3,
-					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory"
+					"path" : "D:/Documents/cops-menu/module/src/main/cpp/KittyMemory"
 				},
 				{
 					"backtrace" : 4,
-					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes"
+					"path" : "D:/Documents/cops-menu/module/src/main/cpp/Includes"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui"
+					"path" : "D:/Documents/cops-menu/module/src/main/cpp/ImGui"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends"
+					"path" : "D:/Documents/cops-menu/module/src/main/cpp/ImGui/backends"
 				}
 			],
 			"language" : "CXX",
@@ -119,7 +119,7 @@
 			],
 			"sysroot" : 
 			{
-				"path" : "C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+				"path" : "C:/Users/0x7is/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
 			}
 		}
 	],
@@ -139,7 +139,7 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\libs\\arm64-v8a\\libdobby.a",
+				"fragment" : "D:\\Documents\\cops-menu\\module\\src\\main\\cpp\\libs\\arm64-v8a\\libdobby.a",
 				"role" : "libraries"
 			},
 			{
@@ -167,7 +167,7 @@
 		"language" : "CXX",
 		"sysroot" : 
 		{
-			"path" : "C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+			"path" : "C:/Users/0x7is/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
 		}
 	},
 	"name" : "ZyCheatsC",
