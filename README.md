@@ -1,5 +1,5 @@
-# ZygiskPG
-Mod Menu for Pixel Gun 3D 23.0.1
+# ZygiskCOPS
+Mod Menu for Critical Ops
 
 This is NOT a good project 
 You WILL encounter many problems
