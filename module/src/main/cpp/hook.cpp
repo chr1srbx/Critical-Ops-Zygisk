@@ -25,6 +25,7 @@
 #include "Misc.h"
 #include "hook.h"
 #include "Include/Roboto-Regular.h"
+#include "ESP.h"
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
@@ -44,10 +45,16 @@ int (*getLocalId)(void* pSys);
 void* (*getPlayer)(void* pSys, int id);
 void* (*getLocalPlayer)(void* pSys, int64_t a2, int64_t a3, int64_t a4, int64_t a5, int64_t a6, int64_t a7, int64_t a8, int64_t a9, int64_t a10);
 int (*getCharacterCount)(void* pSys);
+int (*get_Health)(void* character);
+void* (*get_Player)(void* character);
+bool (*get_IsInitialized)(void* character);
+Vector3 (*get_Position)(void* transform);
+Vector3 (*WorldToScreen)(Vector3 worldPos);
 
 
-bool recoil, radar, flash, smoke, scope;
+bool recoil, radar, flash, smoke, scope, setupimg;
 float recoilVal;
+int glHeight, glWidth;
 
 
 void Pointers()
@@ -59,6 +66,13 @@ void Pointers()
     getPlayer = (void*(*)(void*,int)) (void*) get_absolute_address( 0x112BFE4);
     getLocalPlayer = (void*(*)(void*,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t)) get_absolute_address(0x111CC4C);
     getCharacterCount = (int(*)(void*)) get_absolute_address(0x1128D98);
+    get_Health = (int(*)(void*)) get_absolute_address(0x1A74DA0);
+    get_Player = (void*(*)(void*)) get_absolute_address(0x1A74D88);
+    get_IsInitialized = (bool(*)(void*)) get_absolute_address(0x1A74C10);
+    get_Position = (Vector3(*)(void*)) get_absolute_address(0x1A3B390);
+
+
+    WorldToScreen = (Vector3(*)(Vector3)) get_absolute_address(0x1A13390);
 }
 
 
@@ -109,6 +123,34 @@ void GameLogic(void* obj){
     oldGameLogic(obj);
 }
 
+void* oldShaderFind(std::string name);
+void* ShaderFind(std::string name)
+{
+    LOGE("Shader logged: %s", name.c_str());
+    oldShaderFind(name);
+}
+
+// character functions
+void* getTransform(void* character)
+{
+    return *(void**)((uint64_t)character + 0x70);
+}
+
+int get_CharacterTeam(void* character)
+{
+    void* player = get_Player(character);
+    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+    return *(int*)((uint64_t)boxedValueName + 0x1C);
+}
+
+int get_PlayerTeam(void* player)
+{
+    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+    return *(int*)((uint64_t)boxedValueName + 0x1C);
+}
+
+
+
 void(*oldGameSystemUpdate)(void* pSys, float deltaTime);
 void GameSystemUpdate(void* pSys, float deltaTime)
 {
@@ -120,10 +162,47 @@ void GameSystemUpdate(void* pSys, float deltaTime)
         LOGE("Player Id is: %d", id);
         void* localPlayer = getPlayer(pSys, id);
         LOGE("Player class is at: %p", localPlayer);
-        void* boxedValueName = *(void**)((uint64_t)localPlayer + 0x70);
+        void* boxedValueName = *(void**)((uint64_t)localPlayer + 0x118);
         LOGE("Player Boxed Value is at: %p: ", boxedValueName);
-        uint8_t realValue = *(uint8_t *)((uint64_t)boxedValueName + 0x19); // NOTE the get value offset from the boxed data type depends on the boxed datatype refer to dump.cs for more info
+        uint8_t realValue = *(uint8_t*)((uint64_t)boxedValueName + 0x1C); // NOTE the get value offset from the boxed data type depends on the boxed datatype refer to dump.cs for more info
         LOGE("Player team is: %d", realValue);
+
+        /*
+         int localTeam = get_PlayerTeam(localPlayer);
+         LOGE("Character LocalTeam: %d", int);
+         void* characterList = getAllCharacters(pSys);
+         LOGE("Charcter List found at: %p", characterList);
+         int characterCount = getCharacterCount(pSys);
+         LOGE("Character Count found: %d", character)
+         for(int i= 0;i < characterCount; i++)
+         {
+           LOGE("Character Iteration loop: %d", i)
+           currentCharcter* = *(void**)((uint64_t)characterList + i);
+           LOGE("Character Current is at: %p", currentCharcter);
+           if (get_Health(currentCharcter) > 0 && get_IsInitialized(currentCharcter) && localTeam != get_CharacterTeam(currentCharcter))
+           {
+               LOGE("Character Health: %d", get_Health(currentCharcter));
+               LOGE("Character Initialized: %d", get_IsInitialized(currentCharcter));
+               void* transform = getTransform(currentCharcter);
+               LOGE("Character Transform at: %p", transform);
+               Vector3 position = get_Position(transform);
+               LOGE("Character position X: %f, Y: %f, Z: %f", position.x, position.y, position.z);
+               Vector3 screenPos = WorldToScreen(position);
+               LOGE("Character  Screen position X: %f, Y: %f, Z: %f", screenPos.x, screenPos.y, screenPos.z);
+
+               // Snaplines (Ew)
+               DrawLine(ImVec2(glWidth/2,glHeight), ImVec2(screenPos.x,screenPos.y), ImVec4(127/255,204/255,1,1));
+               LOGE("Character Snapoline Drawn");
+           }
+          }
+
+
+
+         
+         */
+
+
+
     }
     return oldGameSystemUpdate(pSys, deltaTime);
 }
@@ -167,9 +246,6 @@ void RenderOverlaySmoke(void* obj){
     oldRenderOverlaySmoke(obj);
 }
 
-int glHeight, glWidth;
-bool setupimg;
-
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
@@ -187,6 +263,7 @@ void Hooks() {
     DobbyHook((void*) get_absolute_address(0x1D7005C), (void*) GameLogic, (void**) &oldGameLogic);
     // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "F8 0F 1C F8 F7 5B 01 A9 F5 53 02 A9 F3 7B 03 A9 95 85", "xxxxxxxxxxxxxxxxxx"))
     DobbyHook((void*) get_absolute_address(0x10CE734), (void*) GameSystemUpdate, (void**) &oldGameSystemUpdate);
+    DobbyHook((void*) get_absolute_address(0x1A0C310), (void*) ShaderFind, (void**) &oldShaderFind);
 }
 
 void Patches(){
@@ -226,14 +303,17 @@ void SetupImgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    int width = get_Width();
-    int height = get_Height();
-    io.DisplaySize = ImVec2((float)width , (float)height);
+    glWidth = get_Width();
+    glHeight = get_Height();
+    io.DisplaySize = ImVec2((float)glWidth , (float)glHeight);
     ImGui_ImplOpenGL3_Init("#version 100");
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(6.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
 }
+
+
+
 
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
