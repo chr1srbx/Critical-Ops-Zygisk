@@ -55,7 +55,7 @@ Vector2 (*WorldToScreen)(void*, Vector3 worldPos);
 void* (*get_camera)();
 void* (*SetRotation)(void* obj, Vector2 rotation);
 
-void* pSys = nullptr;
+void* obj = nullptr;
 void* pBones = nullptr;
 bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
 fov, ggod, killnotes,crosshair, supressor, rifleb;
@@ -146,9 +146,47 @@ void* ShaderFind(std::string name)
 void(*oldGameSystemUpdate)(void* obj);
 void GameSystemUpdate(void* obj){
     if(obj != nullptr){
-        pSys = obj;
+        if(esp) {
+            ImGui::Begin("OL", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
+            DrawLine(ImVec2(0, 0), ImVec2(200, 200), ImVec4(1, 1, 1, 1));
+            int id = getLocalId(obj);
+            void *localPlayer = getPlayer(obj, id);
+            int localTeam = get_PlayerTeam(localPlayer);
+            monoList<void **> *characterList = getAllCharacters(obj);
+            for (int i = 0; i < characterList->getSize(); i++) {
+                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
+                    localTeam != get_CharacterTeam(currentCharacter)) {
+                    void *transform = getTransform(currentCharacter);
+                    Vector3 position = get_Position(transform);
+                    Vector2 screenPos = WorldToScreen(get_camera(), position);
+                    screenPos.Y = glHeight - screenPos.Y;
+                    if (snaplines) {
+                        ImVec2 fromLine = ImVec2(glWidth / 2, 0);
+                        ImVec2 linePosition = ImVec2(screenPos.X, screenPos.Y);
+                        ImGui::GetBackgroundDrawList()->AddLine(fromLine, linePosition,ImColor(172, 204, 255), 5);
+                    }
+                }
+            }
+            ImGui::End();
+        }
+        /*monoList<void **> *characterList = getAllCharacters(obj);
+        for (int i = 0; i < characterList->getSize(); i++)
+        {
+            void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+            void** bodyPartList = *(void***) ((uint64_t)currentCharacter + 0x78);
+            for (int j = 0; j < 10; j++ )
+            {
+                void* bodyPart = *(void**)((uint64_t)bodyPartList + i);
+                int value = *(int*)((uint64_t)bodyPart + 0x18);
+                void* hitsphere = *(void**)((uint64_t)bodyPart + 0x20);
+                Vector3 center = *(Vector3*)((uint64_t)hitsphere + 0x18);
 
-
+                LOGE("Bodypart Loop: %d Bodypart Value: %d ", j, value);
+                LOGE("Bodypart center X: %f, Y: %f, Z: %f", center.X, center.Y, center.Z);
+            }
+        }*/
     }
     return oldGameSystemUpdate(obj);
 }
@@ -172,23 +210,11 @@ void set_Spread(void* obj){
 }
 
 void(*oldRenderOverlaySmoke)(void* obj);
-void RenderOverlaySmoke(void* obj){
-    if(obj != nullptr && smoke){
-        *(float*)((uint64_t) obj + 0x20) = 9999;//m_fadeSpeed
+void RenderOverlaySmoke(void* obj) {
+    if (obj != nullptr && smoke) {
+        *(float *) ((uint64_t) obj + 0x20) = 9999;//m_fadeSpeed
     }
     oldRenderOverlaySmoke(obj);
-}
-
-void(*oldUpdateWeapon)(void* obj);
-void UpdateWeapon(void* obj){
-    if(obj != nullptr){
-        monoArray<void**> *CharcacterBodyPart = *(monoArray<void**>**)((uint64_t) obj + 0x78);
-        if(CharcacterBodyPart != nullptr){
-            LOGE("CHAR BODY");
-            *(int*)((uint64_t) CharcacterBodyPart + 0x18) = 10;
-            pBones = obj;
-        }
-    }
 }
 
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
@@ -204,24 +230,19 @@ void Hooks() {
     HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
     HOOK("0x19B6090", RenderOverlaySmoke, oldRenderOverlaySmoke);
     HOOK("0x10CE734", GameSystemUpdate, oldGameSystemUpdate);
-    HOOK("0x1A78DD8", UpdateWeapon, oldUpdateWeapon);
     HOOK("0x1A10C54", get_fieldOfView, old_get_fieldOfView);
 }
 
 void Patches(){
     PATCH_SWITCH("0x1D4FD28", "000080D2C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x1D4FBF8", "1F2003D5C0035FD6", recoil);//AddRecoil
-    PATCH_SWITCH("0x17292FC", "000080D2C0035FD6", recoil);//get_RecoilRotatesCamera
-    PATCH_SWITCH("0x172930C", "000080D2C0035FD6", recoil);//get_RecoilRotatesViewModel
-    PATCH_SWITCH("0x17257C8", "000080D2C0035FD6", recoil);//get_RecoilRotatesCamera
-    PATCH_SWITCH("0x17257D8", "000080D2C0035FD6", recoil);//get_RecoilRotatesViewModel
+    PATCH_SWITCH("0x1D50130", "1F2003D5C0035FD6", recoil);//ApplyRecoil
+    PATCH_SWITCH("0x1D4FC38", "1F2003D5C0035FD6", recoil);//RecoilRecover
     PATCH_SWITCH("0x10BEED4", "1F2003D5C0035FD6", recoil);//UpdateCameraShake
     PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
-    PATCH_SWITCH("0x1D4FDC4", "000080D2C0035FD6", kickback);//ApplyKickBack
     PATCH_SWITCH("0x19BAB70", "1F2003D5C0035FD6", crouch);//UpdateCrouch
-    PATCH_SWITCH("0x10D2730", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
+    //PATCH_SWITCH("0x10D2730", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
     PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
-    PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
+    PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
     PATCH_SWITCH("0x10D1664", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
     PATCH_SWITCH("0xF3C32C", "1F2003D5C0035FD6", killnotes);//SetKillNotification
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
@@ -234,31 +255,6 @@ void Patches(){
 
 
 void DrawMenu(){
-    if(pSys != nullptr) {
-        if (esp) {
-            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
-            DrawLine(ImVec2(0, 0), ImVec2(200, 200), ImVec4(1, 1, 1, 1));
-            int id = getLocalId(pSys);
-            void *localPlayer = getPlayer(pSys, id);
-            int localTeam = get_PlayerTeam(localPlayer);
-            monoList<void **> *characterList = getAllCharacters(pSys);
-            for (int i = 0; i < characterList->getSize(); i++) {
-                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
-                    localTeam != get_CharacterTeam(currentCharacter)) {
-                    void *transform = getTransform(currentCharacter);
-                    Vector3 position = get_Position(transform);
-                    Vector2 screenPos = WorldToScreen(get_camera(), position);
-                    screenPos.Y = glHeight - screenPos.Y;
-                    if (snaplines) {
-                        ImVec2 fromLine = ImVec2(glWidth / 2, 0);
-                        ImVec2 linePosition = ImVec2(screenPos.X, screenPos.Y);
-                        ImGui::GetBackgroundDrawList()->AddLine(fromLine, linePosition, ImColor(172, 204, 255), 5);
-                    }
-                }
-            }
-        }
-    }
 
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     {
@@ -292,20 +288,19 @@ void DrawMenu(){
             }
             
             if (ImGui::BeginTabItem(OBFUSCATE("Visual Mods"))) {
-                if(ImGui::Checkbox(OBFUSCATE("ESP"), &esp))
+                ImGui::Checkbox(OBFUSCATE("ESP"), &esp);
                 if(esp){
-                    ImGui::Checkbox(OBFUSCATE("Snaplines"), &snaplines);
+                    ImGui::Checkbox(OBFUSCATE(" · Snaplines"), &snaplines);
                 }
-                if(ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov))
+                ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov);
                 if(fov){
-                    ImGui::SliderFloat(OBFUSCATE("Value"), &fovModifier, 0.0, 360.0);
+                    ImGui::SliderFloat(OBFUSCATE(" · Value"), &fovModifier, 1.0, 360.0);
                 }
                 ImGui::Checkbox(OBFUSCATE("Radar"), &radar);
                 ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
                 ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
                 ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch);
-                ImGui::Checkbox(OBFUSCATE("No Kickback"), &kickback);
                 ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);
                 ImGui::EndTabItem();
             }
