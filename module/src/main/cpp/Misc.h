@@ -7,18 +7,20 @@
 #include "Includes/Dobby/dobbyForHooks.h"
 #include "Include/Unity.h"
 #include "KittyMemory/KittyMemory.h"
-#include "KittyMemory/KittyScanner.h"
 #include "KittyMemory/MemoryPatch.h"
 #include "Include/obfuscate.h"
 #include "hook.h"
 
 using KittyMemory::ProcMap;
-using KittyScanner::RegisterNativeFn;
 
 
 uint64_t libBaseAddress;
 uintptr_t get_absolute_address(uintptr_t relative_addr){
     return (reinterpret_cast<uintptr_t>(libBaseAddress) + relative_addr);
+}
+
+uintptr_t* get_absolute_addresss(uintptr_t relative_addr){
+    return (reinterpret_cast<uintptr_t*>(libBaseAddress) + relative_addr);
 }
 
 ProcMap g_il2cppBaseMap ;
@@ -33,7 +35,7 @@ std::vector<uint64_t> offsetVector;
 // Patching a offset with switch.
 void patchOffset(uint64_t offset, std::string hexBytes, bool isOn) {
 
-    MemoryPatch patch = MemoryPatch::createWithHex(g_il2cppBaseMap, offset, hexBytes);
+    MemoryPatch patch = MemoryPatch::createWithHex(get_absolute_address(offset), hexBytes);
 
     //Check if offset exists in the offsetVector
     if (std::find(offsetVector.begin(), offsetVector.end(), offset) != offsetVector.end()) {
@@ -46,10 +48,14 @@ void patchOffset(uint64_t offset, std::string hexBytes, bool isOn) {
         //LOGI(OBFUSCATE("Added"));
     }
 
-    if (isOn && patch.get_CurrBytes() == patch.get_OrigBytes()) {
-        patch.Modify();
-    } else if (!isOn && patch.get_CurrBytes() != patch.get_OrigBytes()) {
-        patch.Restore();
+    if (isOn) {
+        if (!patch.Modify()) {
+
+        }
+    } else {
+        if (!patch.Restore()) {
+
+        }
     }
 }
 
@@ -61,7 +67,7 @@ uintptr_t string2Offset(const char *c) {
     // compiler that is not yet addressed.
     static_assert(sizeof(uintptr_t) == sizeof(unsigned long)
                   || sizeof(uintptr_t) == sizeof(unsigned long long),
-                  "Please add string to handle conversion for this architecture.");
+                  "");
 
     // Now choose the correct function ...
     if (sizeof(uintptr_t) == sizeof(unsigned long)) {
@@ -71,7 +77,7 @@ uintptr_t string2Offset(const char *c) {
     // All other options exhausted, sizeof(uintptr_t) == sizeof(unsigned long long))
     return strtoull(c, nullptr, base);
 }
-#define HOOK(offset, ptr, orig) hook(get_absolute_address(string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
+#define HOOK(offset, ptr, orig) hook((void*)get_absolute_address(string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
 #define PATCH(offset, hex) patchOffset((string2Offset(OBFUSCATE(offset))), OBFUSCATE(hex), true)
 #define PATCH_SWITCH(offset, hex, boolean) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), boolean)
 #define RESTORE(offset) patchOffset(string2Offset(OBFUSCATE(offset)), "", false)

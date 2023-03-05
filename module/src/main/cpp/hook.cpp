@@ -26,53 +26,88 @@
 #include "hook.h"
 #include "Include/Roboto-Regular.h"
 #include "ESP.h"
+#include "Include/Vector3.h"
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
 monoString* CreateIl2cppString(const char* str)
 {
     static monoString* (*CreateIl2cppString)(const char* str, int *startIndex, int *length) =
-    (monoString* (*)(const char* str, int *startIndex, int *length))(g_il2cppBaseMap.startAddress + string2Offset(OBFUSCATE("0x44865B4")));
+    (monoString* (*)(const char* str, int *startIndex, int *length))(get_absolute_address(string2Offset(OBFUSCATE("0x44865B4"))));
     int* startIndex = 0;
     int* length = (int *)strlen(str);
     return CreateIl2cppString(str, startIndex, length);
 }
-
+void (*SetResolution)(int widht, int height, bool fullscreen, float refreshRate);
 int (*get_Width)();
 int (*get_Height)();
-void* (*getAllCharacters)(void* pSys);
-int (*getLocalId)(void* pSys);
-void* (*getPlayer)(void* pSys, int id);
-void* (*getLocalPlayer)(void* pSys, int64_t a2, int64_t a3, int64_t a4, int64_t a5, int64_t a6, int64_t a7, int64_t a8, int64_t a9, int64_t a10);
-int (*getCharacterCount)(void* pSys);
+monoList<void**>* (*getAllCharacters)(void* obj);
+int (*getLocalId)(void* obj);
+void* (*getPlayer)(void* obj, int id);
+void* (*getLocalPlayer)(void* obj);
+int (*getCharacterCount)(void* obj);
 int (*get_Health)(void* character);
 void* (*get_Player)(void* character);
+void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
 Vector3 (*get_Position)(void* transform);
-Vector3 (*WorldToScreen)(Vector3 worldPos);
+Vector2 (*WorldToScreen)(void*, Vector3 worldPos);
+void* (*get_camera)();
+void* (*SetRotation)(void* obj, Vector2 rotation);
 
-
-bool recoil, radar, flash, smoke, scope, setupimg;
-float recoilVal;
+void* pSys = nullptr;
+void* pBones = nullptr;
+bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
+fov, ggod, killnotes,crosshair, supressor, rifleb;
+float speedval = 1, fovModifier;
 int glHeight, glWidth;
+
+float (*old_get_fieldOfView)(void *instance);
+float get_fieldOfView(void *instance) {
+    if (instance != nullptr && fov) {
+        return fovModifier;
+    }
+    return old_get_fieldOfView(instance);
+}
+
+// character functions
+void* getTransform(void* character)
+{
+    return *(void**)((uint64_t)character + 0x70);
+}
+
+int get_CharacterTeam(void* character)
+{
+    void* player = get_Player(character);
+    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+    return *(int*)((uint64_t)boxedValueName + 0x1C);
+}
+
+int get_PlayerTeam(void* player)
+{
+    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+    return *(int*)((uint64_t)boxedValueName + 0x1C);
+}
 
 
 void Pointers()
 {
+    SetResolution = (void(*)(int, int, bool, float)) get_absolute_address(0x1A0C224);
     get_Width = (int(*)()) get_absolute_address(0x1A0BF90);
     get_Height = (int(*)()) get_absolute_address(0x1A0BFB8);
-    getAllCharacters = (void*(*)(void*)) get_absolute_address(0x1128D88);
-    getLocalId= (int(*)(void*)) (void*) get_absolute_address( 0x111D1DC);
-    getPlayer = (void*(*)(void*,int)) (void*) get_absolute_address( 0x112BFE4);
-    getLocalPlayer = (void*(*)(void*,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t,int64_t)) get_absolute_address(0x111CC4C);
-    getCharacterCount = (int(*)(void*)) get_absolute_address(0x1128D98);
+    getAllCharacters = (monoList<void**>*(*)(void*)) get_absolute_address(0x10C993C);
+    getLocalId= (int(*)(void*)) get_absolute_address(0x10BDBEC);
+    getPlayer = (void*(*)(void*,int))  get_absolute_address(0x10CCBDC);
+    getLocalPlayer = (void*(*)(void*)) get_absolute_address(0x10BD65C);
+    getCharacterCount = (int(*)(void*)) get_absolute_address(0x10C994C);
     get_Health = (int(*)(void*)) get_absolute_address(0x1A74DA0);
     get_Player = (void*(*)(void*)) get_absolute_address(0x1A74D88);
     get_IsInitialized = (bool(*)(void*)) get_absolute_address(0x1A74C10);
     get_Position = (Vector3(*)(void*)) get_absolute_address(0x1A3B390);
-
-
-    WorldToScreen = (Vector3(*)(Vector3)) get_absolute_address(0x1A13390);
+    get_camera = (void*(*)()) get_absolute_address(0x1A13C5C);
+    SetRotation = (void*(*)(void*, Vector2)) get_absolute_address(0x1A75780);
+    WorldToScreen = (Vector2(*)(void*, Vector3)) get_absolute_address(0x160D4CC);
+    set_targetFrameRate = (void(*)(int)) get_absolute_address(0x1A3A5BC);
 }
 
 
@@ -101,125 +136,23 @@ int isGame(JNIEnv *env, jstring appDataDir) {
     }
 }
 
-void(*oldGameLogic)(void* obj);
-void GameLogic(void* obj){
-    if(obj != nullptr){
-        LOGE("GAME LOGIC");
-        void* GameData = *(void**)((uint64_t) obj + 0xE8);
-        if(GameData != nullptr){
-            LOGE("GAME DATA");
-            monoArray<void **> *weaponDefsData = *(monoArray<void **> **)((uint64_t)GameData + 0x28);
-            if(weaponDefsData != nullptr){
-                LOGE("WDD");
-                if(recoil){
-                    *(float*)((uint64_t) weaponDefsData + 0x104) = recoilVal;
-                    *(float*)((uint64_t) weaponDefsData + 0x108) = recoilVal;
-                    *(float*)((uint64_t) weaponDefsData + 0x100) = recoilVal;
-                    *(float*)((uint64_t) weaponDefsData + 0xF0) = recoilVal;
-                }
-            }
-        }
-    }
-    oldGameLogic(obj);
-}
-
-void* oldShaderFind(std::string name);
+void* (*oldShaderFind)(std::string name);
 void* ShaderFind(std::string name)
 {
     LOGE("Shader logged: %s", name.c_str());
     oldShaderFind(name);
 }
 
-// character functions
-void* getTransform(void* character)
-{
-    return *(void**)((uint64_t)character + 0x70);
-}
-
-int get_CharacterTeam(void* character)
-{
-    void* player = get_Player(character);
-    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(int*)((uint64_t)boxedValueName + 0x1C);
-}
-
-int get_PlayerTeam(void* player)
-{
-    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(int*)((uint64_t)boxedValueName + 0x1C);
-}
-
-
-
-void(*oldGameSystemUpdate)(void* pSys, float deltaTime);
-void GameSystemUpdate(void* pSys, float deltaTime)
-{
-    LOGE("GameSystemUpdate called");
-
-    if(pSys)
-    {
-        int id = getLocalId(pSys);
-        LOGE("Player Id is: %d", id);
-        void* localPlayer = getPlayer(pSys, id);
-        LOGE("Player class is at: %p", localPlayer);
-        void* boxedValueName = *(void**)((uint64_t)localPlayer + 0x118);
-        LOGE("Player Boxed Value is at: %p: ", boxedValueName);
-        uint8_t realValue = *(uint8_t*)((uint64_t)boxedValueName + 0x1C); // NOTE the get value offset from the boxed data type depends on the boxed datatype refer to dump.cs for more info
-        LOGE("Player team is: %d", realValue);
-
-        /*
-         int localTeam = get_PlayerTeam(localPlayer);
-         LOGE("Character LocalTeam: %d", int);
-         void* characterList = getAllCharacters(pSys);
-         LOGE("Charcter List found at: %p", characterList);
-         int characterCount = getCharacterCount(pSys);
-         LOGE("Character Count found: %d", character)
-         for(int i= 0;i < characterCount; i++)
-         {
-           LOGE("Character Iteration loop: %d", i)
-           currentCharcter* = *(void**)((uint64_t)characterList + i);
-           LOGE("Character Current is at: %p", currentCharcter);
-           if (get_Health(currentCharcter) > 0 && get_IsInitialized(currentCharcter) && localTeam != get_CharacterTeam(currentCharcter))
-           {
-               LOGE("Character Health: %d", get_Health(currentCharcter));
-               LOGE("Character Initialized: %d", get_IsInitialized(currentCharcter));
-               void* transform = getTransform(currentCharcter);
-               LOGE("Character Transform at: %p", transform);
-               Vector3 position = get_Position(transform);
-               LOGE("Character position X: %f, Y: %f, Z: %f", position.x, position.y, position.z);
-               Vector3 screenPos = WorldToScreen(position);
-               LOGE("Character  Screen position X: %f, Y: %f, Z: %f", screenPos.x, screenPos.y, screenPos.z);
-
-               // Snaplines (Ew)
-               DrawLine(ImVec2(glWidth/2,glHeight), ImVec2(screenPos.x,screenPos.y), ImVec4(127/255,204/255,1,1));
-               LOGE("Character Snapoline Drawn");
-           }
-          }
-
-
-
-         
-         */
-
-
-
-    }
-    return oldGameSystemUpdate(pSys, deltaTime);
-}
-
-
-
-
-void(*oldUpdateCameraEffects)(void* obj);
-void UpdateCameraEffects(void* obj){
+void(*oldGameSystemUpdate)(void* obj);
+void GameSystemUpdate(void* obj){
     if(obj != nullptr){
-        LOGE("UPDATE CAMERA FX");
-        if(radar){
-            *(int*)((uint64_t) obj + 0x6C) = 1;//m_currentTeamIndex
-        }
+        pSys = obj;
+
+
     }
-    oldUpdateCameraEffects(obj);
+    return oldGameSystemUpdate(obj);
 }
+
 
 void(*oldRenderOverlayFlashbang)(void* obj);
 void RenderOverlayFlashbang(void* obj){
@@ -246,6 +179,18 @@ void RenderOverlaySmoke(void* obj){
     oldRenderOverlaySmoke(obj);
 }
 
+void(*oldUpdateWeapon)(void* obj);
+void UpdateWeapon(void* obj){
+    if(obj != nullptr){
+        monoArray<void**> *CharcacterBodyPart = *(monoArray<void**>**)((uint64_t) obj + 0x78);
+        if(CharcacterBodyPart != nullptr){
+            LOGE("CHAR BODY");
+            *(int*)((uint64_t) CharcacterBodyPart + 0x18) = 10;
+            pBones = obj;
+        }
+    }
+}
+
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
@@ -254,50 +199,123 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
 
 
 void Hooks() {
-    DobbyHook((void*) get_absolute_address(0x10BE384), (void*) UpdateCameraEffects, (void**) &oldUpdateCameraEffects);
-    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "FF 03 01 D1 E9 23 01 6D F5 53 02 A9 F3 7B 03 A9 F5", "xxxxxxxxxxxxxxxxx"))
-    DobbyHook((void*) get_absolute_address(0x19AFC90), (void*) RenderOverlayFlashbang, (void**) &oldRenderOverlayFlashbang);
-    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "", ""))
-    DobbyHook((void*) get_absolute_address(0x19AFED8), (void*) set_Spread, (void**) &oldset_Spread);
-    DobbyHook((void*) get_absolute_address(0x19B6090), (void*) RenderOverlaySmoke, (void**) &oldRenderOverlaySmoke);
-    DobbyHook((void*) get_absolute_address(0x1D7005C), (void*) GameLogic, (void**) &oldGameLogic);
-    // reinterpret_cast<uintptr_t>(KittyMemory::findHexFirst(libBaseAddress, libBaseAddress + 10000000, "F8 0F 1C F8 F7 5B 01 A9 F5 53 02 A9 F3 7B 03 A9 95 85", "xxxxxxxxxxxxxxxxxx"))
-    DobbyHook((void*) get_absolute_address(0x10CE734), (void*) GameSystemUpdate, (void**) &oldGameSystemUpdate);
-    DobbyHook((void*) get_absolute_address(0x1A0C310), (void*) ShaderFind, (void**) &oldShaderFind);
+    HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
+    HOOK("0x19AFED8", set_Spread, oldset_Spread);
+    HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
+    HOOK("0x19B6090", RenderOverlaySmoke, oldRenderOverlaySmoke);
+    HOOK("0x10CE734", GameSystemUpdate, oldGameSystemUpdate);
+    HOOK("0x1A78DD8", UpdateWeapon, oldUpdateWeapon);
+    HOOK("0x1A10C54", get_fieldOfView, old_get_fieldOfView);
 }
 
 void Patches(){
-   // PATCH("0xA8AC30", "")
+    PATCH_SWITCH("0x1D4FD28", "000080D2C0035FD6", spread);//UpdateSpread
+    PATCH_SWITCH("0x1D4FBF8", "1F2003D5C0035FD6", recoil);//AddRecoil
+    PATCH_SWITCH("0x17292FC", "000080D2C0035FD6", recoil);//get_RecoilRotatesCamera
+    PATCH_SWITCH("0x172930C", "000080D2C0035FD6", recoil);//get_RecoilRotatesViewModel
+    PATCH_SWITCH("0x17257C8", "000080D2C0035FD6", recoil);//get_RecoilRotatesCamera
+    PATCH_SWITCH("0x17257D8", "000080D2C0035FD6", recoil);//get_RecoilRotatesViewModel
+    PATCH_SWITCH("0x10BEED4", "1F2003D5C0035FD6", recoil);//UpdateCameraShake
+    PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
+    PATCH_SWITCH("0x1D4FDC4", "000080D2C0035FD6", kickback);//ApplyKickBack
+    PATCH_SWITCH("0x19BAB70", "1F2003D5C0035FD6", crouch);//UpdateCrouch
+    PATCH_SWITCH("0x10D2730", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
+    PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
+    PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
+    PATCH_SWITCH("0x10D1664", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
+    PATCH_SWITCH("0xF3C32C", "1F2003D5C0035FD6", killnotes);//SetKillNotification
+    PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
+    PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
+    PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//get_GrenadeSmokeAreaOfEffect
+    PATCH_SWITCH("0x1D8506C", "400080D2C0035FD6", rifleb);//get_GrenadeSmokeAreaOfEffect
+    PATCH("0x10DCE9C", "000080D2C0035FD6");//HasBadWord
+    PATCH("0x10DCF88", "000080D2C0035FD6");//IsBadWord
 }
 
+
 void DrawMenu(){
+    if(pSys != nullptr) {
+        if (esp) {
+            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
+            DrawLine(ImVec2(0, 0), ImVec2(200, 200), ImVec4(1, 1, 1, 1));
+            int id = getLocalId(pSys);
+            void *localPlayer = getPlayer(pSys, id);
+            int localTeam = get_PlayerTeam(localPlayer);
+            monoList<void **> *characterList = getAllCharacters(pSys);
+            for (int i = 0; i < characterList->getSize(); i++) {
+                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
+                    localTeam != get_CharacterTeam(currentCharacter)) {
+                    void *transform = getTransform(currentCharacter);
+                    Vector3 position = get_Position(transform);
+                    Vector2 screenPos = WorldToScreen(get_camera(), position);
+                    screenPos.Y = glHeight - screenPos.Y;
+                    if (snaplines) {
+                        ImVec2 fromLine = ImVec2(glWidth / 2, 0);
+                        ImVec2 linePosition = ImVec2(screenPos.X, screenPos.Y);
+                        ImGui::GetBackgroundDrawList()->AddLine(fromLine, linePosition, ImColor(172, 204, 255), 5);
+                    }
+                }
+            }
+        }
+    }
+
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     {
-        ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (23.1) - chr1s#4191 && 077 Icemods && networkCommand()#7611 && ohmyfajett#3500"));
+        ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (1.37.0.f2085) - chr1s#4191 && 077 Icemods"));
+        ImGui::TextUnformatted("If the menu touch is broken, set the screenscale in settings to 100.");
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
             //isDiscordPressed = true;
         }
         ImGui::TextUnformatted("Its Recommended to join the discord server for mod updates etc.");
-        if (ImGui::CollapsingHeader(OBFUSCATE("Legit Mods"))) {
-            ImGui::Checkbox(OBFUSCATE("Change Recoil"), &recoil);
-            if(recoil){
-                ImGui::SliderFloat(OBFUSCATE("Recoil Intensity"), &recoilVal, 0.0f, 100.0f);
+        ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_FittingPolicyResizeDown;
+        if (ImGui::BeginTabBar("Menu", tab_bar_flags)) {
+            if (ImGui::BeginTabItem(OBFUSCATE("Legit Mods"))) {
+                if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
+                    ImGui::Checkbox(OBFUSCATE("No Recoil"), &recoil);
+                    ImGui::Checkbox(OBFUSCATE("No Spread"), &spread);
+                    ImGui::Checkbox(OBFUSCATE("Force Supressor"), &supressor);
+                }
+                ImGui::EndTabItem();
             }
-        }
-        if (ImGui::CollapsingHeader(OBFUSCATE("Rage Mods"))) {
 
-        }
-        if (ImGui::CollapsingHeader(OBFUSCATE("Visual Mods"))) {
-            ImGui::Checkbox(OBFUSCATE("Radar"), &radar);
-            ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
-            ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
-            ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
+            if (ImGui::BeginTabItem(OBFUSCATE("Rage Mods"))) {
+                if (ImGui::CollapsingHeader(OBFUSCATE("Player Mods"))) {
+                    ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod);
+                    ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch);
+                }
+                if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
+                    ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang);
+                }
+                ImGui::EndTabItem();
+            }
+            
+            if (ImGui::BeginTabItem(OBFUSCATE("Visual Mods"))) {
+                if(ImGui::Checkbox(OBFUSCATE("ESP"), &esp))
+                if(esp){
+                    ImGui::Checkbox(OBFUSCATE("Snaplines"), &snaplines);
+                }
+                if(ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov))
+                if(fov){
+                    ImGui::SliderFloat(OBFUSCATE("Value"), &fovModifier, 0.0, 360.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Radar"), &radar);
+                ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
+                ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
+                ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
+                ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch);
+                ImGui::Checkbox(OBFUSCATE("No Kickback"), &kickback);
+                ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
         }
         Patches();
-        ImGui::End();
     }
+    ImGui::End();
 }
+
 
 void SetupImgui() {
     IMGUI_CHECKVERSION();
@@ -312,19 +330,19 @@ void SetupImgui() {
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
 }
 
-
-
-
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     eglQuerySurface(dpy, surface, EGL_WIDTH, &glWidth);
     eglQuerySurface(dpy, surface, EGL_HEIGHT, &glHeight);
 
-
+    int width = get_Width();
+    int height = get_Height();
     if (!setupimg) {
         SetupImgui();
+        SetResolution(width, height, true, 999);
         setupimg = true;
     }
+    set_targetFrameRate(999);
 
     ImGuiIO &io = ImGui::GetIO();
 
@@ -335,7 +353,7 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
 
     ImGui::EndFrame();
     ImGui::Render();
-    glViewport(0, 0, (int)2560, (int)1440);
+    glViewport(0, 0, (int)width, (int)height);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     return old_eglSwapBuffers(dpy, surface);
 }
