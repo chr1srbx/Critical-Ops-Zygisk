@@ -4,7 +4,9 @@ In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook
 D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Unity.h:605:16: warning: returning address of local temporary object [-Wreturn-stack-address]
         return getString().c_str();
                ^~~~~~~~~~~
-In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:29:
+In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:25:
+In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Misc.h:12:
+In file included from D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.h:6:
 D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Vector3.h:596:21: warning: cast to 'const char *' from smaller integer type 'int' [-Wint-to-pointer-cast]
     const char* x = (const char*)(int)a.X;
                     ^~~~~~~~~~~~~~~~~~~~~
@@ -14,10 +16,10 @@ D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Vector3.h:597:21: 
 D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Include/Vector3.h:598:21: warning: cast to 'const char *' from smaller integer type 'int' [-Wint-to-pointer-cast]
     const char* z = (const char*)(int)a.Z;
                     ^~~~~~~~~~~~~~~~~~~~~
-D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:144:1: warning: non-void function does not return a value [-Wreturn-type]
+D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:154:1: warning: non-void function does not return a value [-Wreturn-type]
 }
 ^
-D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:360:22: warning: implicit conversion from 'unsigned long' to 'int' changes value from 18446744073709551615 to -1 [-Wconstant-conversion]
+D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp:403:22: warning: implicit conversion from 'unsigned long' to 'int' changes value from 18446744073709551615 to -1 [-Wconstant-conversion]
         int lowest = ULONG_MAX;
             ~~~~~~   ^~~~~~~~~
 C:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/lib64/clang/14.0.6/include/limits.h:57:37: note: expanded from macro 'ULONG_MAX'

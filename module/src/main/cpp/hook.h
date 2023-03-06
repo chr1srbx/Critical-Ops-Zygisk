@@ -3,11 +3,14 @@
 #define ZygiskImGui_HOOK_H
 
 #include <jni.h>
-
+#include "Include/Vector3.h"
 static int enable_hack;
 static char *game_data_dir = NULL;
 int isGame(JNIEnv *env, jstring appDataDir);
 void *hack_thread(void *arg);
+Vector3 getBonePosition(void* character, int bone);
+
+
 
 #include <android/log.h>
 

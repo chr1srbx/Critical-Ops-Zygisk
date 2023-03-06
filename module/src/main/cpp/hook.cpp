@@ -23,10 +23,11 @@
 #include"Includes/Dobby/dobbyForHooks.h"
 #include "Include/Unity.h"
 #include "Misc.h"
+#include "Include/Vector3.h"
 #include "hook.h"
 #include "Include/Roboto-Regular.h"
 #include "ESP.h"
-#include "Include/Vector3.h"
+
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
@@ -38,29 +39,18 @@ monoString* CreateIl2cppString(const char* str)
     int* length = (int *)strlen(str);
     return CreateIl2cppString(str, startIndex, length);
 }
-void (*SetResolution)(int widht, int height, bool fullscreen, float refreshRate);
-int (*get_Width)();
-int (*get_Height)();
-monoList<void**>* (*getAllCharacters)(void* obj);
-int (*getLocalId)(void* obj);
-void* (*getPlayer)(void* obj, int id);
-void* (*getLocalPlayer)(void* obj);
-int (*getCharacterCount)(void* obj);
-int (*get_Health)(void* character);
-void* (*get_Player)(void* character);
-void(*set_targetFrameRate)(int frames);
-bool (*get_IsInitialized)(void* character);
-Vector3 (*get_Position)(void* transform);
-Vector2 (*WorldToScreen)(void*, Vector3 worldPos);
-void* (*get_camera)();
-void* (*SetRotation)(void* obj, Vector2 rotation);
 
-void* obj = nullptr;
+void* pSys = nullptr;
 void* pBones = nullptr;
 bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb;
+fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp;
 float speedval = 1, fovModifier;
 int glHeight, glWidth;
+monoList<void**>* (*getAllCharacters)(void* obj);
+Vector3 (*get_Position)(void* transform);
+Vector3 (*WorldToScreen)(void*, Vector3 worldPos, int);
+void* (*get_camera)();
+void* (*get_CharacterBodyPart)(void* obj, int);
 
 float (*old_get_fieldOfView)(void *instance);
 float get_fieldOfView(void *instance) {
@@ -69,7 +59,18 @@ float get_fieldOfView(void *instance) {
     }
     return old_get_fieldOfView(instance);
 }
+void (*SetResolution)(int widht, int height, bool fullscreen, float refreshRate);
+int (*get_Width)();
+int (*get_Height)();
+int (*getLocalId)(void* obj);
+void* (*getPlayer)(void* obj, int id);
+void* (*getLocalPlayer)(void* obj);
+int (*getCharacterCount)(void* obj);
+int (*get_Health)(void* character);
+void* (*get_Player)(void* character);
 
+void(*set_targetFrameRate)(int frames);
+bool (*get_IsInitialized)(void* character);
 // character functions
 void* getTransform(void* character)
 {
@@ -89,7 +90,6 @@ int get_PlayerTeam(void* player)
     return *(int*)((uint64_t)boxedValueName + 0x1C);
 }
 
-
 void Pointers()
 {
     SetResolution = (void(*)(int, int, bool, float)) get_absolute_address(0x1A0C224);
@@ -105,9 +105,19 @@ void Pointers()
     get_IsInitialized = (bool(*)(void*)) get_absolute_address(0x1A74C10);
     get_Position = (Vector3(*)(void*)) get_absolute_address(0x1A3B390);
     get_camera = (void*(*)()) get_absolute_address(0x1A13C5C);
-    SetRotation = (void*(*)(void*, Vector2)) get_absolute_address(0x1A75780);
-    WorldToScreen = (Vector2(*)(void*, Vector3)) get_absolute_address(0x160D4CC);
+    WorldToScreen = (Vector3(*)(void*, Vector3, int)) get_absolute_address(0x1A13060);
     set_targetFrameRate = (void(*)(int)) get_absolute_address(0x1A3A5BC);
+    get_CharacterBodyPart =(void*(*)(void*, int)) get_absolute_address(0x1A74DFC);
+}
+
+void DrawBones(void* character, int bone1, int bone2){
+    Vector3 bone1Pos = getBonePosition(character, bone1);
+    Vector3 bone2Pos = getBonePosition(character, bone2);
+    Vector3 wsbone1 = WorldToScreen(get_camera(), bone1Pos, 2);
+    Vector3 wsbone2 = WorldToScreen(get_camera(), bone2Pos, 2);
+    wsbone1.Y = glHeight - wsbone1.Y;
+    wsbone2.Y = glHeight - wsbone2.Y;
+    DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
 }
 
 
@@ -146,47 +156,7 @@ void* ShaderFind(std::string name)
 void(*oldGameSystemUpdate)(void* obj);
 void GameSystemUpdate(void* obj){
     if(obj != nullptr){
-        if(esp) {
-            ImGui::Begin("OL", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
-            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
-            DrawLine(ImVec2(0, 0), ImVec2(200, 200), ImVec4(1, 1, 1, 1));
-            int id = getLocalId(obj);
-            void *localPlayer = getPlayer(obj, id);
-            int localTeam = get_PlayerTeam(localPlayer);
-            monoList<void **> *characterList = getAllCharacters(obj);
-            for (int i = 0; i < characterList->getSize(); i++) {
-                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
-                    localTeam != get_CharacterTeam(currentCharacter)) {
-                    void *transform = getTransform(currentCharacter);
-                    Vector3 position = get_Position(transform);
-                    Vector2 screenPos = WorldToScreen(get_camera(), position);
-                    screenPos.Y = glHeight - screenPos.Y;
-                    if (snaplines) {
-                        ImVec2 fromLine = ImVec2(glWidth / 2, 0);
-                        ImVec2 linePosition = ImVec2(screenPos.X, screenPos.Y);
-                        ImGui::GetBackgroundDrawList()->AddLine(fromLine, linePosition,ImColor(172, 204, 255), 5);
-                    }
-                }
-            }
-            ImGui::End();
-        }
-        /*monoList<void **> *characterList = getAllCharacters(obj);
-        for (int i = 0; i < characterList->getSize(); i++)
-        {
-            void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-            void** bodyPartList = *(void***) ((uint64_t)currentCharacter + 0x78);
-            for (int j = 0; j < 10; j++ )
-            {
-                void* bodyPart = *(void**)((uint64_t)bodyPartList + i);
-                int value = *(int*)((uint64_t)bodyPart + 0x18);
-                void* hitsphere = *(void**)((uint64_t)bodyPart + 0x20);
-                Vector3 center = *(Vector3*)((uint64_t)hitsphere + 0x18);
-
-                LOGE("Bodypart Loop: %d Bodypart Value: %d ", j, value);
-                LOGE("Bodypart center X: %f, Y: %f, Z: %f", center.X, center.Y, center.Z);
-            }
-        }*/
+        pSys = obj;
     }
     return oldGameSystemUpdate(obj);
 }
@@ -253,9 +223,81 @@ void Patches(){
     PATCH("0x10DCF88", "000080D2C0035FD6");//IsBadWord
 }
 
+Vector3 getBonePosition(void* character, int bone){
+    void* curBone = get_CharacterBodyPart(character, bone);
+    int boneValue = *(int*)((uint64_t)curBone + 0x18);
+    void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
+    void* transform = *(void**)((uint64_t)hitSphere + 0x30);
+    Vector3 bonePos = get_Position(transform);
+    return bonePos;
+}
+
+
+enum BodyPart
+{
+    LOWERLEG_LEFT,
+    LOWERLEG_RIGHT,
+    UPPERLEG_LEFT,
+    UPPERLEG_RIGHT,
+    STOMACH,
+    CHEST,
+    UPPERARM_LEFT,
+    UPPERARM_RIGHT,
+    LOWERARM_LEFT,
+    LOWERARM_RIGHT,
+    HEAD
+};
 
 void DrawMenu(){
+    if(pSys != nullptr){
+        void* GamePlayModule = *(void**)((uint64_t)pSys + 0x80);
+        void* GameModeSystem = *(void**)((uint64_t)GamePlayModule + 0x38);
+        bool inGame = *(bool*)((uint64_t)GameModeSystem + 0x69); // NICEa
+        LOGE("IS GAME : %d", inGame);
+        if (inGame) {
+            if(esp) {
+                ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
+                int id = getLocalId(pSys);
+                void *localPlayer = getPlayer(pSys, id);
+                int localTeam = get_PlayerTeam(localPlayer);
+                monoList<void **> *characterList = getAllCharacters(pSys);
+                for (int i = 0; i < characterList->getSize(); i++) {
+                    void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                    int curTeam = get_CharacterTeam(currentCharacter);
+                    if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
+                        localTeam != curTeam && curTeam != -1) {
+                        void *transform = getTransform(currentCharacter);
+                        Vector3 position = get_Position(transform);
+                        Vector3 screenPos = WorldToScreen(get_camera(), position, 2);
+                        screenPos.Y = glHeight - screenPos.Y;
+                        if (snaplines) {
+                            DrawLine(ImVec2(glWidth / 2, glHeight),ImVec2(screenPos.X, screenPos.Y), ImColor(172, 204, 255), 5);
+                        }
+                        if(bonesp){
+                            DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
+                            DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
+                            DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
+                            DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
+                            DrawBones(currentCharacter, STOMACH, CHEST);
+                            DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
+                            DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
+                            DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
+                            DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
+                            Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                            Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                            Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                            Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                            Vector3 diff = wschestPos - wsheadPos;
+                            diff.Y = glHeight - diff.Y;
+                            float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                            DrawCircle(wsheadPos.X, wsheadPos.Y, radius, false, ImVec4(172, 204, 255, 1), 0, 5);
+                        }
 
+                    }
+                }
+            }
+        }
+    }
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     {
         ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (1.37.0.f2085) - chr1s#4191 && 077 Icemods"));
@@ -269,7 +311,7 @@ void DrawMenu(){
         if (ImGui::BeginTabBar("Menu", tab_bar_flags)) {
             if (ImGui::BeginTabItem(OBFUSCATE("Legit Mods"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("No Recoil"), &recoil);
+                    ImGui::Checkbox(OBFUSCATE("Less Recoil"), &recoil);
                     ImGui::Checkbox(OBFUSCATE("No Spread"), &spread);
                     ImGui::Checkbox(OBFUSCATE("Force Supressor"), &supressor);
                 }
@@ -291,6 +333,7 @@ void DrawMenu(){
                 ImGui::Checkbox(OBFUSCATE("ESP"), &esp);
                 if(esp){
                     ImGui::Checkbox(OBFUSCATE(" · Snaplines"), &snaplines);
+                    ImGui::Checkbox(OBFUSCATE(" · Bones"), &bonesp);
                 }
                 ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov);
                 if(fov){
