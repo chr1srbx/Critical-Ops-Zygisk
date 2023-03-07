@@ -321,6 +321,10 @@ void DrawMenu(){
                             wsheadPos.Y = glHeight - wsheadPos.Y;
                             background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius, IM_COL32(172, 204, 255, 255), 0, 5.0f);
                         }
+
+                        if(espbox){
+
+                        }
                     }
                 }
             }

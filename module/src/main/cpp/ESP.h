@@ -11,23 +11,23 @@ void DrawLine(ImVec2 start, ImVec2 end, ImVec4 color, int thickness) {
         background->AddLine(start, end, ImColor(color.x,color.y,color.z,color.w), thickness);
     }
 }
-void DrawBox(ImVec4 rect, ImVec4 color) {
+void DrawBox(ImVec4 rect, ImVec4 color, int thickness) {
     ImVec2 v1(rect.x, rect.y);
     ImVec2 v2(rect.x + rect.z, rect.y);
     ImVec2 v3(rect.x + rect.z, rect.y + rect.w);
     ImVec2 v4(rect.x, rect.y + rect.w);
 
-    DrawLine(v1, v2, color, 1);
-    DrawLine(v2, v3, color, 1);
-    DrawLine(v3, v4, color, 1);
-    DrawLine(v4, v1, color, 1);
+    DrawLine(v1, v2, color, thickness);
+    DrawLine(v2, v3, color, thickness);
+    DrawLine(v3, v4, color, thickness);
+    DrawLine(v4, v1, color, thickness);
 }
 
-void DrawOutlinedBox(ImVec4 rect, ImVec4 color)
+void DrawOutlinedBox(ImVec4 rect, ImVec4 color, int thickness)
 {
-    DrawBox(ImVec4(rect.x + 1, rect.y + 1, rect.z - 1, rect.w - 1), ImVec4(0,0,0,color.w));
-    DrawBox(ImVec4(rect), color);
-    DrawBox(ImVec4(rect.x - 1, rect.y - 1, rect.z + 1, rect.w + 1), ImVec4(0,0,0,color.w));
+    DrawBox(ImVec4(rect.x + 1, rect.y + 1, rect.z - 1, rect.w - 1), ImVec4(0,0,0,color.w), thickness);
+    DrawBox(ImVec4(rect), color, thickness);
+    DrawBox(ImVec4(rect.x - 1, rect.y - 1, rect.z + 1, rect.w + 1), ImVec4(0,0,0,color.w), thickness);
 }
 
 void DrawFilledRect(ImVec4 rect, ImVec4 color)
