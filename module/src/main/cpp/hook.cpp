@@ -43,8 +43,8 @@ monoString* CreateIl2cppString(const char* str)
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp;
-float speedval = 1, fovModifier;
+fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov;
+float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
 int glHeight, glWidth;
 monoList<void**>* (*getAllCharacters)(void* obj);
 Vector3 (*get_Position)(void* transform);
@@ -117,7 +117,9 @@ void DrawBones(void* character, int bone1, int bone2){
     Vector3 wsbone2 = WorldToScreen(get_camera(), bone2Pos, 2);
     wsbone1.Y = glHeight - wsbone1.Y;
     wsbone2.Y = glHeight - wsbone2.Y;
-    DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
+    if(wsbone1.Z > 0 && wsbone2.Z > 0){
+        DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
+    }
 }
 
 
@@ -157,6 +159,20 @@ void(*oldGameSystemUpdate)(void* obj);
 void GameSystemUpdate(void* obj){
     if(obj != nullptr){
         pSys = obj;
+        void* GamePlayModule = *(void**)((uint64_t) obj + 0x80);
+        if(GamePlayModule != nullptr){
+            LOGE("GAMEPLAYMODULE");
+            void* CameraSystem = *(void**)((uint64_t) GamePlayModule + 0x30);
+            if(CameraSystem != nullptr){
+                if(fov){
+                    *(float*)((uint64_t) CameraSystem + 0x8C) = fovModifier;//m_horizontalFieldOfView
+                }
+
+                if(viewmodelfov){
+                    *(float*)((uint64_t) CameraSystem + 0x90) = viewmodelfovval;//m_viewModelFieldOfView
+                }
+            }
+        }
     }
     return oldGameSystemUpdate(obj);
 }
@@ -187,12 +203,24 @@ void RenderOverlaySmoke(void* obj) {
     oldRenderOverlaySmoke(obj);
 }
 
+void(*oldDrawRenderer)(void* obj);
+void DrawRenderer(void* obj){
+    if(obj != nullptr){
+        LOGE("DRENDER");
+        void* m_offset = *(void**)((uint64_t) obj + 0x64);
+        if(viewmodel){
+            *(float*)((uint64_t)m_offset + 0x0) = viemodelposx;
+            *(float*)((uint64_t)m_offset + 0x4) = viemodelposy;
+            *(float*)((uint64_t)m_offset + 0x8) = viemodelposz;
+        }
+    }
+    oldDrawRenderer(obj);
+}
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
     return;
 }
-
 
 void Hooks() {
     HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
@@ -200,14 +228,14 @@ void Hooks() {
     HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
     HOOK("0x19B6090", RenderOverlaySmoke, oldRenderOverlaySmoke);
     HOOK("0x10CE734", GameSystemUpdate, oldGameSystemUpdate);
-    HOOK("0x1A10C54", get_fieldOfView, old_get_fieldOfView);
+    //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
 }
 
 void Patches(){
     PATCH_SWITCH("0x1D4FD28", "000080D2C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x1D50130", "1F2003D5C0035FD6", recoil);//ApplyRecoil
-    PATCH_SWITCH("0x1D4FC38", "1F2003D5C0035FD6", recoil);//RecoilRecover
-    PATCH_SWITCH("0x10BEED4", "1F2003D5C0035FD6", recoil);//UpdateCameraShake
+    PATCH_SWITCH("0x1D50130", "000080D2C0035FD6", recoil);//ApplyRecoil
+    PATCH_SWITCH("0x1D4FC38", "000080D2C0035FD6", recoil);//RecoilRecover
+    PATCH_SWITCH("0x10BEED4", "000080D2C0035FD6", recoil);//UpdateCameraShake
     PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
     PATCH_SWITCH("0x19BAB70", "1F2003D5C0035FD6", crouch);//UpdateCrouch
     //PATCH_SWITCH("0x10D2730", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
@@ -233,6 +261,7 @@ Vector3 getBonePosition(void* character, int bone){
 }
 
 
+
 enum BodyPart
 {
     LOWERLEG_LEFT,
@@ -252,47 +281,46 @@ void DrawMenu(){
     if(pSys != nullptr){
         void* GamePlayModule = *(void**)((uint64_t)pSys + 0x80);
         void* GameModeSystem = *(void**)((uint64_t)GamePlayModule + 0x38);
-        bool inGame = *(bool*)((uint64_t)GameModeSystem + 0x69); // NICEa
-        LOGE("IS GAME : %d", inGame);
+        bool inGame = *(bool*)((uint64_t)GameModeSystem + 0x69);
         if (inGame) {
-            if(esp) {
-                ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
-                int id = getLocalId(pSys);
-                void *localPlayer = getPlayer(pSys, id);
-                int localTeam = get_PlayerTeam(localPlayer);
-                monoList<void **> *characterList = getAllCharacters(pSys);
-                for (int i = 0; i < characterList->getSize(); i++) {
-                    void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-                    int curTeam = get_CharacterTeam(currentCharacter);
-                    if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
-                        localTeam != curTeam && curTeam != -1) {
-                        void *transform = getTransform(currentCharacter);
-                        Vector3 position = get_Position(transform);
-                        Vector3 screenPos = WorldToScreen(get_camera(), position, 2);
-                        screenPos.Y = glHeight - screenPos.Y;
-                        if (snaplines) {
-                            DrawLine(ImVec2(glWidth / 2, glHeight),ImVec2(screenPos.X, screenPos.Y), ImColor(172, 204, 255), 5);
-                        }
-                        if(bonesp){
-                            DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
-                            DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
-                            DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
-                            DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
-                            DrawBones(currentCharacter, STOMACH, CHEST);
-                            DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
-                            DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
-                            DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
-                            DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
-                            Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
-                            Vector3 headPos = getBonePosition(currentCharacter, HEAD);
-                            Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
-                            Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
-                            Vector3 diff = wschestPos - wsheadPos;
-                            diff.Y = glHeight - diff.Y;
+            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
+            int id = getLocalId(pSys);
+            void *localPlayer = getPlayer(pSys, id);
+            int localTeam = get_PlayerTeam(localPlayer);
+            monoList<void **> *characterList = getAllCharacters(pSys);
+            for (int i = 0; i < characterList->getSize(); i++) {
+                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                int curTeam = get_CharacterTeam(currentCharacter);
+                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
+                    localTeam != curTeam && curTeam != -1) {
+                    void *transform = getTransform(currentCharacter);
+                    Vector3 position = get_Position(transform);
+                    Vector3 screenPos = WorldToScreen(get_camera(), position, 2);
+                    screenPos.Y = glHeight - screenPos.Y;
+                    if (snaplines && screenPos.Z > 0) {
+                        DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(screenPos.X, screenPos.Y), ImColor(172, 204, 255), 5);
+                    }
+                    if (bonesp) {
+                        DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
+                        DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
+                        DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
+                        DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
+                        DrawBones(currentCharacter, STOMACH, CHEST);
+                        DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
+                        DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
+                        DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
+                        DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
+                        Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                        Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                        Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                        Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                        Vector3 diff = wschestPos - wsheadPos;
+                        if(wsheadPos.Z > 0 && wschestPos.Z > 0 ){
                             float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
-                            DrawCircle(wsheadPos.X, wsheadPos.Y, radius, false, ImVec4(172, 204, 255, 1), 0, 5);
+                            auto background = ImGui::GetBackgroundDrawList();
+                            wsheadPos.Y = glHeight - wsheadPos.Y;
+                            background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius, IM_COL32(172, 204, 255, 255), 0, 5.0f);
                         }
-
                     }
                 }
             }
@@ -330,10 +358,21 @@ void DrawMenu(){
             }
             
             if (ImGui::BeginTabItem(OBFUSCATE("Visual Mods"))) {
-                ImGui::Checkbox(OBFUSCATE("ESP"), &esp);
-                if(esp){
+                if (ImGui::CollapsingHeader(OBFUSCATE("ESP"))) {
                     ImGui::Checkbox(OBFUSCATE(" · Snaplines"), &snaplines);
                     ImGui::Checkbox(OBFUSCATE(" · Bones"), &bonesp);
+                }
+                if (ImGui::CollapsingHeader(OBFUSCATE("ViewModel"))) {
+                    ImGui::Checkbox(OBFUSCATE("Viewmodel Position"), &viewmodel);
+                    if(viewmodel){
+                        ImGui::SliderFloat(OBFUSCATE(" · Value X"), &viemodelposx, 1.0, 360.0);
+                        ImGui::SliderFloat(OBFUSCATE(" · Value Y"), &viemodelposy, 1.0, 360.0);
+                        ImGui::SliderFloat(OBFUSCATE(" · Value Z"), &viemodelposz, 1.0, 360.0);
+                    }
+                    ImGui::Checkbox(OBFUSCATE("View Model FOV"), &viewmodelfov);
+                    if(viewmodelfov){
+                        ImGui::SliderFloat(OBFUSCATE(" · Value"), &viewmodelfovval, 1.0, 360.0);
+                    }
                 }
                 ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov);
                 if(fov){
@@ -380,7 +419,6 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
         SetResolution(width, height, true, 999);
         setupimg = true;
     }
-    set_targetFrameRate(999);
 
     ImGuiIO &io = ImGui::GetIO();
 

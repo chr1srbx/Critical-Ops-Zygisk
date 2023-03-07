@@ -38,16 +38,17 @@ void DrawFilledRect(ImVec4 rect, ImVec4 color)
     }
 }
 
-void DrawCircle(float X, float Y, float radius, bool filled, ImVec4 color, int tesselation, int thickness) {
+/*
+void DrawCircle(float X, float Y, float radius, bool filled, IM_COL32, int tesselation, float thickness) {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
         if(filled) {
             background->AddCircleFilled(ImVec2(X, Y), radius, ImColor(color.x,color.y,color.z,color.w), tesselation);
         } else {
-            background->AddCircle(ImVec2(X, Y), radius, ImColor(color.x,color.y,color.z,color.w));
+            background->AddCircle(ImVec2(X, Y), radius, IM_COL32(color.x,color.y,color.z,color.w), tesselation, thickness);
         }
     }
-}
+}*/
 void DrawText(ImVec2 position, ImVec4 color, const char *text) {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
