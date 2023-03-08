@@ -547,8 +547,8 @@ void SetupImgui() {
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(6.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
-    espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 11);
-    flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 8);
+    espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 30);
+    flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 30);
 }
 
 
