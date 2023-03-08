@@ -21,11 +21,14 @@
 #include "KittyMemory/KittyScanner.h"
 #include "KittyMemory/KittyUtils.h"
 #include"Includes/Dobby/dobbyForHooks.h"
+#include <cmath>
 #include "Include/Unity.h"
 #include "Misc.h"
 #include "Include/Vector3.h"
 #include "hook.h"
 #include "Include/Roboto-Regular.h"
+#include "Include/RetroGaming.h"
+#include "Include/Minecraftia-Regular.h"
 #include "ESP.h"
 
 
@@ -40,10 +43,18 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
+struct Ray
+{
+    Vector3 origin;
+    Vector3 direction;
+};
+
+
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov;
+fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets;
+
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
 int glHeight, glWidth;
 monoList<void**>* (*getAllCharacters)(void* obj);
@@ -68,9 +79,11 @@ void* (*getLocalPlayer)(void* obj);
 int (*getCharacterCount)(void* obj);
 int (*get_Health)(void* character);
 void* (*get_Player)(void* character);
-
+void (*RaycastCharacters)(void* pSys, void* shooter , Ray ray);
 void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
+ImFont* espFont;
+ImFont* flagFont;
 // character functions
 void* getTransform(void* character)
 {
@@ -88,6 +101,47 @@ int get_PlayerTeam(void* player)
 {
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
     return *(int*)((uint64_t)boxedValueName + 0x1C);
+}
+std::u16string get_CharacterName(void* character)
+{
+    void* player = get_Player(character);
+    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+    return *(std::u16string*)((uint64_t)boxedValueName + 0x1C);
+}
+
+std::u16string get_characterWeaponName(void* character)
+{
+    void* characterData = *(void**)((uint64_t)character + 0x98);
+    void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
+    return *(std::u16string*)((uint64_t)m_wpn + 0x10);
+}
+
+const char* get_characterArmors(void* character)
+{
+    void* CharacterArmors = *(void**)((uint64_t)character + 0xE8);
+    monoArray<void **> *ArmorList = *(monoArray<void **>**)((uint64_t)CharacterArmors + 0xE8);
+    bool hasHelmet, hasKevlar;
+    for (int i = 0; i < ArmorList->getLength(); i++)
+    {
+        void* currentArmor = (monoList<void **> *) ArmorList->getPointer()[i];
+        void* ArmorDef = *(void**)((uint64_t)currentArmor + 0x10);
+        void* ArmorDefData = *(void**)((uint64_t)ArmorDef + 0x30);
+        int armorType = *(int*)((uint64_t)ArmorDefData + 0x30);
+        if (armorType == 0)
+        {
+            hasHelmet = true;
+        }
+        else
+        {
+            hasKevlar = true;
+        }
+    }
+
+
+    if (hasKevlar && hasHelmet) return "HK";
+    if (hasKevlar && !hasHelmet) return "K";
+    if (!hasKevlar && hasHelmet) return "H";
+    return "NONE";
 }
 
 void Pointers()
@@ -108,6 +162,7 @@ void Pointers()
     WorldToScreen = (Vector3(*)(void*, Vector3, int)) get_absolute_address(0x1A13060);
     set_targetFrameRate = (void(*)(int)) get_absolute_address(0x1A3A5BC);
     get_CharacterBodyPart =(void*(*)(void*, int)) get_absolute_address(0x1A74DFC);
+    RaycastCharacters = (void(*)(void*,void*,Ray)) get_absolute_address(0x10D3454);
 }
 
 void DrawBones(void* character, int bone1, int bone2){
@@ -170,6 +225,34 @@ void GameSystemUpdate(void* obj){
 
                 if(viewmodelfov){
                     *(float*)((uint64_t) CameraSystem + 0x90) = viewmodelfovval;//m_viewModelFieldOfView
+                }
+            }
+
+            if (spawnbullets) {
+                int id = getLocalId(pSys);
+                void *localPlayer = getPlayer(pSys, id);
+                int localTeam = get_PlayerTeam(localPlayer);
+                // spawn bullets in ppls headlol
+                monoList<void **> *characterList = getAllCharacters(pSys);
+                void *localCharacter = nullptr;
+                for (int i = 0; i < characterList->getSize(); i++) {
+                    void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                    if (get_Player(currentCharacter) == localPlayer) {
+                        localCharacter = currentCharacter;
+                    }
+                }
+                for (int i = 0; i < characterList->getSize(); i++) {
+                    void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                    int curTeam = get_CharacterTeam(currentCharacter);
+                    if (curTeam != localTeam) {
+                        Vector3 headPos = getBonePosition(currentCharacter, 10);
+                        Ray ray;
+                        ray.origin = headPos;
+                        ray.direction = Vector3(1, 1, 1);
+                        if (localCharacter) {
+                            RaycastCharacters(pSys, localCharacter, ray);
+                        }
+                    }
                 }
             }
         }
@@ -245,10 +328,10 @@ void Patches(){
     PATCH_SWITCH("0xF3C32C", "1F2003D5C0035FD6", killnotes);//SetKillNotification
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
-    PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//get_GrenadeSmokeAreaOfEffect
-    PATCH_SWITCH("0x1D8506C", "400080D2C0035FD6", rifleb);//get_GrenadeSmokeAreaOfEffect
+    PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
     PATCH("0x10DCE9C", "000080D2C0035FD6");//HasBadWord
     PATCH("0x10DCF88", "000080D2C0035FD6");//IsBadWord
+    PATCH("0x19A8B20", "200080D2C0035FD6");//IsVisible CharacterModel
 }
 
 Vector3 getBonePosition(void* character, int bone){
@@ -283,7 +366,6 @@ void DrawMenu(){
         void* GameModeSystem = *(void**)((uint64_t)GamePlayModule + 0x38);
         bool inGame = *(bool*)((uint64_t)GameModeSystem + 0x69);
         if (inGame) {
-            ImGui::GetBackgroundDrawList()->AddLine(ImVec2(0, 0), ImVec2(200, 200), ImColor(255, 255, 0), 1);
             int id = getLocalId(pSys);
             void *localPlayer = getPlayer(pSys, id);
             int localTeam = get_PlayerTeam(localPlayer);
@@ -291,14 +373,28 @@ void DrawMenu(){
             for (int i = 0; i < characterList->getSize(); i++) {
                 void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
                 int curTeam = get_CharacterTeam(currentCharacter);
-                if (get_Health(currentCharacter) > 0 && get_IsInitialized(currentCharacter) &&
+                int health = get_Health(currentCharacter);
+                if (health > 0 && get_IsInitialized(currentCharacter) &&
                     localTeam != curTeam && curTeam != -1) {
                     void *transform = getTransform(currentCharacter);
                     Vector3 position = get_Position(transform);
-                    Vector3 screenPos = WorldToScreen(get_camera(), position, 2);
-                    screenPos.Y = glHeight - screenPos.Y;
-                    if (snaplines && screenPos.Z > 0) {
-                        DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(screenPos.X, screenPos.Y), ImColor(172, 204, 255), 5);
+                    Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
+                    transformPos.Y = glHeight - transformPos.Y;
+                    Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                    Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                    Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                    Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                    Vector3 wsheadPos2 = wsheadPos;
+                    Vector3 aboveHead = headPos + Vector3(0,0,1); // estimate
+                    Vector3 headEstimate = position + Vector3(0,0,1.48);// estimate
+                    Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
+                    Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
+                    wsAboveHead.Y = glHeight - wsAboveHead.Y;
+                    wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
+                    float height = transformPos.Y - wsAboveHead.Y;
+                    float width = (transformPos.Y - wsheadEstimate.Y);
+                    if (snaplines && transformPos.Z > 0) {
+                        DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(transformPos.X, transformPos.Y), ImColor(172, 204, 255), 3);
                     }
                     if (bonesp) {
                         DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
@@ -310,21 +406,58 @@ void DrawMenu(){
                         DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
                         DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
                         DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
-                        Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
-                        Vector3 headPos = getBonePosition(currentCharacter, HEAD);
-                        Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
-                        Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
                         Vector3 diff = wschestPos - wsheadPos;
+                        Vector3 neck = (chestPos + headPos)/2;
+                        Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
+                        wsneck.Y = glHeight - wsneck.Y;
+                        wschestPos.Y = glHeight - wschestPos.Y;
+                        wsheadPos.Y = glHeight - wsheadPos.Y;
+                        if(wschestPos.Z > 0 && wsneck.Z)
+                        {
+                            DrawLine(ImVec2(wschestPos.X, wschestPos.Y),ImVec2(wsneck.X,wsneck.Y),ImVec4(172, 204, 255, 255), 3);
+                        }
                         if(wsheadPos.Z > 0 && wschestPos.Z > 0 ){
                             float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
                             auto background = ImGui::GetBackgroundDrawList();
-                            wsheadPos.Y = glHeight - wsheadPos.Y;
-                            background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius, IM_COL32(172, 204, 255, 255), 0, 5.0f);
-                        }
 
-                        if(espbox){
-
+                            background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius/2, IM_COL32(172, 204, 255, 255), 0, 3.0f);
                         }
+                    }
+                    if (boxesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        DrawOutlinedBox2(wsAboveHead.X, wsAboveHead.Y, width, height, ImVec4(255,255,255,255), 3);
+                    }
+                    if (healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        DrawOutlinedBox2(wsheadPos.X - 12, wsheadPos.Y - height*(1 - (health/100)), 3, height*(health/100), HealthToColor(health), 3);
+                    }
+                    if (healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        if (health < 100)
+                        {
+                            DrawText(ImVec2(wsheadPos.X - 10, wsheadPos.Y - height*(1 - (health/100))), ImVec4(255,255,255,255), std::to_string(health), espFont);
+                        }
+                    }
+                    if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        std::u16string name = get_CharacterName(currentCharacter);
+                        DrawText(ImVec2(wsheadPos.X, wsAboveHead.Y - 7), ImVec4(255,255,255,255), name.c_str(), espFont);
+                    }
+                    if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        std::u16string weapon = get_characterWeaponName(currentCharacter);
+                        DrawText(ImVec2(wsheadPos.X, transformPos.Y + 7), ImVec4(255,255,255,255), weapon.c_str(), espFont);
+                    }
+                    if (armroFlag && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                    {
+                        const char* armor = get_characterArmors(currentCharacter);
+                        // sorcery calculations to make the text left allign
+                        int length = strlen(armor);
+
+                        // flag font is 8px
+                        // we want to have 3 px between the furthest border of the box
+
+                        DrawText(ImVec2(wsheadPos.X + width + 4 + 4*length, wsheadPos.Y + 4), ImVec4(255,255,255,255), armor, flagFont);
                     }
                 }
             }
@@ -358,21 +491,26 @@ void DrawMenu(){
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
                     ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang);
                 }
+                if (ImGui::CollapsingHeader(OBFUSCATE("Game Mods"))) {
+                    ImGui::Checkbox(OBFUSCATE("Spawn Bullets In Enemy"), &spawnbullets);
+                }
                 ImGui::EndTabItem();
             }
-            
+
             if (ImGui::BeginTabItem(OBFUSCATE("Visual Mods"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("ESP"))) {
-                    ImGui::Checkbox(OBFUSCATE(" · Snaplines"), &snaplines);
-                    ImGui::Checkbox(OBFUSCATE(" · Bones"), &bonesp);
+                    ImGui::Checkbox(OBFUSCATE("Snaplines"), &snaplines);
+                    ImGui::Checkbox(OBFUSCATE("Bones"), &bonesp);
+                    ImGui::Checkbox(OBFUSCATE("Boxes"), &boxesp);
+                    ImGui::Checkbox(OBFUSCATE("Show Names"), &espName);
+                    ImGui::Checkbox(OBFUSCATE("Show Health"), &healthesp);
+                    if(healthesp){
+                        ImGui::Checkbox(OBFUSCATE("Health Numbers"), &healthNumber);
+                    }
+                    ImGui::Checkbox(OBFUSCATE(" Show Armor"), &armroFlag);
+                    ImGui::Checkbox(OBFUSCATE(" Show Weapon"), &weaponEsp);
                 }
                 if (ImGui::CollapsingHeader(OBFUSCATE("ViewModel"))) {
-                    ImGui::Checkbox(OBFUSCATE("Viewmodel Position"), &viewmodel);
-                    if(viewmodel){
-                        ImGui::SliderFloat(OBFUSCATE(" · Value X"), &viemodelposx, 1.0, 360.0);
-                        ImGui::SliderFloat(OBFUSCATE(" · Value Y"), &viemodelposy, 1.0, 360.0);
-                        ImGui::SliderFloat(OBFUSCATE(" · Value Z"), &viemodelposz, 1.0, 360.0);
-                    }
                     ImGui::Checkbox(OBFUSCATE("View Model FOV"), &viewmodelfov);
                     if(viewmodelfov){
                         ImGui::SliderFloat(OBFUSCATE(" · Value"), &viewmodelfovval, 1.0, 360.0);
@@ -409,7 +547,10 @@ void SetupImgui() {
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(6.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
+    espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 11);
+    flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 8);
 }
+
 
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
