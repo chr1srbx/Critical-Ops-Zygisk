@@ -43,48 +43,27 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
-struct Ray
-{
-    Vector3 origin;
-    Vector3 direction;
-};
-
-
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
 fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
-int glHeight, glWidth;
-monoList<void**>* (*getAllCharacters)(void* obj);
-Vector3 (*get_Position)(void* transform);
-Vector3 (*WorldToScreen)(void*, Vector3 worldPos, int);
-void* (*get_camera)();
-void* (*get_CharacterBodyPart)(void* obj, int);
 
-float (*old_get_fieldOfView)(void *instance);
+extern int glHeight;
+extern int glWidth;
+ImFont* espFont;
+ImFont* flagFont;
+
+
 float get_fieldOfView(void *instance) {
     if (instance != nullptr && fov) {
         return fovModifier;
     }
     return old_get_fieldOfView(instance);
 }
-void (*SetResolution)(int widht, int height, bool fullscreen, float refreshRate);
-int (*get_Width)();
-int (*get_Height)();
-int (*getLocalId)(void* obj);
-void* (*getPlayer)(void* obj, int id);
-void* (*getLocalPlayer)(void* obj);
-int (*getCharacterCount)(void* obj);
-int (*get_Health)(void* character);
-void* (*get_Player)(void* character);
-void (*RaycastCharacters)(void* pSys, void* shooter , Ray ray);
-void(*set_targetFrameRate)(int frames);
-bool (*get_IsInitialized)(void* character);
-ImFont* espFont;
-ImFont* flagFont;
-// character functions
+
+// Custom functions
 void* getTransform(void* character)
 {
     return *(void**)((uint64_t)character + 0x70);
@@ -102,6 +81,7 @@ int get_PlayerTeam(void* player)
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
     return *(int*)((uint64_t)boxedValueName + 0x1C);
 }
+
 std::u16string get_CharacterName(void* character)
 {
     void* player = get_Player(character);
@@ -144,39 +124,13 @@ const char* get_characterArmors(void* character)
     return "NONE";
 }
 
-void Pointers()
-{
-    SetResolution = (void(*)(int, int, bool, float)) get_absolute_address(0x1A0C224);
-    get_Width = (int(*)()) get_absolute_address(0x1A0BF90);
-    get_Height = (int(*)()) get_absolute_address(0x1A0BFB8);
-    getAllCharacters = (monoList<void**>*(*)(void*)) get_absolute_address(0x10C993C);
-    getLocalId= (int(*)(void*)) get_absolute_address(0x10BDBEC);
-    getPlayer = (void*(*)(void*,int))  get_absolute_address(0x10CCBDC);
-    getLocalPlayer = (void*(*)(void*)) get_absolute_address(0x10BD65C);
-    getCharacterCount = (int(*)(void*)) get_absolute_address(0x10C994C);
-    get_Health = (int(*)(void*)) get_absolute_address(0x1A74DA0);
-    get_Player = (void*(*)(void*)) get_absolute_address(0x1A74D88);
-    get_IsInitialized = (bool(*)(void*)) get_absolute_address(0x1A74C10);
-    get_Position = (Vector3(*)(void*)) get_absolute_address(0x1A3B390);
-    get_camera = (void*(*)()) get_absolute_address(0x1A13C5C);
-    WorldToScreen = (Vector3(*)(void*, Vector3, int)) get_absolute_address(0x1A13060);
-    set_targetFrameRate = (void(*)(int)) get_absolute_address(0x1A3A5BC);
-    get_CharacterBodyPart =(void*(*)(void*, int)) get_absolute_address(0x1A74DFC);
-    RaycastCharacters = (void(*)(void*,void*,Ray)) get_absolute_address(0x10D3454);
+Vector3 getBonePosition(void* character, int bone){
+    void* curBone = get_CharacterBodyPart(character, bone);
+    void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
+    void* transform = *(void**)((uint64_t)hitSphere + 0x30);
+    Vector3 bonePos = get_Position(transform);
+    return bonePos;
 }
-
-void DrawBones(void* character, int bone1, int bone2){
-    Vector3 bone1Pos = getBonePosition(character, bone1);
-    Vector3 bone2Pos = getBonePosition(character, bone2);
-    Vector3 wsbone1 = WorldToScreen(get_camera(), bone1Pos, 2);
-    Vector3 wsbone2 = WorldToScreen(get_camera(), bone2Pos, 2);
-    wsbone1.Y = glHeight - wsbone1.Y;
-    wsbone2.Y = glHeight - wsbone2.Y;
-    if(wsbone1.Z > 0 && wsbone2.Z > 0){
-        DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
-    }
-}
-
 
 int isGame(JNIEnv *env, jstring appDataDir) {
     if (!appDataDir)
@@ -203,14 +157,12 @@ int isGame(JNIEnv *env, jstring appDataDir) {
     }
 }
 
-void* (*oldShaderFind)(std::string name);
 void* ShaderFind(std::string name)
 {
     LOGE("Shader logged: %s", name.c_str());
     oldShaderFind(name);
 }
 
-void(*oldGameSystemUpdate)(void* obj);
 void GameSystemUpdate(void* obj){
     if(obj != nullptr){
         pSys = obj;
@@ -260,8 +212,6 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
-
-void(*oldRenderOverlayFlashbang)(void* obj);
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
         *(float*)((uint64_t) obj + 0x38) = 0;//m_flashTime
@@ -269,7 +219,6 @@ void RenderOverlayFlashbang(void* obj){
     oldRenderOverlayFlashbang(obj);
 }
 
-void(*oldset_Spread)(void*obj);
 void set_Spread(void* obj){
     if(obj != nullptr){
         *(float*)((uint64_t) obj + 0x24) = 0;//m_maxSpread
@@ -278,7 +227,6 @@ void set_Spread(void* obj){
     oldset_Spread(obj);
 }
 
-void(*oldRenderOverlaySmoke)(void* obj);
 void RenderOverlaySmoke(void* obj) {
     if (obj != nullptr && smoke) {
         *(float *) ((uint64_t) obj + 0x20) = 9999;//m_fadeSpeed
@@ -286,7 +234,6 @@ void RenderOverlaySmoke(void* obj) {
     oldRenderOverlaySmoke(obj);
 }
 
-void(*oldDrawRenderer)(void* obj);
 void DrawRenderer(void* obj){
     if(obj != nullptr){
         LOGE("DRENDER");
@@ -299,19 +246,42 @@ void DrawRenderer(void* obj){
     }
     oldDrawRenderer(obj);
 }
+
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
     return;
 }
 
-void Hooks() {
-    HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
-    HOOK("0x19AFED8", set_Spread, oldset_Spread);
-    HOOK("0x19AFC90", RenderOverlayFlashbang, oldRenderOverlayFlashbang);
-    HOOK("0x19B6090", RenderOverlaySmoke, oldRenderOverlaySmoke);
-    HOOK("0x10CE734", GameSystemUpdate, oldGameSystemUpdate);
+// Initilizers with patterns <3
+void Hooks()
+{
+    Hook("E9 23 BD 6D F5 53 01 A9 F3 7B 02 A9 74 94 00 B0", (void*)set_Spread, (void**)&oldset_Spread, "xxxxxxxxxxxxxxxx");
+    Hook("E8 0F 1C FC FC 07 00 F9", (void*)RenderOverlayFlashbang, (void**)&oldRenderOverlayFlashbang, "xxxxxxxx");
+    Hook("F6 0F 1D F8 F5 53 01 A9 F3 7B 02 A9 34 94 00 D0 D5 81 00 F0 88 DE", (void*)RenderOverlaySmoke, (void**)&oldRenderOverlaySmoke, "xxxxxxxxxxxxxxxxxxxxxx");
+    Hook("FF C3 03 D1 E8 43 00 FD FC 6F 09 A9 FA 67 0A A9 F8 5F 0B A9 F6 57 0C A9 F4 4F 0D A9 FD 7B 0E A9 74 EE 00 B0", (void*)GameSystemUpdate, (void**)&oldGameSystemUpdate, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
+}
+
+void Pointers()
+{
+    SetResolution = (void(*)(int, int, bool, int)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F7 5B BD A9 F5 53 01 A9 F3 7B 02 A9 97 A0 00 B0 E4 B6 43 F9 5F 00 00 72", "xxxxxxxxxxxxxxxxxxxxxxxx");
+    get_Width = (int(*)()) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F3 7B BF A9 93 A0 00 B0 60 9E", "xxxxxxxxxx");
+    get_Height = (int(*)()) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F3 7B BF A9 93 A0 00 B0 60 A2", "xxxxxxxxxx");
+    getAllCharacters = (monoList<void**>*(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "", "xxxxxxxxxx");
+    getLocalId= (int(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F4 0F 1E F8 F3 7B 01 A9 F4 EE 00 D0 88 86 46 39", "xxxxxxxxxxxxxxxx");
+    getPlayer = (void*(*)(void*,int))  KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "FF C3 00 D1 F5 53 01 A9 F3 7B 02 A9 75 EE 00 F0", "xxxxxxxxxxxxxxxx");
+    getLocalPlayer = (void*(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F4 0F 1E F8 F3 7B 01 A9 F3 EE 00 D0", "xxxxxxxxxxxx");
+    getCharacterCount = (int(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F4 0F 1E F8 F3 7B 01 A9 94 EE 00 D0 88 7E 46 39", "xxxxxxxxxxxxxxxx");
+    get_Health = (int(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "00 C0 40 B9 C0 03 5F D6 01 C0 00 B9 C0 03 5F D6", "xxxxxxxxxxxxxxxx");
+    get_Player = (void*(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "00 48 40 F9 C0 03 5F D6 00 48 41 BD C0 03 5F D6", "xxxxxxxxxxxxxxxx");
+    get_IsInitialized = (bool(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "00 60 43 39 C0 03 5F D6  08 C0 40 B9 1F 05 00 71", "xxxxxxxxxxxxxxxx");
+    get_Position = (Vector3(*)(void*)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "FF C3 00 D1 F4 0B 00 F9 F3 7B 02 A9 14 9F 00 D0 88 2E 44 F9", "xxxxxxxxxxxxxxxxxxxx");
+    get_camera = (void*(*)()) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F3 7B BF A9 53 A0 00 B0 60 F6 46 F9", "xxxxxxxxxxxx");
+    WorldToScreen = (Vector3(*)(void*, Vector3, int)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "FF 03 01 D1 F5 53 02 A9 F3 7B 03 A9 55 A0 00 D0 A8 F6 47 F9", "xxxxxxxxxxxxxxxxxxxx");
+    set_targetFrameRate = (void(*)(int))  KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "F4 0F 1E F8 F3 7B 01 A9 14 9F 00 F0 81 D6 43 F9", "xxxxxxxxxxxxxxxx");
+    get_CharacterBodyPart =(void*(*)(void*, int)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "FE 0F 1F F8 08 3C 40 F9 08 01 00 B4 09 19 40 B9 3F 01 01 6B C9 00 00 54 08 CD 21 8B 00 11 40 F9", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    RaycastCharacters = (void(*)(void*,void*,Ray)) KittyScanner::findHexFirst(libBaseAddress, libBaseEndAddress, "FF 43 06 D1 ED 33 10 6D", "xxxxxxxx");
 }
 
 void Patches(){
@@ -333,32 +303,6 @@ void Patches(){
     PATCH("0x10DCF88", "000080D2C0035FD6");//IsBadWord
     PATCH("0x19A8B20", "200080D2C0035FD6");//IsVisible CharacterModel
 }
-
-Vector3 getBonePosition(void* character, int bone){
-    void* curBone = get_CharacterBodyPart(character, bone);
-    int boneValue = *(int*)((uint64_t)curBone + 0x18);
-    void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
-    void* transform = *(void**)((uint64_t)hitSphere + 0x30);
-    Vector3 bonePos = get_Position(transform);
-    return bonePos;
-}
-
-
-
-enum BodyPart
-{
-    LOWERLEG_LEFT,
-    LOWERLEG_RIGHT,
-    UPPERLEG_LEFT,
-    UPPERLEG_RIGHT,
-    STOMACH,
-    CHEST,
-    UPPERARM_LEFT,
-    UPPERARM_RIGHT,
-    LOWERARM_LEFT,
-    LOWERARM_RIGHT,
-    HEAD
-};
 
 void DrawMenu(){
     if(pSys != nullptr){
@@ -535,7 +479,6 @@ void DrawMenu(){
     ImGui::End();
 }
 
-
 void SetupImgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -551,47 +494,68 @@ void SetupImgui() {
     flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 30);
 }
 
-
-EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     eglQuerySurface(dpy, surface, EGL_WIDTH, &glWidth);
     eglQuerySurface(dpy, surface, EGL_HEIGHT, &glHeight);
 
-    int width = get_Width();
-    int height = get_Height();
-    if (!setupimg) {
+    LOGE("swapBuffers Hooked");
+
+    if (!setupimg)
+    {
+        LOGE("1");
+        glHeight = get_Height();
+        LOGE("2");
+        glWidth = get_Width();
+        LOGE("3");
         SetupImgui();
-        SetResolution(width, height, true, 999);
+        LOGE("4");
+        SetResolution(glWidth, glHeight, true, 999);
+        LOGE("5");
         setupimg = true;
+        LOGE("6");
     }
 
     ImGuiIO &io = ImGui::GetIO();
+    LOGE("7");
 
     ImGui_ImplOpenGL3_NewFrame();
+    LOGE("8");
     ImGui::NewFrame();
+    LOGE("9");
 
     DrawMenu();
+    LOGE("10");
 
     ImGui::EndFrame();
     ImGui::Render();
-    glViewport(0, 0, (int)width, (int)height);
+    LOGE("height: %d, width: %d", glHeight, glWidth);
+    glViewport(0, 0, (int)glWidth, (int)glHeight);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     return old_eglSwapBuffers(dpy, surface);
 }
 
 void *hack_thread(void *arg) {
+    int tries = 0;
     do {
         sleep(1);
         auto maps =  KittyMemory::getMapsByName("split_config.arm64_v8a.apk");
-        int lowest = ULONG_MAX;
-        int highest = 0;
         for(std::vector<ProcMap>::iterator it = maps.begin(); it != maps.end(); ++it) {
             auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress, "7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 90 06 7A 00 00 00 00 00 40 00 00 00 00 00 00 00 B8 6A E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-            if(address != 0){
+            if(address != 0)
+            {
                 libBaseAddress = address;
+                libBaseEndAddress = it->endAddress;
             }
         }
+        if (tries > 10)
+        {
+            auto map = KittyMemory::getLibraryBaseMap("libil2cpp.so");
+            libBaseAddress = map.startAddress;
+            libBaseEndAddress = map.endAddress;
+        }
+        tries++;
     } while (libBaseAddress == 0);
+    LOGE("LIB base at: %p", (void*)get_absolute_address(0x0));
     Hooks();
     Pointers();
     auto eglhandle = dlopen("libunity.so", RTLD_LAZY);

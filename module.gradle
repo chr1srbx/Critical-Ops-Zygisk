@@ -4,6 +4,6 @@ ext {
     moduleName = "Critical Ops Mod Menu - ZyCheats"
     moduleAuthor = "chr1s and 077IceMods ---- Credits to : oobbb - module, jmpews - Dobby, MJx0 - KittyMemory, ocornut - ImGui"
     moduleDescription = "Mod Menu for PG3D 1.37.0.f2085"
-    moduleVersion = "v1.0a (1.37.0.f2085)"
+    moduleVersion = "v1.0a(1.37.0.f2085)"
     moduleVersionCode = 2
 }

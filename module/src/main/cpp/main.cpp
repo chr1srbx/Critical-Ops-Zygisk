@@ -1,13 +1,21 @@
 #include <cstring>
 #include <jni.h>
 #include <pthread.h>
-#include "hook.h"
+#include <android/log.h>
 #include "zygisk.hpp"
 
 
 using zygisk::Api;
 using zygisk::AppSpecializeArgs;
 using zygisk::ServerSpecializeArgs;
+
+// function predefines
+static int enable_hack;
+static char *game_data_dir = NULL;
+int isGame(JNIEnv *env, jstring appDataDir);
+void *hack_thread(void *arg);
+#define LOG_TAG "ZygiskCops"
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 class MyModule : public zygisk::ModuleBase {
 public:

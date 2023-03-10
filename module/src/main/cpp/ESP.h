@@ -5,6 +5,9 @@
 #ifndef COPS_MENU_ESP_H
 #define COPS_MENU_ESP_H
 
+int glHeight;
+int glWidth;
+
 void DrawLine(ImVec2 start, ImVec2 end, ImVec4 color, int thickness) {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
@@ -88,6 +91,21 @@ void DrawCircle(float X, float Y, float radius, bool filled, IM_COL32, int tesse
         }
     }
 }*/
+
+void DrawBones(void* character, int bone1, int bone2){
+    Vector3 bone1Pos = getBonePosition(character, bone1);
+    Vector3 bone2Pos = getBonePosition(character, bone2);
+    Vector3 wsbone1 = WorldToScreen(get_camera(), bone1Pos, 2);
+    Vector3 wsbone2 = WorldToScreen(get_camera(), bone2Pos, 2);
+    wsbone1.Y = glHeight - wsbone1.Y;
+    wsbone2.Y = glHeight - wsbone2.Y;
+    if(wsbone1.Z > 0 && wsbone2.Z > 0){
+        DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
+    }
+}
+
+
+
 void DrawText(ImVec2 position, ImVec4 color, std::string text, ImFont* font) {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
