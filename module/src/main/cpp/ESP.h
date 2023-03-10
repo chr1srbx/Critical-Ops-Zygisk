@@ -30,15 +30,15 @@ void DrawBox2(float x, float y, float width, float height, ImColor color, int th
 {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
-        background->AddRect(ImVec2(x - width/2, y), ImVec2(x + width/2, y + height), color,0, ImDrawCornerFlags_All, thickness);
+        background->AddRect(ImVec2(x, y), ImVec2(x + width ,y + height), color,0, ImDrawCornerFlags_All, thickness);
     }
 }
 
 void DrawOutlinedBox2(float x, float y, float width, float height, ImVec4 color, int thickness)
 {
-    DrawBox2(x-1, y-1, width + 2, height + 2, ImVec4(0,0,0,color.w), 1);
+    DrawBox2(x-thickness+1, y-thickness+1, width + thickness*2 -2, height + thickness*2 -2, ImVec4(0,0,0,color.w), 1);
     DrawBox2(x, y, width, height, color, thickness);
-    DrawBox2(x + thickness, y + thickness, width - thickness*2, height - thickness*2, ImVec4(0,0,0,color.w), 1);
+    DrawBox2(x + thickness -1, y + thickness -1, width - thickness*2 + 2, height - thickness*2 +2, ImVec4(0,0,0,color.w), 1);
 }
 
 ImVec4 HealthToColor(int health)
@@ -53,7 +53,7 @@ ImVec4 HealthToColor(int health)
         color.x = 255;
         color.y = (health) * 5.1;
     }
-    else
+    if (health == 50)
     {
         color.x = 255;
         color.y = 255;
@@ -72,12 +72,18 @@ void DrawOutlinedBox(ImVec4 rect, ImVec4 color, int thickness)
     DrawBox(ImVec4(rect.x - 1, rect.y - 1, rect.z + 1, rect.w + 1), ImVec4(0,0,0,color.w), 1);
 }
 
-void DrawFilledRect(ImVec4 rect, ImVec4 color)
+void DrawFilledRect(float x, float y, float width, float height, ImVec4 color)
 {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {
-        // background->AddRectFilled(ImVec2(rect.x,rect.y), ImVec2(rect.z,rect.w), color);
+        background->AddRectFilled(ImVec2(x,y), ImVec2(x+width,y + height), IM_COL32(color.x,color.y,color.z, color.w));
     }
+}
+
+void DrawOutlinedFilledRect(float x, float y, float width, float height, ImVec4 color)
+{
+    DrawFilledRect(x,y,width,height,color);
+    DrawBox2(x-1, y-1, width + 2, height + 2, ImVec4(0,0,0,color.w), 1);
 }
 
 /*

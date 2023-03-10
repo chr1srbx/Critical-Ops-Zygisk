@@ -1,2 +1,23 @@
 ninja: Entering directory `D:\Documents\cops-menu\module\.cxx\cmake\debug\arm64-v8a'
-ninja: no work to do.
+[1/2] Building CXX object CMakeFiles/ZyCheatsC.dir/hook.cpp.o
+In file included from D:/Documents/cops-menu/module/src/main/cpp/hook.cpp:25:
+D:/Documents/cops-menu/module/src/main/cpp/Include/Unity.h:605:16: warning: returning address of local temporary object [-Wreturn-stack-address]
+        return getString().c_str();
+               ^~~~~~~~~~~
+In file included from D:/Documents/cops-menu/module/src/main/cpp/hook.cpp:26:
+In file included from D:/Documents/cops-menu/module/src/main/cpp/Misc.h:13:
+In file included from D:/Documents/cops-menu/module/src/main/cpp/hook.h:6:
+D:/Documents/cops-menu/module/src/main/cpp/Include/Vector3.h:596:21: warning: cast to 'const char *' from smaller integer type 'int' [-Wint-to-pointer-cast]
+    const char* x = (const char*)(int)a.X;
+                    ^~~~~~~~~~~~~~~~~~~~~
+D:/Documents/cops-menu/module/src/main/cpp/Include/Vector3.h:597:21: warning: cast to 'const char *' from smaller integer type 'int' [-Wint-to-pointer-cast]
+    const char* y = (const char*)(int)a.Y;
+                    ^~~~~~~~~~~~~~~~~~~~~
+D:/Documents/cops-menu/module/src/main/cpp/Include/Vector3.h:598:21: warning: cast to 'const char *' from smaller integer type 'int' [-Wint-to-pointer-cast]
+    const char* z = (const char*)(int)a.Z;
+                    ^~~~~~~~~~~~~~~~~~~~~
+D:/Documents/cops-menu/module/src/main/cpp/hook.cpp:164:1: warning: non-void function does not return a value [-Wreturn-type]
+}
+^
+5 warnings generated.
+[2/2] Linking CXX shared library D:\Documents\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libZyCheatsC.so

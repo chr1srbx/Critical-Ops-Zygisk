@@ -19,7 +19,7 @@ Vector3 (*get_Position)(void* transform);
 Vector3 (*WorldToScreen)(void*, Vector3 worldPos, int);
 void* (*get_camera)();
 void* (*get_CharacterBodyPart)(void* obj, int);
-void (*SetResolution)(int widht, int height, bool fullscreen, int refreshRate);
+void (*SetResolution)(int widht, int height, bool fullscreen);
 int (*get_Width)();
 int (*get_Height)();
 int (*getLocalId)(void* obj);
