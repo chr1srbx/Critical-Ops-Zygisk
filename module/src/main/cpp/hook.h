@@ -31,6 +31,7 @@ void* (*get_Player)(void* character);
 void (*RaycastCharacters)(void* pSys, void* shooter , Ray ray);
 void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
+void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
 
 // Custom functions
 void* getTransform(void* character);
@@ -51,6 +52,7 @@ void(*oldRenderOverlayFlashbang)(void* obj);
 void(*oldset_Spread)(void*obj);
 void(*oldRenderOverlaySmoke)(void* obj);
 void(*oldDrawRenderer)(void* obj);
+void(*oldBackendManager)(void* obj);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 
 // Hooks

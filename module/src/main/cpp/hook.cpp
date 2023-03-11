@@ -47,7 +47,8 @@ monoString* CreateIl2cppString(const char* str)
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets;
+fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
+isPurchasingSkins;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
 
@@ -258,6 +259,16 @@ void DrawRenderer(void* obj){
     oldDrawRenderer(obj);
 }
 
+void BackendManager(void* obj){
+    if(obj != nullptr && isPurchasingSkins){
+        for (int i = 0; i < 9999; i++)
+        {
+            LOGE("trying to force purchase skins...");
+        }
+    }
+    oldBackendManager(obj);
+}
+
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
@@ -276,6 +287,7 @@ void Hooks()
 
 void Pointers()
 {
+    RequestPurchaseSkin = (void(*)(void*, int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1B80760")));
     SetResolution = (void(*)(int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1A268A4"))); // SetResolution
     get_Width = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A265AC"))); // screen get_Width
     get_Height = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A265D4"))); // screen get_Height
@@ -395,12 +407,12 @@ void DrawMenu(){
                     }
                     if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
                     {
-                        std::u16string name = get_CharacterName(currentCharacter);
+                        std::string name = get_CharacterName(currentCharacter);
                         DrawText(ImVec2(wsheadPos.X, wsAboveHead.Y - 7), ImVec4(255,255,255,255), name.c_str(), espFont);
                     }
                     if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0)
                     {
-                        std::u16string weapon = get_characterWeaponName(currentCharacter);
+                        std::string weapon = get_characterWeaponName(currentCharacter);
                         DrawText(ImVec2(wsheadPos.X, transformPos.Y + 7), ImVec4(255,255,255,255), weapon.c_str(), espFont);
                     }
                     if (armroFlag && transformPos.Z > 0 && wsAboveHead.Z > 0)
@@ -449,6 +461,7 @@ void DrawMenu(){
                 if (ImGui::CollapsingHeader(OBFUSCATE("Game Mods"))) {
                     ImGui::Checkbox(OBFUSCATE("Spawn Bullets In Enemy"), &spawnbullets);
                 }
+
                 ImGui::EndTabItem();
             }
 
@@ -481,6 +494,10 @@ void DrawMenu(){
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
                 ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch);
                 ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem(OBFUSCATE("Account Mods"))) {
+                ImGui::Checkbox(OBFUSCATE("Purchase all skins"), &isPurchasingSkins);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
