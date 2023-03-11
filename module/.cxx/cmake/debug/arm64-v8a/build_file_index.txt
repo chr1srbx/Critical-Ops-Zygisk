@@ -1,1 +1,1 @@
-D:\Github\Mods\copsmenu\cops-menu\module\src\main\cpp\CMakeLists.txt
+C:\Users\lbert\Desktop\gitrepos\cops-menu\module\src\main\cpp\CMakeLists.txt

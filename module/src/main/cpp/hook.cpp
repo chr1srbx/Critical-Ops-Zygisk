@@ -91,18 +91,20 @@ int get_PlayerTeam(void* player)
     return *(int*)((uint64_t)boxedValueName + 0x1C);
 }
 
-std::u16string get_CharacterName(void* character)
+std::string get_CharacterName(void* character)
 {
     void* player = get_Player(character);
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(std::u16string*)((uint64_t)boxedValueName + 0x1C);
+    monoString *username = *(monoString **)((uint64_t)boxedValueName + 0x1C);
+    return username->getString();
 }
 
-std::u16string get_characterWeaponName(void* character)
+std::string get_characterWeaponName(void* character)
 {
     void* characterData = *(void**)((uint64_t)character + 0x98);
     void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
-    return *(std::u16string*)((uint64_t)m_wpn + 0x10);
+    monoString *weaponName = *(monoString **)((uint64_t)m_wpn + 0x10);
+    return weaponName->getString();
 }
 
 const char* get_characterArmors(void* character)

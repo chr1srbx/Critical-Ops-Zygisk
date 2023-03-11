@@ -2,21 +2,91 @@
   {
     "level": "INFO",
     "message": "Start JSON generation. Platform version: 23 min SDK version: arm64-v8a",
-    "file": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
     "tag": "debug|arm64-v8a",
     "diagnosticCode": "UNKNOWN"
   },
   {
     "level": "INFO",
-    "message": "JSON \u0027D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\\android_gradle_build.json\u0027 was up-to-date",
-    "file": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "message": "rebuilding JSON C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\\android_gradle_build.json due to:",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "- command changed from previous, will remove stale json folder",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "- a dependent build file changed",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "  - D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "- prefab configuration has changed",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "removing stale contents from \u0027C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\u0027",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "created folder \u0027C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\u0027",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "executing cmake Executable : C:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\cmake.exe\narguments : \n-HC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\n-DCMAKE_BUILD_TYPE\u003dDebug\n-DCMAKE_TOOLCHAIN_FILE\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\\build\\cmake\\android.toolchain.cmake\n-DANDROID_ABI\u003darm64-v8a\n-DANDROID_NDK\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\n-DANDROID_PLATFORM\u003dandroid-23\n-DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a\n-DCMAKE_ANDROID_NDK\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\n-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON\n-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\n-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\n-DCMAKE_MAKE_PROGRAM\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe\n-DCMAKE_SYSTEM_NAME\u003dAndroid\n-DCMAKE_SYSTEM_VERSION\u003d23\n-DCMAKE_FIND_ROOT_PATH\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab\n-DMODULE_NAME:STRING\u003dZyCheatsC\n-BC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\n-GNinja\njvmArgs : \n\n",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "Executable : C:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\cmake.exe\narguments : \n-HC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\n-DCMAKE_BUILD_TYPE\u003dDebug\n-DCMAKE_TOOLCHAIN_FILE\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\\build\\cmake\\android.toolchain.cmake\n-DANDROID_ABI\u003darm64-v8a\n-DANDROID_NDK\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\n-DANDROID_PLATFORM\u003dandroid-23\n-DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a\n-DCMAKE_ANDROID_NDK\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\ndk\\25.0.8775105\n-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON\n-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\n-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\n-DCMAKE_MAKE_PROGRAM\u003dC:\\Users\\lbert\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe\n-DCMAKE_SYSTEM_NAME\u003dAndroid\n-DCMAKE_SYSTEM_VERSION\u003d23\n-DCMAKE_FIND_ROOT_PATH\u003dC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\prefab\\arm64-v8a\\prefab\n-DMODULE_NAME:STRING\u003dZyCheatsC\n-BC:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\n-GNinja\njvmArgs : \n\n",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "done executing cmake",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "tag": "debug|arm64-v8a",
+    "diagnosticCode": "UNKNOWN"
+  },
+  {
+    "level": "INFO",
+    "message": "write command file C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\.cxx\\cmake\\debug\\arm64-v8a\\build_command.txt",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
     "tag": "debug|arm64-v8a",
     "diagnosticCode": "UNKNOWN"
   },
   {
     "level": "INFO",
     "message": "JSON generation completed without problems",
-    "file": "D:\\Github\\Mods\\copsmenu\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
+    "file": "C:\\Users\\lbert\\Desktop\\gitrepos\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt",
     "tag": "debug|arm64-v8a",
     "diagnosticCode": "UNKNOWN"
   }

@@ -579,25 +579,23 @@ typedef struct _monoString
     void *klass;
     void *monitor;
     int length;
-    char chars[1];
+    char16_t chars[1];
 
     int getLength()
     {
         return length;
     }
 
-    char *getRawChars()
+    char16_t *getRawChars()
     {
         return chars;
     }
 
     std::string getString()
     {
-        std::u16string u16string(reinterpret_cast<const char16_t *>(chars));
-        std::wstring wstring(u16string.begin(), u16string.end());
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-
-        return convert.to_bytes(wstring);
+        std::u16string u16 = std::u16string(chars);
+        std::string u8_conv = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(u16);
+        return u8_conv;
     }
 
     const char *getChars()
