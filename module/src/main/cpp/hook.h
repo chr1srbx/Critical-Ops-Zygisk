@@ -36,7 +36,7 @@ bool (*get_IsInitialized)(void* character);
 void* getTransform(void* character);
 int get_CharacterTeam(void* character);
 int get_PlayerTeam(void* player);
-std::u16string get_CharacterName(void* character);
+monoString* get_CharacterName(void* character);
 std::u16string get_characterWeaponName(void* character);
 const char* get_characterArmors(void* character);
 Vector3 getBonePosition(void* character, int bone);

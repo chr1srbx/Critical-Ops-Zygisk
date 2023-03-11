@@ -47,7 +47,8 @@ monoString* CreateIl2cppString(const char* str)
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets;
+fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
+canmove;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
 
@@ -177,7 +178,6 @@ void GameSystemUpdate(void* obj){
         pSys = obj;
         void* GamePlayModule = *(void**)((uint64_t) obj + 0x80);
         if(GamePlayModule != nullptr){
-            LOGE("GAMEPLAYMODULE");
             void* CameraSystem = *(void**)((uint64_t) GamePlayModule + 0x30);
             if(CameraSystem != nullptr){
                 if(fov){
@@ -221,6 +221,32 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
+void(*oldUpdatePlayerMovement)(void* obj);
+void UpdatePlayerMovement(void* obj){
+    if(obj != nullptr){
+        LOGE("PLAYER MOVEMENT");
+        void* CharacterData = *(void**)((uint64_t) obj + 0x98);
+        if(CharacterData){
+            LOGE("CDATA");
+            void* AimData = *(void**)((uint64_t) obj + 0x10);
+            if(AimData){
+                LOGE("AIMDATA");
+                if(recoil){
+                    *(float*)((uint64_t) obj + 0x8) = 0.0f;
+                    *(float*)((uint64_t) obj + 0xC) = 0.0f;
+                    *(float*)((uint64_t) obj + 0x10) = 0.0f;
+                    *(float*)((uint64_t) obj + 0x14) = 0.0f;
+                }
+
+                if(spread){
+                    *(float*)((uint64_t) obj + 0x0) = 0.0f;
+                    *(float*)((uint64_t) obj + 0x4) = 0.0f;
+                }
+            }
+        }
+    }
+    oldUpdatePlayerMovement(obj);
+}
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
         *(float*)((uint64_t) obj + 0x38) = 0;//m_flashTime
@@ -269,6 +295,7 @@ void Hooks()
     HOOK("0x1BACD84", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
     HOOK("0x1BB31C8", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
     HOOK("0x106431C", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
+    HOOK("0x1BB7B74", UpdatePlayerMovement, oldUpdatePlayerMovement); // character
     //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
 }
 
@@ -294,23 +321,25 @@ void Pointers()
 }
 
 void Patches(){
-    PATCH_SWITCH("0x1D4FD28", "000080D2C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x1D50130", "000080D2C0035FD6", recoil);//ApplyRecoil
-    PATCH_SWITCH("0x1D4FC38", "000080D2C0035FD6", recoil);//RecoilRecover
+    PATCH_SWITCH("0x1D6EF8C", "000080D2C0035FD6", spread);//UpdateSpread
+    PATCH_SWITCH("0x1D6F394", "000080D2C0035FD6", recoil);//ApplyRecoil
+    PATCH_SWITCH("0x1D6EF60", "000080D2C0035FD6", recoil);//Evaluate
     PATCH_SWITCH("0x10BEED4", "000080D2C0035FD6", recoil);//UpdateCameraShake
     PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
-    PATCH_SWITCH("0x19BAB70", "1F2003D5C0035FD6", crouch);//UpdateCrouch
-    //PATCH_SWITCH("0x10D2730", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers
+    PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanMove
     PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
     PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
-    PATCH_SWITCH("0x10D1664", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
+    PATCH_SWITCH("0x106724C", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
+    PATCH_SWITCH("0x1067820", "000080D2C0035FD6", ggod);//OnGrenadeExploded
     PATCH_SWITCH("0xF3C32C", "1F2003D5C0035FD6", killnotes);//SetKillNotification
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
+    PATCH_SWITCH("0x1D6A808", "200080D2C0035FD6", radar);//isSupressor
     PATCH("0x10DCE9C", "000080D2C0035FD6");//bad word
     PATCH("0x19A8B20", "200080D2C0035FD6");// bad word
     PATCH("0x10DCF88", "000080D2C0035FD6");//character visi
+    PATCH("0x1028BC4", "1F2003D5C0035FD6");//screenscale
 }
 
 void DrawMenu(){
