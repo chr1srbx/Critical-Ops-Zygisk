@@ -45,7 +45,7 @@ monoString* CreateIl2cppString(const char* str)
 
 void* pSys = nullptr;
 void* pBones = nullptr;
-bool recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
+bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
 fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
@@ -299,9 +299,9 @@ void Patches(){
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
-    PATCH("0x10DCE9C", "000080D2C0035FD6");//HasBadWord
-    PATCH("0x10DCF88", "000080D2C0035FD6");//IsBadWord
-    PATCH("0x19A8B20", "200080D2C0035FD6");//IsVisible CharacterModel
+    PATCH("0x10DCE9C", "000080D2C0035FD6");//bad word
+    PATCH("0x19A8B20", "200080D2C0035FD6");// bad word
+    PATCH("0x10DCF88", "000080D2C0035FD6");//character visi
 }
 
 void DrawMenu(){
@@ -408,7 +408,8 @@ void DrawMenu(){
         }
     }
     {
-        ImGui::Begin(OBFUSCATE("Critical Ops 1.0a (1.37.0.f2085) - chr1s#4191 && 077 Icemods"));
+        if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Free - 1.37.1f2091 - chr1s#4191 & IceMods077"));}
+        else{ImGui::Begin(OBFUSCATE("zyCheats Free - 1.37.1f2091 - chr1s#4191 & IceMods077"));}
         ImGui::TextUnformatted("If the menu touch is broken, set the screenscale in settings to 100.");
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
@@ -527,7 +528,7 @@ void *hack_thread(void *arg) {
         sleep(1);
         auto maps =  KittyMemory::getMapsByName("split_config.arm64_v8a.apk");
         for(std::vector<ProcMap>::iterator it = maps.begin(); it != maps.end(); ++it) {
-            auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress, "7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 90 06 7A 00 00 00 00 00 40 00 00 00 00 00 00 00 B8 6A E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+            auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 D0 70 7A 00 00 00 00 00 40 00 00 00 00 00 00 00 B0 DB E2 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
             if(address != 0)
             {
                 libBaseAddress = address;
@@ -539,10 +540,10 @@ void *hack_thread(void *arg) {
             auto map = KittyMemory::getLibraryBaseMap("libil2cpp.so");
             libBaseAddress = map.startAddress;
             libBaseEndAddress = map.endAddress;
+            unsafe = true;
         }
         tries++;
     } while (libBaseAddress == 0);
-    LOGE("LIB base at: %p", (void*)get_absolute_address(0x0));
     Hooks();
     Pointers();
     auto eglhandle = dlopen("libunity.so", RTLD_LAZY);
