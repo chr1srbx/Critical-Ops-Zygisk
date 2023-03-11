@@ -264,6 +264,7 @@ void BackendManager(void* obj){
         for (int i = 0; i < 9999; i++)
         {
             LOGE("trying to force purchase skins...");
+            RequestPurchaseSkin(obj, i, 0, false);
         }
     }
     oldBackendManager(obj);
@@ -278,6 +279,7 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
 // Initilizers with patterns <3
 void Hooks()
 {
+    HOOK("0x1B872E8", BackendManager, oldBackendManager);
     HOOK("0x1BACFCC", set_Spread, oldset_Spread); // Overlay Scope set spread
     HOOK("0x1BACD84", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
     HOOK("0x1BB31C8", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
