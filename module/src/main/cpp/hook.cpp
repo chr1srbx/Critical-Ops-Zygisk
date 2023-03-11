@@ -379,7 +379,7 @@ void DrawMenu(){
                     {
                         if (health < 100)
                         {
-                            DrawText(ImVec2(wsheadPos.X - width/2 - 15, wsheadPos.Y + height*(1 - static_cast<float>(health)/100.0f) - 25), ImVec4(255,255,255,255), std::to_string(health), espFont);
+                            DrawText(ImVec2(wsAboveHead.X - width/2 - 15, wsAboveHead.Y + height*(1 - static_cast<float>(health)/100.0f)), ImVec4(255,255,255,255), std::to_string(health), espFont);
                         }
                     }
                     if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
