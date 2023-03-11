@@ -14,9 +14,9 @@
 
 using KittyMemory::ProcMap;
 
-
 uint64_t libBaseAddress;
 uint64_t libBaseEndAddress;
+size_t libSize;
 uintptr_t get_absolute_address(uintptr_t relative_addr){
     return (reinterpret_cast<uintptr_t>(libBaseAddress) + relative_addr);
 }

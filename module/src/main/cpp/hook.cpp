@@ -32,6 +32,7 @@
 #include "ESP.h"
 
 
+
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
 monoString* CreateIl2cppString(const char* str)
@@ -55,6 +56,14 @@ extern int glWidth;
 ImFont* espFont;
 ImFont* flagFont;
 
+uintptr_t find_pattern_in_module(const char* lib_name, const char* pattern) {
+    lib_info lib_info = find_library(lib_name);
+    return find_pattern((uint8_t*)lib_info.start_address, lib_info.size, pattern);
+}
+
+uintptr_t find_pattern_with_lib(const char* pattern) {
+    return find_pattern((uint8_t*)libBaseAddress, libSize, pattern);
+}
 
 float get_fieldOfView(void *instance) {
     if (instance != nullptr && fov) {
@@ -408,8 +417,8 @@ void DrawMenu(){
         }
     }
     {
-        if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Free - 1.37.1f2091 - chr1s#4191 & IceMods077"));}
-        else{ImGui::Begin(OBFUSCATE("zyCheats Free - 1.37.1f2091 - chr1s#4191 & IceMods077"));}
+        if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Legit - 1.37.1f2091 - chr1s#4191 & 077 Icemods"));}
+        else{ImGui::Begin(OBFUSCATE("zyCheats Legit - 1.37.1f2091 - chr1s#4191 & 077 Icemods"));}
         ImGui::TextUnformatted("If the menu touch is broken, set the screenscale in settings to 100.");
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
@@ -533,6 +542,7 @@ void *hack_thread(void *arg) {
             {
                 libBaseAddress = address;
                 libBaseEndAddress = it->endAddress;
+                libSize = it->length;
             }
         }
         if (tries > 10)
