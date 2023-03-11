@@ -48,7 +48,7 @@ void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
 fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
-canmove;
+canmove,isPurchasingSkins, fly;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
 
@@ -92,18 +92,20 @@ int get_PlayerTeam(void* player)
     return *(int*)((uint64_t)boxedValueName + 0x1C);
 }
 
-std::u16string get_CharacterName(void* character)
+std::string get_CharacterName(void* character)
 {
     void* player = get_Player(character);
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(std::u16string*)((uint64_t)boxedValueName + 0x1C);
+    monoString *username = *(monoString **)((uint64_t)boxedValueName + 0x1C);
+    return username->getString();
 }
 
-std::u16string get_characterWeaponName(void* character)
+std::string get_characterWeaponName(void* character)
 {
     void* characterData = *(void**)((uint64_t)character + 0x98);
     void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
-    return *(std::u16string*)((uint64_t)m_wpn + 0x10);
+    monoString *weaponName = *(monoString **)((uint64_t)m_wpn + 0x10);
+    return weaponName->getString();
 }
 
 const char* get_characterArmors(void* character)
@@ -221,28 +223,13 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
-void(*oldUpdatePlayerMovement)(void* obj);
-void UpdatePlayerMovement(void* obj){
+void(*oldUpdatePlayerMovement)(void* obj, void* inputdata);
+void UpdatePlayerMovement(void* obj, void* inputdata){
     if(obj != nullptr){
         LOGE("PLAYER MOVEMENT");
         void* CharacterData = *(void**)((uint64_t) obj + 0x98);
-        if(CharacterData){
-            LOGE("CDATA");
-            void* AimData = *(void**)((uint64_t) obj + 0x10);
-            if(AimData){
-                LOGE("AIMDATA");
-                if(recoil){
-                    *(float*)((uint64_t) obj + 0x8) = 0.0f;
-                    *(float*)((uint64_t) obj + 0xC) = 0.0f;
-                    *(float*)((uint64_t) obj + 0x10) = 0.0f;
-                    *(float*)((uint64_t) obj + 0x14) = 0.0f;
-                }
+        if(CharacterData != nullptr){
 
-                if(spread){
-                    *(float*)((uint64_t) obj + 0x0) = 0.0f;
-                    *(float*)((uint64_t) obj + 0x4) = 0.0f;
-                }
-            }
         }
     }
     oldUpdatePlayerMovement(obj);
@@ -282,6 +269,18 @@ void DrawRenderer(void* obj){
     oldDrawRenderer(obj);
 }
 
+void BackendManager(void* obj){
+    if(obj != nullptr && isPurchasingSkins){
+        for (int i = 0; i < 9999; i++)
+        {
+            LOGE("trying to force purchase skins...");
+            RequestPurchaseSkin(obj, i, 0, false);
+        }
+        isPurchasingSkins = false;
+    }
+    oldBackendManager(obj);
+}
+
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
@@ -291,6 +290,7 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
 // Initilizers with patterns <3
 void Hooks()
 {
+    HOOK("0x1B872E8", BackendManager, oldBackendManager);
     HOOK("0x1BACFCC", set_Spread, oldset_Spread); // Overlay Scope set spread
     HOOK("0x1BACD84", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
     HOOK("0x1BB31C8", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
@@ -301,6 +301,7 @@ void Hooks()
 
 void Pointers()
 {
+    RequestPurchaseSkin = (void(*)(void*, int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1B80760")));
     SetResolution = (void(*)(int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1A268A4"))); // SetResolution
     get_Width = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A265AC"))); // screen get_Width
     get_Height = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A265D4"))); // screen get_Height
@@ -336,9 +337,9 @@ void Patches(){
     PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
     PATCH_SWITCH("0x1D6A808", "200080D2C0035FD6", radar);//isSupressor
-    PATCH("0x10DCE9C", "000080D2C0035FD6");//bad word
-    PATCH("0x19A8B20", "200080D2C0035FD6");// bad word
-    PATCH("0x10DCF88", "000080D2C0035FD6");//character visi
+    PATCH("0x10DC594", "000080D2C0035FD6");//bad word
+    PATCH("0x10DC680", "000080D2C0035FD6");// bad word
+    PATCH("0x19DEC30", "000080D2C0035FD6");//character visi
     PATCH("0x1028BC4", "1F2003D5C0035FD6");//screenscale
 }
 
@@ -422,12 +423,12 @@ void DrawMenu(){
                     }
                     if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
                     {
-                        std::u16string name = get_CharacterName(currentCharacter);
+                        std::string name = get_CharacterName(currentCharacter);
                         DrawText(ImVec2(wsheadPos.X, wsAboveHead.Y - 7), ImVec4(255,255,255,255), name.c_str(), espFont);
                     }
                     if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0)
                     {
-                        std::u16string weapon = get_characterWeaponName(currentCharacter);
+                        std::string weapon = get_characterWeaponName(currentCharacter);
                         DrawText(ImVec2(wsheadPos.X, transformPos.Y + 7), ImVec4(255,255,255,255), weapon.c_str(), espFont);
                     }
                     if (armroFlag && transformPos.Z > 0 && wsAboveHead.Z > 0)
@@ -446,8 +447,8 @@ void DrawMenu(){
         }
     }
     {
-        if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Legit - 1.37.1f2091 - chr1s#4191 & 077 Icemods"));}
-        else{ImGui::Begin(OBFUSCATE("zyCheats Legit - 1.37.1f2091 - chr1s#4191 & 077 Icemods"));}
+        if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));}
+        else{ImGui::Begin(OBFUSCATE("zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));}
         ImGui::TextUnformatted("If the menu touch is broken, set the screenscale in settings to 100.");
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
@@ -458,24 +459,27 @@ void DrawMenu(){
         if (ImGui::BeginTabBar("Menu", tab_bar_flags)) {
             if (ImGui::BeginTabItem(OBFUSCATE("Legit Mods"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("Less Recoil"), &recoil);
-                    ImGui::Checkbox(OBFUSCATE("No Spread"), &spread);
-                    ImGui::Checkbox(OBFUSCATE("Force Supressor"), &supressor);
+                    if(ImGui::Checkbox(OBFUSCATE("Less Recoil"), &recoil)){ Patches(); }
+                    if(ImGui::Checkbox(OBFUSCATE("No Spread"), &spread)){ Patches(); }
+                    if(ImGui::Checkbox(OBFUSCATE("Force Supressor"), &supressor)){ Patches(); }
                 }
                 ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem(OBFUSCATE("Rage Mods"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Player Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod);
-                    ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch);
+                    if(ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod)){ Patches(); }
+                    if( ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)){ Patches(); }
+                    ImGui::Checkbox(OBFUSCATE("Fly"), &fly);
                 }
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang);
+                    if(ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang)){ Patches(); }
                 }
                 if (ImGui::CollapsingHeader(OBFUSCATE("Game Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("Spawn Bullets In Enemy"), &spawnbullets);
+                    if(ImGui::Checkbox(OBFUSCATE("Spawn Bullets In Enemy"), &spawnbullets));
+                    if(ImGui::Checkbox(OBFUSCATE("Move before timer"), &canmove)){ Patches(); }
                 }
+
                 ImGui::EndTabItem();
             }
 
@@ -502,17 +506,22 @@ void DrawMenu(){
                 if(fov){
                     ImGui::SliderFloat(OBFUSCATE(" · Value"), &fovModifier, 1.0, 360.0);
                 }
-                ImGui::Checkbox(OBFUSCATE("Radar"), &radar);
+                if(ImGui::Checkbox(OBFUSCATE("Radar"), &radar)){ Patches(); }
                 ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
                 ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
-                ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch);
+                if(ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)){ Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem(OBFUSCATE("Account Mods"))) {
+                if(ImGui::Button(OBFUSCATE("Purchase all skins"))){
+                    isPurchasingSkins = true;
+                }
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
         }
-        //Patches();
     }
     ImGui::End();
 }

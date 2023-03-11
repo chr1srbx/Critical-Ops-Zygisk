@@ -31,13 +31,14 @@ void* (*get_Player)(void* character);
 void (*RaycastCharacters)(void* pSys, void* shooter , Ray ray);
 void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
+void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
 
 // Custom functions
 void* getTransform(void* character);
 int get_CharacterTeam(void* character);
 int get_PlayerTeam(void* player);
-monoString* get_CharacterName(void* character);
-std::u16string get_characterWeaponName(void* character);
+std::string get_CharacterName(void* character);
+std::string get_characterWeaponName(void* character);
 const char* get_characterArmors(void* character);
 Vector3 getBonePosition(void* character, int bone);
 
@@ -51,6 +52,7 @@ void(*oldRenderOverlayFlashbang)(void* obj);
 void(*oldset_Spread)(void*obj);
 void(*oldRenderOverlaySmoke)(void* obj);
 void(*oldDrawRenderer)(void* obj);
+void(*oldBackendManager)(void* obj);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 
 // Hooks
