@@ -48,7 +48,7 @@ void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
         fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
-        canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity;
+        canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity, dropweapon,ragdoll;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval;
 int screenscale = 0;
@@ -109,9 +109,9 @@ std::string get_characterWeaponName(void* character)
     {
         monoString* weaponName = *(monoString**)((uint64_t)m_wpn + 0x10);
         return weaponName->getString();
-    }
+    }    return filler;
+
     std::string filler = "";
-    return filler;
 }
 
 Vector3 getBonePosition(void* character, int bone){
@@ -209,12 +209,16 @@ void GameSystemUpdate(void* obj){
 void UpdateAimedCharacter(void* obj){
     if(obj != nullptr) {
         LOGE("PLAYER MOVEMENT");
-        void *CharacterData = *(void **) ((uint64_t) obj + 0x98);
-        if (CharacterData != nullptr) {
-            void *StateData = *(void **) ((uint64_t) obj + 0x98);
-            if (StateData != nullptr) {
-                if (fly) {
-                    *(bool *) ((uint64_t) obj + 0x0) = true;
+        void *Character = *(void **) ((uint64_t) obj + 0x178);
+        if (Character != nullptr) {
+            void *CharacterData = *(void **) ((uint64_t) Character + 0x98);
+            if(CharacterData != nullptr){
+                void *CharacterSettingsData = *(void **) ((uint64_t) CharacterData + 0x78);
+                if(CharacterSettingsData != nullptr){
+                    *(float*)((uint64_t) CharacterSettingsData + 0x14) = 20;
+                    *(float*)((uint64_t) CharacterSettingsData + 0x18) = 20;
+                    *(float*)((uint64_t) CharacterSettingsData + 0x1C) = 20;
+                    *(float*)((uint64_t) CharacterSettingsData + 0x20) = 20;
                 }
             }
         }
@@ -257,34 +261,27 @@ void DrawRenderer(void* obj){
     oldDrawRenderer(obj);
 }
 
-float GetCurrentMaxSpeed(void* obj, float speed){
+void(*oldFpsLimitUpdate)(void* obj);
+void FpsLimitUpdate(void* obj){
     if(obj != nullptr){
-        if(speed){
-            return 20;
-        }
+        *(int*)((uint64_t) obj + 0x18) = 999;
     }
-    oldGetCurrentMaxSpeed(obj, speed);
+    oldFpsLimitUpdate(obj);
 }
 
-int GetPlayerMoney(void* obj){
-    if(obj != nullptr){
-        if(freeshop){
-            return 10000;
-        }
-    }
-    oldGetPlayerMoney(obj);
-}
 
 Vector3 get_gravity(){
     if(gravity){
         return gravityval;
     }
+    oldget_gravity();
 }
 
 Vector3 get_height(){
     if(fly){
         return flyval;
     }
+    oldget_height();
 }
 
 void Init(void* obj){
@@ -313,6 +310,22 @@ void BackendManager(void* obj){
     oldBackendManager(obj);
 }
 
+float(*oldFovWorld)(void* obj);
+float FovWorld(void* obj){
+    if(obj != nullptr && fov){
+        return fovModifier;
+    }
+    return oldFovWorld(obj);
+}
+
+float(*oldFovViewModel)(void* obj);
+float FovViewModel(void* obj){
+    if(obj != nullptr && fov){
+        return fovModifier;
+    }
+    return oldFovViewModel(obj);
+}
+
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
@@ -329,8 +342,8 @@ void Hooks()
     HOOK("0x106431C", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
     //HOOK("0x1BB7B74", UpdatePlayerMovement, oldUpdatePlayerMovement); // character
     HOOK("0x1BC0334", UpdateAimedCharacter, oldUpdateAimedCharacter); // character
-    // HOOK("0x1D6EA74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
-    HOOK("0x1F99474", GetPlayerMoney, oldGetPlayerMoney); // freshop
+    HOOK("0x1051658", FovViewModel, oldFovViewModel); // speed
+    HOOK("0x1051618", FovWorld, oldFovWorld); // speed
     //HOOK("0x1AF318C", get_gravity, oldget_gravity); // gravity
     // HOOK("0x1AF71A4", get_height, oldget_height); // height
     //HOOK("0x1A76E68", Init, oldInit); // for scale
@@ -364,22 +377,31 @@ void Pointers()
 
 void Patches(){
     PATCH_SWITCH("0x1D6EF8C", "1F2003D5C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x1D6F028", "1F2003D5C0035FD6", recoil);//ApplyRecoil
-    PATCH_SWITCH("0x1D6EF60", "000080D2C0035FD6", recoil);//Evaluate
+    PATCH_SWITCH("0x1D6F028", "000080D2C0035FD6", recoil);//ApplyRecoil
     PATCH_SWITCH("0x10BEED4", "000080D2C0035FD6", recoil);//UpdateCameraShake
     PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
     PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanMove
-    PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanShoot
+    PATCH_SWITCH("0x1BB65D8", "200080D2C0035FD6", canmove);//CanShoot
+    PATCH_SWITCH("0x1BB59D8", "200080D2C0035FD6", canmove);//ShootingAllowed
+    PATCH_SWITCH("0x1BB59C4", "200080D2C0035FD6", canmove);//MovementAllowed
     PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
     PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
     //  PATCH_SWITCH("0x10695C0", "1F2003D5C0035FD6", wallbang);//CheckWallHits
     PATCH_SWITCH("0x106724C", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
     PATCH_SWITCH("0x1067820", "000080D2C0035FD6", ggod);//OnGrenadeExploded
-    PATCH_SWITCH("0xF3D9F4", "1F2003D5C0035FD6", killnotes);//SetKillNotification
+    PATCH_SWITCH("0xF3CB7C", "000080D2C0035FD6", killnotes);//SetKillNotification
+    PATCH_SWITCH("0x1DB3698", "1F2003D5C0035FD6", killnotes);//Init
     PATCH_SWITCH("0x1A7C36C", "200080D2C0035FD6", crosshair);//get_Crosshair weapondef
-    PATCH_SWITCH("0x16CDFBC", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
+    PATCH_SWITCH("0x10D2F98", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
-    PATCH_SWITCH("0x1F96504", "200080D2C0035FD6", tutorial);//get_Tutorial
+    PATCH_SWITCH("0x19D93E4", "1F2003D5C0035FD6", crouch);//isSupressor
+    PATCH_SWITCH("0x1BB5A00", "200080D2C0035FD6", dropweapon);//WeaponDroppingAllowed
+    PATCH_SWITCH("0x1BB5A14", "200080D2C0035FD6", dropweapon);//WeaponPickupAllowed
+    PATCH_SWITCH("0xCE8450", "E003271EC0035FD6", ragdoll);//Ragdoll
+    PATCH_SWITCH("0xF6EA08", "200080D2C0035FD6", isPurchasingSkins);//isOwned
+    PATCH_SWITCH("0xDCAC38", "200080D2C0035FD6", isPurchasingSkins);//isEnabled
+    PATCH_SWITCH("0xF6E878", "200080D2C0035FD6", isPurchasingSkins);//isOwned
+   // PATCH_SWITCH("0x1F96504", "200080D2C0035FD6", tutorial);//get_Tutorial
     PATCH("0x10DC594", "000080D2C0035FD6");//bad word
     PATCH("0x10DC680", "000080D2C0035FD6");//bad word
     PATCH("0x19DEC30", "200080D2C0035FD6");//character visi
@@ -387,6 +409,10 @@ void Patches(){
     PATCH("0x1D6BBF8", "1F2003D5C0035FD6");//ProcessMovement
     PATCH("0x208BB6C", "1F2003D5C0035FD6");//ApplyRestorePriceToArmor
     PATCH("0x208BB28", "1F2003D5C0035FD6");//ApplyNormalPriceToArmor
+    PATCH("0xCF43E0", "200080D2C0035FD6");//RankedEnabled
+    PATCH("0x1C04C30", "1F2003D5C0035FD6");//afk
+    PATCH("0x1C4EA20", "1F2003D5C0035FD6");//afk
+    PATCH("0xE6CE4C", "1F2003D5C0035FD6");//SetBanStatus
 }
 
 void DrawMenu(){
@@ -521,7 +547,7 @@ void DrawMenu(){
             if (ImGui::BeginTabItem(OBFUSCATE("Rage"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Player Mods"))) {
                     if(ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod)){ Patches(); }
-                    //if( ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)){ Patches(); }
+                    if( ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)){ Patches(); }
                     ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
                     ImGui::Checkbox(OBFUSCATE("Gravity"), &gravity);
                     if(gravity){
@@ -573,7 +599,7 @@ void DrawMenu(){
                 ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
                 ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
-                if(ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &scope)){ Patches(); }
+                if(ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)){ Patches(); }
                 if(ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)){ Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);{Patches();}
                 ImGui::EndTabItem();
@@ -585,8 +611,9 @@ void DrawMenu(){
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem(OBFUSCATE("Misc"))) {
-                if(ImGui::Checkbox(OBFUSCATE("Tutorial Shop"), &tutorial)){Patches();}
-                if(ImGui::Checkbox(OBFUSCATE("Free shop"), &freeshop)){ Patches(); }
+                if(ImGui::Checkbox(OBFUSCATE("Force Allow Droping Weapon"), &dropweapon)){Patches();}
+                if(ImGui::Checkbox(OBFUSCATE("Disable Ragdoll"), &ragdoll)){ Patches(); }
+                if(ImGui::Checkbox(OBFUSCATE("Unlock Skins"), &isPurchasingSkins)){ Patches(); }
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

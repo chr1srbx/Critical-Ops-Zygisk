@@ -34,6 +34,7 @@ bool (*get_IsInitialized)(void* character);
 void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
 monoString* (*getNameAndTag)(void* player);
 void(*RemoveCharacter)(void* obj, int playerID);
+void(*oldUpdate)(void* obj);
 
 // Custom functions
 void* getTransform(void* character);
@@ -72,8 +73,6 @@ void set_Spread(void* obj);
 void RenderOverlaySmoke(void* obj);
 void DrawRenderer(void* obj);
 void UpdateAimedCharacter(void* obj);
-float GetCurrentMaxSpeed(void* obj, float speed);
-int GetPlayerMoney(void* obj);
 Vector3 get_gravity();
 Vector3 get_height();
 void Init(void* obj);
