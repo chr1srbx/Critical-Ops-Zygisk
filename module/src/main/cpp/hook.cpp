@@ -114,34 +114,6 @@ std::string get_characterWeaponName(void* character)
     return filler;
 }
 
-const char* get_characterArmors(void* character)
-{
-    void* CharacterArmors = *(void**)((uint64_t)character + 0xE8);
-    monoArray<void **> *ArmorList = *(monoArray<void **>**)((uint64_t)CharacterArmors + 0xE8);
-    bool hasHelmet, hasKevlar;
-    for (int i = 0; i < ArmorList->getLength(); i++)
-    {
-        void* currentArmor = (monoList<void **> *) ArmorList->getPointer()[i];
-        void* ArmorDef = *(void**)((uint64_t)currentArmor + 0x10);
-        void* ArmorDefData = *(void**)((uint64_t)ArmorDef + 0x30);
-        int armorType = *(int*)((uint64_t)ArmorDefData + 0x30);
-        if (armorType == 0)
-        {
-            hasHelmet = true;
-        }
-        else
-        {
-            hasKevlar = true;
-        }
-    }
-
-
-    if (hasKevlar && hasHelmet) return "HK";
-    if (hasKevlar && !hasHelmet) return "K";
-    if (!hasKevlar && hasHelmet) return "H";
-    return "NONE";
-}
-
 Vector3 getBonePosition(void* character, int bone){
     void* curBone = get_CharacterBodyPart(character, bone);
     void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
@@ -234,7 +206,6 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
-void(*oldUpdateAimedCharacter)(void* obj);
 void UpdateAimedCharacter(void* obj){
     if(obj != nullptr) {
         LOGE("PLAYER MOVEMENT");
@@ -286,7 +257,6 @@ void DrawRenderer(void* obj){
     oldDrawRenderer(obj);
 }
 
-float(*oldGetCurrentMaxSpeed)(void* obj, float speed);
 float GetCurrentMaxSpeed(void* obj, float speed){
     if(obj != nullptr){
         if(speed){
@@ -296,7 +266,6 @@ float GetCurrentMaxSpeed(void* obj, float speed){
     oldGetCurrentMaxSpeed(obj, speed);
 }
 
-int (*oldGetPlayerMoney)(void* obj);
 int GetPlayerMoney(void* obj){
     if(obj != nullptr){
         if(freeshop){
@@ -306,21 +275,18 @@ int GetPlayerMoney(void* obj){
     oldGetPlayerMoney(obj);
 }
 
-Vector3 (*oldget_gravity)();
 Vector3 get_gravity(){
     if(gravity){
         return gravityval;
     }
 }
 
-Vector3 (*oldget_height)();
 Vector3 get_height(){
     if(fly){
         return flyval;
     }
 }
 
-void(*oldInit)(void* obj);
 void Init(void* obj){
     if(obj != nullptr){
         LOGE("CALLED");
@@ -334,6 +300,7 @@ void Init(void* obj){
     }
     oldInit(obj);
 }
+
 void BackendManager(void* obj){
     if(obj != nullptr && isPurchasingSkins){
         for (int i = 0; i < 9999; i++)

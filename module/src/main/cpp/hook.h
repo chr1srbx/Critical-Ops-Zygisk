@@ -55,6 +55,12 @@ void(*oldset_Spread)(void*obj);
 void(*oldRenderOverlaySmoke)(void* obj);
 void(*oldDrawRenderer)(void* obj);
 void(*oldBackendManager)(void* obj);
+void(*oldUpdateAimedCharacter)(void* obj);
+float(*oldGetCurrentMaxSpeed)(void* obj, float speed);
+int (*oldGetPlayerMoney)(void* obj);
+Vector3 (*oldget_gravity)();
+Vector3 (*oldget_height)();
+void(*oldInit)(void* obj);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 
 // Hooks
@@ -65,6 +71,12 @@ void RenderOverlayFlashbang(void* obj);
 void set_Spread(void* obj);
 void RenderOverlaySmoke(void* obj);
 void DrawRenderer(void* obj);
+void UpdateAimedCharacter(void* obj);
+float GetCurrentMaxSpeed(void* obj, float speed);
+int GetPlayerMoney(void* obj);
+Vector3 get_gravity();
+Vector3 get_height();
+void Init(void* obj);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
 
 // Initializers
