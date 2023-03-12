@@ -109,9 +109,9 @@ std::string get_characterWeaponName(void* character)
     {
         monoString* weaponName = *(monoString**)((uint64_t)m_wpn + 0x10);
         return weaponName->getString();
-    }    return filler;
+    }
+    std::string filler = "";    return filler;
 
-    std::string filler = "";
 }
 
 Vector3 getBonePosition(void* character, int bone){
@@ -601,7 +601,7 @@ void DrawMenu(){
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
                 if(ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)){ Patches(); }
                 if(ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)){ Patches(); }
-                ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);{Patches();}
+                if(ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes)){Patches();}
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem(OBFUSCATE("Account"))) {
