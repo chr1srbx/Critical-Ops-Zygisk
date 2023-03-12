@@ -28,10 +28,11 @@ void* (*getLocalPlayer)(void* obj);
 int (*getCharacterCount)(void* obj);
 int (*get_Health)(void* character);
 void* (*get_Player)(void* character);
-void (*RaycastCharacters)(void* pSys, void* shooter , Ray ray);
+void (*RaycastCharacter)(void* pSys, void* shooter , Ray ray, int hitdex);
 void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
 void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
+void(*RemoveCharacter)(void* obj, int playerID);
 
 // Custom functions
 void* getTransform(void* character);

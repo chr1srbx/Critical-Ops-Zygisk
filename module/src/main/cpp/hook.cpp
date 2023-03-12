@@ -48,9 +48,10 @@ void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
 fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
-canmove,isPurchasingSkins, fly;
+canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity;
 
-float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval;
+float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval;
+int screenscale = 0;
 
 extern int glHeight;
 extern int glWidth;
@@ -191,6 +192,11 @@ void GameSystemUpdate(void* obj){
                 }
             }
 
+            if(removecharacter){
+                RemoveCharacter(obj, getLocalId(obj));
+                removecharacter = false;
+            }
+
             if (spawnbullets) {
                 int id = getLocalId(pSys);
                 void *localPlayer = getPlayer(pSys, id);
@@ -213,7 +219,7 @@ void GameSystemUpdate(void* obj){
                         ray.origin = headPos;
                         ray.direction = Vector3(1, 1, 1);
                         if (localCharacter) {
-                            RaycastCharacters(pSys, localCharacter, ray);
+
                         }
                     }
                 }
@@ -223,16 +229,21 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
-void(*oldUpdatePlayerMovement)(void* obj, void* inputdata);
-void UpdatePlayerMovement(void* obj, void* inputdata){
-    if(obj != nullptr){
+void(*oldUpdateAimedCharacter)(void* obj);
+void UpdateAimedCharacter(void* obj){
+    if(obj != nullptr) {
         LOGE("PLAYER MOVEMENT");
-        void* CharacterData = *(void**)((uint64_t) obj + 0x98);
-        if(CharacterData != nullptr){
-
+        void *CharacterData = *(void **) ((uint64_t) obj + 0x98);
+        if (CharacterData != nullptr) {
+            void *StateData = *(void **) ((uint64_t) obj + 0x98);
+            if (StateData != nullptr) {
+                if (fly) {
+                    *(bool *) ((uint64_t) obj + 0x0) = true;
+                }
+            }
         }
     }
-    oldUpdatePlayerMovement(obj);
+    oldUpdateAimedCharacter(obj);
 }
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
@@ -269,6 +280,54 @@ void DrawRenderer(void* obj){
     oldDrawRenderer(obj);
 }
 
+float(*oldGetCurrentMaxSpeed)(void* obj, float speed);
+float GetCurrentMaxSpeed(void* obj, float speed){
+    if(obj != nullptr){
+        if(speed){
+            return 20;
+        }
+    }
+    oldGetCurrentMaxSpeed(obj, speed);
+}
+
+int (*oldGetPlayerMoney)(void* obj);
+int GetPlayerMoney(void* obj){
+    if(obj != nullptr){
+        if(freeshop){
+            return 10000;
+        }
+    }
+    oldGetPlayerMoney(obj);
+}
+
+Vector3 (*oldget_gravity)();
+Vector3 get_gravity(){
+    if(gravity){
+        return gravityval;
+    }
+}
+
+Vector3 (*oldget_height)();
+Vector3 get_height(){
+    if(fly){
+        return flyval;
+    }
+}
+
+void(*oldInit)(void* obj);
+void Init(void* obj){
+    if(obj != nullptr){
+        LOGE("CALLED");
+        void* GraphicsProfile = *(void**)((uint64_t) obj + 0x38);
+        if(GraphicsProfile != nullptr){
+            LOGE("GPROFILE");
+            int scscale = (int)((uint64_t) GraphicsProfile + 0x30);
+            LOGE("SSCALE, %d", scscale);
+            screenscale = scscale / 100;
+        }
+    }
+    oldInit(obj);
+}
 void BackendManager(void* obj){
     if(obj != nullptr && isPurchasingSkins){
         for (int i = 0; i < 9999; i++)
@@ -295,7 +354,12 @@ void Hooks()
     HOOK("0x1BACD84", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
     HOOK("0x1BB31C8", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
     HOOK("0x106431C", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
-    HOOK("0x1BB7B74", UpdatePlayerMovement, oldUpdatePlayerMovement); // character
+    HOOK("0x1BC0334", UpdateAimedCharacter, oldUpdateAimedCharacter); // character
+   // HOOK("0x1D6EA74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
+    HOOK("0x1F99474", GetPlayerMoney, oldGetPlayerMoney); // freshop
+    //HOOK("0x1AF318C", get_gravity, oldget_gravity); // gravity
+   // HOOK("0x1AF71A4", get_height, oldget_height); // height
+    //HOOK("0x1A76E68", Init, oldInit); // for scale
     //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
 }
 
@@ -318,29 +382,35 @@ void Pointers()
     WorldToScreen = (Vector3(*)(void*, Vector3, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1A2D67C"))); // WorldToScreenPoint
     //set_targetFrameRate = (void(*)(int)) get_absolute_address(""); NOT USED
     get_CharacterBodyPart =(void*(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x19D8E6C"))); // Character GetBodyPart
-    RaycastCharacters = (void(*)(void*,void*,Ray)) get_absolute_address(string2Offset(OBFUSCATE("0x1069090"))); // RaycastCharacters
+    RaycastCharacter = (void(*)(void*,void*,Ray, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1068A2C"))); // RaycastCharacters
+    RemoveCharacter = (void(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x106194C")));//RemovePlayer
 }
 
 void Patches(){
-    PATCH_SWITCH("0x1D6EF8C", "000080D2C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x1D6F394", "000080D2C0035FD6", recoil);//ApplyRecoil
+    PATCH_SWITCH("0x1D6EF8C", "1F2003D5C0035FD6", spread);//UpdateSpread
+    PATCH_SWITCH("0x1D6F028", "1F2003D5C0035FD6", recoil);//ApplyRecoil
     PATCH_SWITCH("0x1D6EF60", "000080D2C0035FD6", recoil);//Evaluate
     PATCH_SWITCH("0x10BEED4", "000080D2C0035FD6", recoil);//UpdateCameraShake
     PATCH_SWITCH("0x1D4FCC4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
     PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanMove
+    PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanShoot
     PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
     PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
+  //  PATCH_SWITCH("0x10695C0", "1F2003D5C0035FD6", wallbang);//CheckWallHits
     PATCH_SWITCH("0x106724C", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
     PATCH_SWITCH("0x1067820", "000080D2C0035FD6", ggod);//OnGrenadeExploded
-    PATCH_SWITCH("0xF3C32C", "1F2003D5C0035FD6", killnotes);//SetKillNotification
-    PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", crosshair);//get_Crosshair
-    PATCH_SWITCH("0x1D8502C", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
+    PATCH_SWITCH("0xF3D9F4", "1F2003D5C0035FD6", killnotes);//SetKillNotification
+    PATCH_SWITCH("0x1A7C36C", "200080D2C0035FD6", crosshair);//get_Crosshair weapondef
+    PATCH_SWITCH("0x16CDFBC", "000080D2C0035FD6", smoke);//get_GrenadeSmokeAreaOfEffect
     PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
-    PATCH_SWITCH("0x1D6A808", "200080D2C0035FD6", radar);//isSupressor
+    PATCH_SWITCH("0x1F96504", "200080D2C0035FD6", tutorial);//get_Tutorial
     PATCH("0x10DC594", "000080D2C0035FD6");//bad word
-    PATCH("0x10DC680", "000080D2C0035FD6");// bad word
-    PATCH("0x19DEC30", "000080D2C0035FD6");//character visi
-    PATCH("0x1028BC4", "1F2003D5C0035FD6");//screenscale
+    PATCH("0x10DC680", "000080D2C0035FD6");//bad word
+    PATCH("0x19DEC30", "200080D2C0035FD6");//character visi
+    PATCH("0x1BB5B54", "000080D2C0035FD6");//deploying
+    PATCH("0x1D6BBF8", "1F2003D5C0035FD6");//ProcessMovement
+    PATCH("0x208BB6C", "1F2003D5C0035FD6");//ApplyRestorePriceToArmor
+    PATCH("0x208BB28", "1F2003D5C0035FD6");//ApplyNormalPriceToArmor
 }
 
 void DrawMenu(){
@@ -352,6 +422,9 @@ void DrawMenu(){
             for (int i = 0; i < characterList->getSize(); i++)
             {
                 void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                //if(currentCharacter == localPlayer){
+                //    void* myPlayer = currentCharacter;
+              //  }
                 int curTeam = get_CharacterTeam(currentCharacter);
                 int health = get_Health(currentCharacter);
                 if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam && curTeam != -1)
@@ -373,7 +446,14 @@ void DrawMenu(){
                     wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
                     float height = transformPos.Y - wsAboveHead.Y;
                     float width = (transformPos.Y - wsheadEstimate.Y)/2;
-
+                    int hitindex;
+                    //Vector3 currentheadPos = getBonePosition(, 10);
+                   // Vector3 enemyheadPos = getBonePosition(currentCharacter, 10);
+                    //Ray ray;
+                    //ray.origin = currentheadPos;
+                    //ray.direction = currentheadPos - enemyheadPos;
+                   // RaycastCharacter(pSys, currentCharacter, ray, hitindex);
+                    //LOGE("hitindex %d", hitindex);
                     if (snaplines && transformPos.Z > 0)
                     {
                         DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(transformPos.X, transformPos.Y), ImColor(172, 204, 255), 3);
@@ -449,7 +529,7 @@ void DrawMenu(){
     {
         if(unsafe){ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));}
         else{ImGui::Begin(OBFUSCATE("zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));}
-        ImGui::TextUnformatted("If the menu touch is broken, set the screenscale in settings to 100.");
+        ImGui::TextUnformatted("If the menu is broken, set the screenscale in settings to 100.");
         if (ImGui::Button(OBFUSCATE("Join Discord")))
         {
             //isDiscordPressed = true;
@@ -457,7 +537,7 @@ void DrawMenu(){
         ImGui::TextUnformatted("Its Recommended to join the discord server for mod updates etc.");
         ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_FittingPolicyResizeDown;
         if (ImGui::BeginTabBar("Menu", tab_bar_flags)) {
-            if (ImGui::BeginTabItem(OBFUSCATE("Legit Mods"))) {
+            if (ImGui::BeginTabItem(OBFUSCATE("Legit"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
                     if(ImGui::Checkbox(OBFUSCATE("Less Recoil"), &recoil)){ Patches(); }
                     if(ImGui::Checkbox(OBFUSCATE("No Spread"), &spread)){ Patches(); }
@@ -466,24 +546,35 @@ void DrawMenu(){
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem(OBFUSCATE("Rage Mods"))) {
+            if (ImGui::BeginTabItem(OBFUSCATE("Rage"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("Player Mods"))) {
                     if(ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod)){ Patches(); }
-                    if( ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)){ Patches(); }
+                    //if( ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)){ Patches(); }
+                    ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
+                    ImGui::Checkbox(OBFUSCATE("Gravity"), &gravity);
+                    if(gravity){
+                        ImGui::SliderFloat(OBFUSCATE(" · Value"), &gravityval, 0.0, 100.0);
+                    }
                     ImGui::Checkbox(OBFUSCATE("Fly"), &fly);
+                    if(flyval){
+                        ImGui::SliderFloat(OBFUSCATE(" · Height"), &flyval, 0.0, 10.0);
+                    }
                 }
                 if (ImGui::CollapsingHeader(OBFUSCATE("Weapon Mods"))) {
                     if(ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang)){ Patches(); }
                 }
                 if (ImGui::CollapsingHeader(OBFUSCATE("Game Mods"))) {
                     if(ImGui::Checkbox(OBFUSCATE("Spawn Bullets In Enemy"), &spawnbullets));
-                    if(ImGui::Checkbox(OBFUSCATE("Move before timer"), &canmove)){ Patches(); }
+                    if(ImGui::Checkbox(OBFUSCATE("Move/Shoot before timer"), &canmove)){ Patches(); }
+                    if(ImGui::Button(OBFUSCATE("Godmode"))){
+                        removecharacter = true;
+                    }
                 }
 
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem(OBFUSCATE("Visual Mods"))) {
+            if (ImGui::BeginTabItem(OBFUSCATE("Visual"))) {
                 if (ImGui::CollapsingHeader(OBFUSCATE("ESP"))) {
                     ImGui::Checkbox(OBFUSCATE("Snaplines"), &snaplines);
                     ImGui::Checkbox(OBFUSCATE("Bones"), &bonesp);
@@ -510,14 +601,20 @@ void DrawMenu(){
                 ImGui::Checkbox(OBFUSCATE("No Flashbang"), &flash);
                 ImGui::Checkbox(OBFUSCATE("No Smoke"), &smoke);
                 ImGui::Checkbox(OBFUSCATE("No Scope"), &scope);
+                if(ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &scope)){ Patches(); }
                 if(ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)){ Patches(); }
-                ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);
+                ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes);{Patches();}
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(OBFUSCATE("Account Mods"))) {
+            if (ImGui::BeginTabItem(OBFUSCATE("Account"))) {
                 if(ImGui::Button(OBFUSCATE("Purchase all skins"))){
                     isPurchasingSkins = true;
                 }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem(OBFUSCATE("Misc"))) {
+                if(ImGui::Checkbox(OBFUSCATE("Tutorial Shop"), &tutorial)){Patches();}
+                if(ImGui::Checkbox(OBFUSCATE("Free shop"), &freeshop)){ Patches(); }
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
@@ -546,12 +643,8 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     eglQuerySurface(dpy, surface, EGL_HEIGHT, &glHeight);
 
 
-    if (!setupimg)
-    {
-        glHeight = get_Height();
-        glWidth = get_Width();
+    if (!setupimg) {
         SetupImgui();
-        SetResolution(glWidth, glHeight, true);
         setupimg = true;
     }
 
@@ -594,10 +687,10 @@ void *hack_thread(void *arg) {
     } while (libBaseAddress == 0);
     Hooks();
     Pointers();
+    Patches();
     auto eglhandle = dlopen("libunity.so", RTLD_LAZY);
     auto eglSwapBuffers = dlsym(eglhandle, "eglSwapBuffers");
-    DobbyHook((void*)eglSwapBuffers,(void*)hook_eglSwapBuffers,
-              (void**)&old_eglSwapBuffers);
+    DobbyHook((void*)eglSwapBuffers,(void*)hook_eglSwapBuffers, (void**)&old_eglSwapBuffers);
     void *sym_input = DobbySymbolResolver(("/system/lib/libinput.so"), ("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"));
     if (NULL != sym_input) {
         DobbyHook(sym_input,(void*)myInput,(void**)&origInput);
