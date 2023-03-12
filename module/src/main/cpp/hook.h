@@ -32,6 +32,7 @@ void (*RaycastCharacter)(void* pSys, void* shooter , Ray ray, int hitdex);
 void(*set_targetFrameRate)(int frames);
 bool (*get_IsInitialized)(void* character);
 void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
+monoString* (*getNameAndTag)(void* player);
 void(*RemoveCharacter)(void* obj, int playerID);
 
 // Custom functions

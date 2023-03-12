@@ -47,8 +47,8 @@ monoString* CreateIl2cppString(const char* str)
 void* pSys = nullptr;
 void* pBones = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
-canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity;
+        fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
+        canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity;
 
 float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval;
 int screenscale = 0;
@@ -96,8 +96,8 @@ int get_PlayerTeam(void* player)
 std::string get_CharacterName(void* character)
 {
     void* player = get_Player(character);
-    void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    monoString *username = *(monoString **)((uint64_t)boxedValueName + 0x1C);
+    void* boxedValueName = *(void**)((uint64_t)player + 0xA8);
+    monoString* username = *(monoString**)((uint64_t)boxedValueName + 0x19);
     return username->getString();
 }
 
@@ -105,8 +105,13 @@ std::string get_characterWeaponName(void* character)
 {
     void* characterData = *(void**)((uint64_t)character + 0x98);
     void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
-    monoString *weaponName = *(monoString **)((uint64_t)m_wpn + 0x10);
-    return weaponName->getString();
+    if (m_wpn)
+    {
+        monoString* weaponName = *(monoString**)((uint64_t)m_wpn + 0x10);
+        return weaponName->getString();
+    }
+    std::string filler = "";
+    return filler;
 }
 
 const char* get_characterArmors(void* character)
@@ -245,6 +250,7 @@ void UpdateAimedCharacter(void* obj){
     }
     oldUpdateAimedCharacter(obj);
 }
+
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
         *(float*)((uint64_t) obj + 0x38) = 0;//m_flashTime
@@ -354,11 +360,12 @@ void Hooks()
     HOOK("0x1BACD84", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
     HOOK("0x1BB31C8", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
     HOOK("0x106431C", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
+    //HOOK("0x1BB7B74", UpdatePlayerMovement, oldUpdatePlayerMovement); // character
     HOOK("0x1BC0334", UpdateAimedCharacter, oldUpdateAimedCharacter); // character
-   // HOOK("0x1D6EA74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
+    // HOOK("0x1D6EA74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
     HOOK("0x1F99474", GetPlayerMoney, oldGetPlayerMoney); // freshop
     //HOOK("0x1AF318C", get_gravity, oldget_gravity); // gravity
-   // HOOK("0x1AF71A4", get_height, oldget_height); // height
+    // HOOK("0x1AF71A4", get_height, oldget_height); // height
     //HOOK("0x1A76E68", Init, oldInit); // for scale
     //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
 }
@@ -382,8 +389,10 @@ void Pointers()
     WorldToScreen = (Vector3(*)(void*, Vector3, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1A2D67C"))); // WorldToScreenPoint
     //set_targetFrameRate = (void(*)(int)) get_absolute_address(""); NOT USED
     get_CharacterBodyPart =(void*(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x19D8E6C"))); // Character GetBodyPart
+    getNameAndTag = (monoString*(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0xBEA754"))); // get_UsernameWithClanTag
     RaycastCharacter = (void(*)(void*,void*,Ray, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1068A2C"))); // RaycastCharacters
     RemoveCharacter = (void(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x106194C")));//RemovePlayer
+
 }
 
 void Patches(){
@@ -396,7 +405,7 @@ void Patches(){
     PATCH_SWITCH("0x1BB86FC", "200080D2C0035FD6", canmove);//CanShoot
     PATCH_SWITCH("0x10D2C58", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
     PATCH_SWITCH("0x10D2228", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
-  //  PATCH_SWITCH("0x10695C0", "1F2003D5C0035FD6", wallbang);//CheckWallHits
+    //  PATCH_SWITCH("0x10695C0", "1F2003D5C0035FD6", wallbang);//CheckWallHits
     PATCH_SWITCH("0x106724C", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
     PATCH_SWITCH("0x1067820", "000080D2C0035FD6", ggod);//OnGrenadeExploded
     PATCH_SWITCH("0xF3D9F4", "1F2003D5C0035FD6", killnotes);//SetKillNotification
@@ -415,114 +424,110 @@ void Patches(){
 
 void DrawMenu(){
     if(pSys != nullptr){
-            int id = getLocalId(pSys);
-            void *localPlayer = getPlayer(pSys, id);
-            int localTeam = get_PlayerTeam(localPlayer);
-            monoList<void **> *characterList = getAllCharacters(pSys);
-            for (int i = 0; i < characterList->getSize(); i++)
+        int id = getLocalId(pSys);
+        void *localPlayer = getPlayer(pSys, id);
+        int localTeam = get_PlayerTeam(localPlayer);
+        monoList<void **> *characterList = getAllCharacters(pSys);
+        for (int i = 0; i < characterList->getSize(); i++)
+        {
+            void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+            //if(currentCharacter == localPlayer){
+            //    void* myPlayer = currentCharacter;
+            //  }
+            int curTeam = get_CharacterTeam(currentCharacter);
+            int health = get_Health(currentCharacter);
+            if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam && curTeam != -1)
             {
-                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-                //if(currentCharacter == localPlayer){
-                //    void* myPlayer = currentCharacter;
-              //  }
-                int curTeam = get_CharacterTeam(currentCharacter);
-                int health = get_Health(currentCharacter);
-                if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam && curTeam != -1)
+                void *transform = getTransform(currentCharacter);
+                Vector3 position = get_Position(transform);
+                Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
+                transformPos.Y = glHeight - transformPos.Y;
+                Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                Vector3 wsheadPos2 = wsheadPos;
+                Vector3 aboveHead = headPos + Vector3(0,0.2,0); // estimate
+                Vector3 headEstimate = position + Vector3(0,1.48,0);// estimate
+                Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
+                Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
+                wsAboveHead.Y = glHeight - wsAboveHead.Y;
+                wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
+                float height = transformPos.Y - wsAboveHead.Y;
+                float width = (transformPos.Y - wsheadEstimate.Y)/2;
+                int hitindex;
+                //Vector3 currentheadPos = getBonePosition(, 10);
+                // Vector3 enemyheadPos = getBonePosition(currentCharacter, 10);
+                //Ray ray;
+                //ray.origin = currentheadPos;
+                //ray.direction = currentheadPos - enemyheadPos;
+                // RaycastCharacter(pSys, currentCharacter, ray, hitindex);
+                //LOGE("hitindex %d", hitindex);
+                if (snaplines && transformPos.Z > 0)
                 {
-                    void *transform = getTransform(currentCharacter);
-                    Vector3 position = get_Position(transform);
-                    Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
-                    transformPos.Y = glHeight - transformPos.Y;
-                    Vector3 headPos = getBonePosition(currentCharacter, HEAD);
-                    Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
-                    Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
-                    Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
-                    Vector3 wsheadPos2 = wsheadPos;
-                    Vector3 aboveHead = headPos + Vector3(0,0.2,0); // estimate
-                    Vector3 headEstimate = position + Vector3(0,1.48,0);// estimate
-                    Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
-                    Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
-                    wsAboveHead.Y = glHeight - wsAboveHead.Y;
-                    wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
-                    float height = transformPos.Y - wsAboveHead.Y;
-                    float width = (transformPos.Y - wsheadEstimate.Y)/2;
-                    int hitindex;
-                    //Vector3 currentheadPos = getBonePosition(, 10);
-                   // Vector3 enemyheadPos = getBonePosition(currentCharacter, 10);
-                    //Ray ray;
-                    //ray.origin = currentheadPos;
-                    //ray.direction = currentheadPos - enemyheadPos;
-                   // RaycastCharacter(pSys, currentCharacter, ray, hitindex);
-                    //LOGE("hitindex %d", hitindex);
-                    if (snaplines && transformPos.Z > 0)
+                    DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(transformPos.X, transformPos.Y), ImColor(172, 204, 255), 3);
+                }
+                if (bonesp && transformPos.Z > 0)
+                {
+                    DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
+                    DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
+                    DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
+                    DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
+                    DrawBones(currentCharacter, STOMACH, CHEST);
+                    DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
+                    DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
+                    DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
+                    DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
+                    Vector3 diff = wschestPos - wsheadPos;
+                    Vector3 neck = (chestPos + headPos)/2;
+                    Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
+                    wsneck.Y = glHeight - wsneck.Y;
+                    wschestPos.Y = glHeight - wschestPos.Y;
+                    wsheadPos.Y = glHeight - wsheadPos.Y;
+                    if(wschestPos.Z > 0 && wsneck.Z)
                     {
-                        DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(transformPos.X, transformPos.Y), ImColor(172, 204, 255), 3);
+                        DrawLine(ImVec2(wschestPos.X, wschestPos.Y),ImVec2(wsneck.X,wsneck.Y),ImColor(172, 204, 255), 3);
                     }
-                    if (bonesp && transformPos.Z > 0)
-                    {
-                        DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
-                        DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
-                        DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
-                        DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
-                        DrawBones(currentCharacter, STOMACH, CHEST);
-                        DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
-                        DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
-                        DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
-                        DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
-                        Vector3 diff = wschestPos - wsheadPos;
-                        Vector3 neck = (chestPos + headPos)/2;
-                        Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
-                        wsneck.Y = glHeight - wsneck.Y;
-                        wschestPos.Y = glHeight - wschestPos.Y;
-                        wsheadPos.Y = glHeight - wsheadPos.Y;
-                        if(wschestPos.Z > 0 && wsneck.Z)
-                        {
-                            DrawLine(ImVec2(wschestPos.X, wschestPos.Y),ImVec2(wsneck.X,wsneck.Y),ImColor(172, 204, 255), 3);
-                        }
-                        if(wsheadPos.Z > 0 && wschestPos.Z > 0 ){
-                            float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
-                            auto background = ImGui::GetBackgroundDrawList();
+                    if(wsheadPos.Z > 0 && wschestPos.Z > 0 ){
+                        float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                        auto background = ImGui::GetBackgroundDrawList();
 
-                            background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius/2, IM_COL32(172, 204, 255, 255), 0, 3.0f);
-                        }
-                    }
-                    if (boxesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        DrawOutlinedBox2(wsAboveHead.X - width/2, wsAboveHead.Y, width, height, ImVec4(255,255,255,255), 3);
-                    }
-                    if (healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        DrawOutlinedFilledRect(wsAboveHead.X - width/2 - 12, wsAboveHead.Y + height*(1 - (static_cast<float>(health)/100.0f)), 3, height*(static_cast<float>(health)/100.0f), HealthToColor(health));
-                    }
-                    if (healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        if (health < 100)
-                        {
-                            DrawText(ImVec2(wsAboveHead.X - width/2 - 15, wsAboveHead.Y + height*(1 - static_cast<float>(health)/100.0f)), ImVec4(255,255,255,255), std::to_string(health), espFont);
-                        }
-                    }
-                    if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        std::string name = get_CharacterName(currentCharacter);
-                        DrawText(ImVec2(wsheadPos.X, wsAboveHead.Y - 7), ImVec4(255,255,255,255), name.c_str(), espFont);
-                    }
-                    if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        std::string weapon = get_characterWeaponName(currentCharacter);
-                        DrawText(ImVec2(wsheadPos.X, transformPos.Y + 7), ImVec4(255,255,255,255), weapon.c_str(), espFont);
-                    }
-                    if (armroFlag && transformPos.Z > 0 && wsAboveHead.Z > 0)
-                    {
-                        const char* armor = get_characterArmors(currentCharacter);
-                        // sorcery calculations to make the text left allign
-                        int length = strlen(armor);
-
-                        // flag font is 8px
-                        // we want to have 3 px between the furthest border of the box
-
-                        DrawText(ImVec2(wsheadPos.X + width + 4 + 4*length, wsheadPos.Y + 4), ImVec4(255,255,255,255), armor, flagFont);
+                        background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius/2, IM_COL32(172, 204, 255, 255), 0, 3.0f);
                     }
                 }
+                if (boxesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                {
+                    DrawOutlinedBox2(wsAboveHead.X - width/2, wsAboveHead.Y, width, height, ImVec4(255,255,255,255), 3);
+                }
+                if (healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                {
+                    DrawOutlinedFilledRect(wsAboveHead.X - width/2 - 12, wsAboveHead.Y + height*(1 - (static_cast<float>(health)/100.0f)), 3, height*(static_cast<float>(health)/100.0f), HealthToColor(health));
+                }
+                if (healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                {
+                    if (health < 100)
+                    {
+                        DrawText(ImVec2(wsAboveHead.X - width/2 - 17, wsAboveHead.Y + height*(1 - static_cast<float>(health)/100.0f) -3 ), ImVec4(255,255,255,255), std::to_string(health), espFont);
+                    }
+                }
+                if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                {
+                    void* player = get_Player(currentCharacter);
+                    monoString* mono = getNameAndTag(player);
+                    std::string name = mono->getString();
+                    // font is 15 px has 2 px outline so has 16px per character, to center the font we do
+                    float compensation = name.length() * 4.0f;
+                    DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20), ImVec4(255,255,255,255), name, espFont);
+                }
+                if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0)
+                {
+                    std::string weapon = get_characterWeaponName(currentCharacter);
+                    // font is 15 px has 2 px outline so has 16px per character, to center the font we do
+                    float compensation = weapon.length() * 4.0f;
+
+                    DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7), ImVec4(255,255,255,255), weapon, espFont);
+                }
+            }
 
         }
     }
