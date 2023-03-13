@@ -7,6 +7,8 @@
 #include "Include/Unity.h"
 #include "Include/GameTypes.h"
 
+#define PI 3.14159265
+
 // function predefines
 static int enable_hack;
 static char *game_data_dir = NULL;
@@ -34,7 +36,7 @@ bool (*get_IsInitialized)(void* character);
 void (*RequestPurchaseSkin)(void* obj, int skinID, int price, bool isSeasonalSkin);
 monoString* (*getNameAndTag)(void* player);
 void(*RemoveCharacter)(void* obj, int playerID);
-void(*oldUpdate)(void* obj);
+Vector3 (*getEularAngles)(void* transform);
 
 // Custom functions
 void* getTransform(void* character);
@@ -56,12 +58,13 @@ void(*oldset_Spread)(void*obj);
 void(*oldRenderOverlaySmoke)(void* obj);
 void(*oldDrawRenderer)(void* obj);
 void(*oldBackendManager)(void* obj);
-void(*oldUpdateAimedCharacter)(void* obj);
+void(*oldUpdateWeapon)(void* obj, float deltatime);
 float(*oldGetCurrentMaxSpeed)(void* obj, float speed);
 int (*oldGetPlayerMoney)(void* obj);
 Vector3 (*oldget_gravity)();
 Vector3 (*oldget_height)();
 void(*oldInit)(void* obj);
+void(*oSetRotation)(void* obj, Vector2 rotation);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 
 // Hooks
@@ -72,7 +75,7 @@ void RenderOverlayFlashbang(void* obj);
 void set_Spread(void* obj);
 void RenderOverlaySmoke(void* obj);
 void DrawRenderer(void* obj);
-void UpdateAimedCharacter(void* obj);
+void UpdateWeapon(void* obj, float deltatime);
 Vector3 get_gravity();
 Vector3 get_height();
 void Init(void* obj);
