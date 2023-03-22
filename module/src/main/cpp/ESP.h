@@ -7,9 +7,13 @@
 
 int glHeight;
 int glWidth;
+float crosshairRotation = 45.0f;
+float crosshairRotation1 = 0.0f;
 
 void DrawLine(ImVec2 start, ImVec2 end, ImVec4 color, int thickness) {
     auto background = ImGui::GetBackgroundDrawList();
+    LOGE("Start: x: %f, y: %f", start.x, start.y);
+    LOGE("End: x: %f, y: %f", end.x, end.y);
     if(background) {
         background->AddLine(start, end, ImColor(color.x,color.y,color.z,color.w), thickness);
     }
@@ -118,9 +122,13 @@ void DrawText(ImVec2 position, ImVec4 color, std::string text, ImFont* font) {
         ImGuiContext& g = *GImGui;
         ImGui::PushFont(font);
         background->AddText(g.Font, g.FontSize, ImVec2(position.x -2, position.y -2), IM_COL32(0,0,0,color.w), text.c_str());
+        background->AddText(g.Font, g.FontSize, ImVec2(position.x, position.y -2), IM_COL32(0,0,0,color.w), text.c_str());
         background->AddText(g.Font, g.FontSize, ImVec2(position.x +2, position.y -2), IM_COL32(0,0,0,color.w), text.c_str());
+        background->AddText(g.Font, g.FontSize, ImVec2(position.x +2, position.y ), IM_COL32(0,0,0,color.w), text.c_str());
         background->AddText(g.Font, g.FontSize, ImVec2(position.x +2, position.y +2), IM_COL32(0,0,0,color.w), text.c_str());
+        background->AddText(g.Font, g.FontSize, ImVec2(position.x , position.y +2), IM_COL32(0,0,0,color.w), text.c_str());
         background->AddText(g.Font, g.FontSize, ImVec2(position.x -2, position.y +2), IM_COL32(0,0,0,color.w), text.c_str());
+        background->AddText(g.Font, g.FontSize, ImVec2(position.x -2, position.y ), IM_COL32(0,0,0,color.w), text.c_str());
         background->AddText(g.Font, g.FontSize, position, ImColor(color.x,color.y,color.z,color.w), text.c_str());
         ImGui::PopFont();
     }
@@ -139,6 +147,40 @@ void DrawText(ImVec2 position, ImVec4 color, std::u16string text, ImFont* font) 
         ImGui::PopFont();
     }
 }
+
+float BOG_TO_GRD(float BOG) {
+    return (180 / M_PI) * BOG;
+}
+
+float GRD_TO_BOG(float GRD) {
+    return (M_PI / 180) * GRD;
+}
+
+void CoolCrosshair(ImVec2 position, ImVec4 color) {
+
+    int a = ((int)glHeight / 60);
+
+    int Drehungswinkel = crosshairRotation;
+    int Drehungswinkel1 = crosshairRotation1;
+
+    int i = 0;
+    while (i < 4) {
+        std::vector<int> p;
+        p.push_back(a * sin(GRD_TO_BOG(Drehungswinkel + (i * 90))));                                    //p[0]		p0_A.x
+        p.push_back(a * cos(GRD_TO_BOG(Drehungswinkel + (i * 90))));                                    //p[1]		p0_A.y
+        p.push_back(a * sin(GRD_TO_BOG(Drehungswinkel1 + (i * 90))));                                    //p[0]		p0_A.x
+        p.push_back(a * cos(GRD_TO_BOG(Drehungswinkel1 + (i * 90))));
+        DrawLine(ImVec2(position.x, position.y), ImVec2(position.x + p[0], position.y - p[1]),
+                 color, 3);
+
+
+        DrawLine(ImVec2(position.x + p[0], position.y - p[1]), ImVec2(position.x + sqrt(2)*p[2], position.y - sqrt(2)*p[3]),
+                 color, 3);
+        i++;
+    }
+}
+
+
 
 
 #endif //COPS_MENU_ESP_H
