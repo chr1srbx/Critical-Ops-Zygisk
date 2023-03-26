@@ -30,8 +30,9 @@
 #include "Include/RetroGaming.h"
 #include "Include/Minecraftia-Regular.h"
 #include "ESP.h"
-
-
+#include <thread>
+#include <chrono>
+#include <time.h>
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
@@ -44,16 +45,18 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
+bool forceSetSpeed = false;
+
 void* pSys = nullptr;
-void* pBones = nullptr;
+void* pSpeed = nullptr;
 void* localCharacter = nullptr;
 bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
         fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
         canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity, dropweapon,ragdoll, crouchheight, cameraheight, interactionrange, jumpheight, bhop,
         noslow, god, ccollision, aimbot, freearmor, firerate, drawFov, p100Crosshair, vischeck, fovCheck, aimbotSmooth, applied = false;
 
-float speedval = 1, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval, firerateval, fovValue = 360, smoothValue = 1;
-int screenscale = 0;
+float speedval = 5.100000, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval = 4.100000, firerateval, fovValue = 360, smoothValue = 1;
+int screenscale = 0, callCount = 0;
 
 extern int glHeight;
 extern int glWidth;
@@ -251,6 +254,12 @@ void GameSystemUpdate(void* obj){
     return oldGameSystemUpdate(obj);
 }
 
+void wait(int seconds){
+    clock_t endwait;
+    endwait=clock()+seconds*CLOCKS_PER_SEC;
+    while (clock()<endwait);
+}
+
 void UpdateWeapon(void* obj, float deltatime){
     if(obj != nullptr) {
         void *CharacterData = *(void **) ((uint64_t) obj + 0x98);
@@ -259,40 +268,58 @@ void UpdateWeapon(void* obj, float deltatime){
             if (CharacterSettingsData != nullptr) {
                 if (speed) {
                     *(float *) ((uint64_t) CharacterSettingsData + 0x14) = speedval;
-                    LOGE("CharacterDataSettings ----------------------\n\n");
-                    LOGE("walkSpeed : %f", *(float*)((uint64_t)CharacterSettingsData + 0x18));
-                    LOGE("crouchWalkSpeed : %f", *(float*)((uint64_t)CharacterSettingsData + 0x1C));
-                    LOGE("backwardsMoveFactor : %f", *(float*)((uint64_t)CharacterSettingsData + 0x2C));
-                    LOGE("jumpForce : %f", *(float*)((uint64_t)CharacterSettingsData + 0x4C));
-                    LOGE("jumpForceCrouched : %f", *(float*)((uint64_t)CharacterSettingsData + 0x50));
-                    LOGE("airAcceleration : %f", *(float*)((uint64_t)CharacterSettingsData + 0x38));
-                    LOGE("crouchHeight : %f", *(float*)((uint64_t)CharacterSettingsData + 0x40));
-                    LOGE("End ----------------------\n\n");
                 }
 
+                if (jumpheight) {
+                    *(float *) ((uint64_t) CharacterSettingsData + 0x4C) = jumpval;
+                    *(float *) ((uint64_t) CharacterSettingsData + 0x50) = jumpval;
+                }
+
+                if (noslow) {
+                    *(float *) ((uint64_t) CharacterSettingsData + 0x60) = 0;
+                    *(float *) ((uint64_t) CharacterSettingsData + 0x64) = 0;
+                    *(float *) ((uint64_t) CharacterSettingsData + 0x5C) = 0;
+                }
+
+                if(forceSetSpeed == true){
+                    if(speed){
+                        speed = false;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x64) = 12.500000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x60) = 2.000000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x5C) = 0.100000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x14) = 5.100000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x1C) = 1.850000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x4C) = 4.100000;
+                        *(float *) ((uint64_t) CharacterSettingsData + 0x50) = 3.700000;
+                        wait(1.5);
+                        speed = true;
+                    }
+                    forceSetSpeed = false;
+                }
             }
         }
     }
     oldUpdateWeapon(obj, deltatime);
+
 }
 
-void ReturnValues(void* obj, float MinDamage, float MaxDamage, float FireRate, float deployTime, int ArmorPenetration, int WallPenetration, int BurstFireShots/*, bool CanBuy*/, float RecoilYFactor, float RecoilXFactor, float RecoilPerShot, float RecoilRecover, float ShakeFactor, float burstSpread, float SpreadFactor, float SpreadPerShot, float SpreadRecover) {
+void ReturnValues(void* obj, float MinDamage, float MaxDamage, float FireRate, float deployTime, int ArmorPenetration, int WallPenetration, int BurstFireShots/*, bool CanBuy*/, float RecoilYFactor, float RecoilXFactor, /*float RecoilPerShot, float RecoilRecover*/ float ShakeFactor, float burstSpread, float SpreadFactor,/* float SpreadPerShot*/ float SpreadRecover) {
     *(float *) ((uint64_t) obj + 0x50) = MinDamage;
     *(float *) ((uint64_t) obj + 0x4C) = MaxDamage;
     *(float *) ((uint64_t) obj + 0x64) = FireRate;
     *(float *) ((uint64_t) obj + 0x88) = deployTime;
     *(int *) ((uint64_t) obj + 0x80) = ArmorPenetration;
-    *(float *) ((uint64_t) obj + 0x7C) = WallPenetration;
-    *(float *) ((uint64_t) obj + 0x11C) = BurstFireShots;
+    *(int *) ((uint64_t) obj + 0x7C) = WallPenetration;
+    *(int *) ((uint64_t) obj + 0x11C) = BurstFireShots;
   //  *(bool *) ((uint64_t) obj + 0x40) = CanBuy;
-    *(float *) ((uint64_t) obj + 0xF0) = RecoilYFactor;
+     *(float *) ((uint64_t) obj + 0xF0) = RecoilYFactor;
     *(float *) ((uint64_t) obj + 0x100) = RecoilXFactor;
-    *(float *) ((uint64_t) obj + 0x104) = RecoilPerShot;
-    *(float *) ((uint64_t) obj + 0x108) = RecoilRecover;
+   // *(float *) ((uint64_t) obj + 0x104) = RecoilPerShot;
+  //  *(float *) ((uint64_t) obj + 0x108) = RecoilRecover;
     *(float *) ((uint64_t) obj + 0x110) = ShakeFactor;
     *(float *) ((uint64_t) obj + 0x6C) = burstSpread;
     *(float *) ((uint64_t) obj + 0xD8) = SpreadFactor;
-    *(float *) ((uint64_t) obj + 0xDC) = SpreadPerShot;
+    //*(float *) ((uint64_t) obj + 0xDC) = SpreadPerShot;
     *(float *) ((uint64_t) obj + 0xE0) = SpreadRecover;
 }
 
@@ -300,43 +327,18 @@ void (*oCopyHashData)(void* obj, void* from, void* to);
 void CopyHashData(void* obj, void* from, void* to)
 {
     if(obj != nullptr) {
-        LOGE("CALLED.");
-
+        forceSetSpeed = true;
         void *fromCharSett = *(void **) ((uint64_t) from + 0x38);
         if (fromCharSett != nullptr) {
-            *(float *) ((uint64_t) fromCharSett + 0x14) = 5.100000; //do matematica for this tmrqw
-        }
-
-        monoArray<void **> *WeaponDef = *(monoArray<void **> **) ((uint64_t) from + 0x28);
-        if (WeaponDef != nullptr) {
-            for (int i = 0; i < WeaponDef->getLength(); i++) {
-                void *weapondef = (monoArray<void **> *) WeaponDef->getPointer()[i];
-                if (weapondef != nullptr) {
-                    monoString *GunName = *(monoString **) ((uint64_t) weapondef + 0x10);
-                    std::string RealGunName = GunName->getString();
-                    if (RealGunName == "AK47") {
-
-                    } else if (RealGunName == "AUG") {
-
-                    } else if (RealGunName == "FP6") {
-
-                    } else if (RealGunName == "M4") {
-                        LOGE("M4");
-                        ReturnValues(WeaponDef, 34.0, 30.6, 666.0, 1.0, 2, 2, 3, 10.0, 2.0, 0.033333, 5.0, 0.6, 1.0, 1.5, 0.033333, 5.0);
-                    } else if (RealGunName == "GSR1911") {
-
-                    } else if (RealGunName == "HK417") {
-
-                    } else if (RealGunName == "Knife") {
-
-                    } else if (RealGunName == "M14") {
-
-                    } else if (RealGunName == "MP5") {
-
-                    } else if (RealGunName == "MP7") {
-
-                    }
-                }
+            if (speedval != 5.100000 || jumpval != 4.100000 || noslow) {
+                *(float *) ((uint64_t) fromCharSett + 0x64) = 12.500000;
+                *(float *) ((uint64_t) fromCharSett + 0x60) = 2.000000;
+                *(float *) ((uint64_t) fromCharSett + 0x5C) = 0.100000;
+                *(float *) ((uint64_t) fromCharSett + 0x14) = 5.100000;
+                *(float *) ((uint64_t) fromCharSett + 0x1C) = 1.850000;
+                *(float *) ((uint64_t) fromCharSett + 0x4C) = 4.100000;
+                *(float *) ((uint64_t) fromCharSett + 0x50) = 3.700000;
+                forceSetSpeed = true;
             }
         }
     }
@@ -345,7 +347,7 @@ void CopyHashData(void* obj, void* from, void* to)
 
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
-        *(float*)((uint64_t) obj + 0x38) = 0;//m_flashTime
+        *(float*)((uint64_t) obj + string2Offset(OBFUSCATE("0x38"))) = 0;//m_flashTime
     }
     oldRenderOverlayFlashbang(obj);
 }
@@ -565,14 +567,13 @@ void acSixthhHook(void* obj){
     }
 }
 
-void(*oldBypass1)(void* obj);
-void Bypass1(void* obj){
+void(*oldGenerateGameDataHashThread)(void* obj);
+void GenerateGameDataHashThread(void* obj){
     if(obj != nullptr){
         LOGE("I AM THE FUCKING ANTICHEAT1");
-        *(bool*)((uint64_t) obj + 0x10) = true;
-        return;
+        *(bool*)((uint64_t) obj + 0x30) = false;
     }
-    oldBypass1(obj);
+    oldGenerateGameDataHashThread(obj);
 }
 
 float get_cameraFov(void* pSys)
@@ -610,6 +611,7 @@ void Hooks()
     HOOK("0x1A7CFCC", setRotation, oSetRotation);
     HOOK("0x1D56428", ApplyKickBack, oldApplyKickBack); // speed
     HOOK("0x1E5D240",CopyHashData , oCopyHashData);
+   // HOOK("0x1BA8AB4", GenerateGameDataHashThread , oldGenerateGameDataHashThread);
    // HOOK("0x1D55E74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
 
       //HOOK("0x19D84B4", susFirst, acRealOld); // speed
