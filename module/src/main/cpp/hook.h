@@ -14,6 +14,7 @@ static int enable_hack;
 static char *game_data_dir = NULL;
 int isGame(JNIEnv *env, jstring appDataDir);
 void *hack_thread(void *arg);
+void* triggerbot_thread();
 
 // In Game Function Predefines
 monoList<void**>* (*getAllCharacters)(void* obj);
@@ -40,6 +41,12 @@ void(*RemoveCharacter)(void* obj, int playerID);
 void*(*get_LocalCharacter)(void* obj);
 bool(*isHeadBehindWall)(void* localCharacter, void* character);
 float(*get_FovWorld)(void* cameraSettings);
+void(*onInputButtons)(void* TouchControls, int Input, bool down);
+Ray (*ScreenPointToRay)(void* camera, Vector2 pos, int eye);
+void (*UpdateCharacterHitBuffer)(void* pSys, void* character, Ray ray, int* hitIndex);
+bool (*getIsCrouched)(void* character);
+void* (*GetWeaponByID)(void* character, int id);
+int (*FindWeaponID)(void* pSys, void* EGID);
 
 
 // Custom functions
@@ -51,6 +58,10 @@ std::string get_characterWeaponName(void* character);
 const char* get_characterArmors(void* character);
 Vector3 getBonePosition(void* character, int bone);
 bool isCharacterVisible(void* character, void* pSys);
+long get_invincibilityTime(void* character);
+int getCurrentWeaponCategory(void* character);
+Vector2 isInFov(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg);
+bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg);
 
 
 
@@ -61,17 +72,15 @@ void(*oldGameSystemUpdate)(void* obj);
 void(*oldRenderOverlayFlashbang)(void* obj);
 void(*oldset_Spread)(void*obj, float value);
 void(*oldRenderOverlaySmoke)(void* obj);
-void(*oldDrawRenderer)(void* obj);
 void(*oldBackendManager)(void* obj);
 void(*oldUpdateWeapon)(void* obj, float deltatime);
-float(*oldGetCurrentMaxSpeed)(void* obj, float speed);
-int (*oldGetPlayerMoney)(void* obj);
-Vector3 (*oldget_gravity)();
-Vector3 (*oldget_height)();
-void(*oldInit)(void* obj);
 void(*oSetRotation)(void* obj, Vector2 rotation);
 void (*oGameSystemDestroy)(void* obj);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
+void (*oTouchControlsUpdate)(void* obj);
+void (*oTouchControlsDestroy)(void* obj);
+void* (*oCreateWeapon)(void* pSys, int weaponId, monoString* ownerName, int weaponDefId, int weaponSkinId);
+void (*oDestroyWeapon)(void* pSys, int weaponId);
 
 // Hooks
 float get_fieldOfView(void *instance);

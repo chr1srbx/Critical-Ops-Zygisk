@@ -39,6 +39,7 @@ add_library(${MODULE_NAME}
         ImGui/imgui_demo.cpp
         ImGui/imgui_widgets.cpp
         ImGui/imgui_tables.cpp
+        ImGui/user_interface.cpp
         ImGui/backends/imgui_impl_opengl3.cpp
         ImGui/backends/imgui_impl_android.cpp
         KittyMemory/KittyArm64.cpp

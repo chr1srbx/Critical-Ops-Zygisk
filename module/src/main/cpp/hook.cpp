@@ -33,30 +33,37 @@
 #include <thread>
 #include <chrono>
 #include <time.h>
+#include "user_interface.h";
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
 monoString* CreateIl2cppString(const char* str)
 {
     static monoString* (*CreateIl2cppString)(const char* str, int *startIndex, int *length) =
-    (monoString* (*)(const char* str, int *startIndex, int *length))(get_absolute_address(string2Offset(OBFUSCATE("0x44865B4"))));
-    int* startIndex = 0;
+    (monoString* (*)(const char* str, int *startIndex, int *length))(get_absolute_address(string2Offset(OBFUSCATE("0x1AA45C4"))));
+    int* startIndex = nullptr;
     int* length = (int *)strlen(str);
     return CreateIl2cppString(str, startIndex, length);
 }
 
-bool forceSetSpeed = false;
+ESPCfg visibleCfg, invisibleCfg, espcfg;
+AimbotCfg pistolCfg, smgCfg, arCFg, shotgunCfg, sniperCfg;
+static int selected = 0;
+static int sub_selected = 0;
 
+void* TouchControls = nullptr;
 void* pSys = nullptr;
 void* pSpeed = nullptr;
 void* localCharacter = nullptr;
-bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, snaplines, kickback, crouch, wallbang,
-        fov, ggod, killnotes,crosshair, supressor, rifleb, bonesp, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
+bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, kickback, crouch, wallbang,
+        fov, ggod, killnotes,crosshair, moneyreward, mindamage, maxdamage, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
         canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity, dropweapon,ragdoll, crouchheight, cameraheight, interactionrange, jumpheight, bhop,
-        noslow, god, ccollision, aimbot, freearmor, firerate, drawFov, p100Crosshair, vischeck, fovCheck, aimbotSmooth, applied = false;
+        noslow, shake, eoi, gbounciness, ammo, firerate, iea, p100Crosshair, vischeck, fovCheck, fscope, applied = false, nosway, burstfire,
+        pickup, bgod, armorpen;
 
-float speedval = 5.100000, fovModifier, viemodelposx, viemodelposy, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval = 4.100000, firerateval, fovValue = 360, smoothValue = 1;
-int screenscale = 0, callCount = 0;
+float speedval = 5.100000, fovModifier, recoilval, spreadval, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval = 4.100000,
+firerateval = 500, fovValue = 360, bounceval, gundmgm;
+int screenscale = 0, callCount = 0, burstfireval, LocalTeam, aimPos = 0, shootControl = 0;
 
 extern int glHeight;
 extern int glWidth;
@@ -88,26 +95,23 @@ int get_PlayerTeam(void* player)
     return *(int*)((uint64_t)boxedValueName + 0x1C);
 }
 
-std::string get_CharacterName(void* character)
+void TouchControlsUpdate(void* obj)
 {
-    void* player = get_Player(character);
-    void* boxedValueName = *(void**)((uint64_t)player + 0xA8);
-    monoString* username = *(monoString**)((uint64_t)boxedValueName + 0x19);
-    return username->getString();
+    if (obj) {
+        TouchControls = obj;
+    }
+    return oTouchControlsUpdate(obj);
 }
 
-std::string get_characterWeaponName(void* character)
+void TouchControlsDestroy(void* obj)
 {
-    void* characterData = *(void**)((uint64_t)character + 0x98);
-    void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
-    if (m_wpn)
+    if (obj)
     {
-        monoString* weaponName = *(monoString**)((uint64_t)m_wpn + 0x10);
-        return weaponName->getString();
+        TouchControls = nullptr;
     }
-    std::string filler = "";
-    return filler;
+    return oTouchControlsDestroy(obj);
 }
+
 
 Vector3 getBonePosition(void* character, int bone){
     void* curBone = get_CharacterBodyPart(character, bone);
@@ -163,39 +167,75 @@ void* ShaderFind(std::string name)
     oldShaderFind(name);
 }
 
-void* getValidEnt()
+bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg)
 {
+    if (!cfg.fovCheck) return true;
+
+    Vector2 difference = newAngle - rotation;
+
+    if (difference.Y > 180) difference.Y -= 360;
+    if (difference.Y < -180) difference.Y += 360;
+
+    if(sqrt(difference.X * difference.X + difference.Y * difference.Y) > cfg.fovValue)
+    {
+        return false;
+    }
+    return true;
+}
+
+void* getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
     int id = getLocalId(pSys);
     void *localPlayer = getPlayer(pSys, id);
     int localTeam = get_PlayerTeam(localPlayer);
     float closestEntDist = 99999.0f;
-    void* closestCharacter = nullptr;
+    void *closestCharacter = nullptr;
     monoList<void **> *characterList = getAllCharacters(pSys);
     for (int i = 0; i < characterList->getSize(); i++) {
         void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-        if (get_Player(currentCharacter) == localPlayer) {
-            localCharacter = currentCharacter;
-        }
         int curTeam = get_CharacterTeam(currentCharacter);
         int health = get_Health(currentCharacter);
         bool canSet = false;
-        if (aimbot && localCharacter && health > 0 && localTeam != curTeam && curTeam != -1) {
-            if (vischeck) {
-                if (isCharacterVisible(currentCharacter, pSys)) {
-                    canSet = true;
-                }
+        Vector2 newAngle;
+        // check if entity is in fov;
 
-            }
-            Vector3 localPosition = get_Position(getTransform(localCharacter));
-            Vector3 currentCharacterPosition = get_Position(getTransform(currentCharacter));
-            Vector3 currentEntDist = Vector3::Distance(localPosition, currentCharacterPosition);
-            if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
-                if (vischeck && !canSet) continue;
-                closestEntDist = Vector3::Magnitude(currentEntDist);
-                closestCharacter = currentCharacter;
+        if (cfg.aimbot && localCharacter && currentCharacter)
+        {
+            if (get_Health(localCharacter) > 0 && get_Health(currentCharacter) > 0)
+            {
+                Vector3 localHead = getBonePosition(localCharacter, 10);
+                if(getIsCrouched(localCharacter))
+                {
+                    localHead = localHead - Vector3(0, 0.5, 0);
+                }
+                Vector3 enemyBone = getBonePosition(currentCharacter, cfg.aimBone);
+                Vector3 deltavec = enemyBone - localHead;
+                float deltLength = sqrt(deltavec.X * deltavec.X + deltavec.Y * deltavec.Y +
+                                        deltavec.Z * deltavec.Z);
+
+                newAngle.X = -asin(deltavec.Y / deltLength) * (180.0 / PI);
+                newAngle.Y = atan2(deltavec.X, deltavec.Z) * 180.0 / PI;
+                if (isInFov2(rotation, newAngle, cfg))
+                {
+                    if (localCharacter && health > 0 && localTeam != curTeam && curTeam != -1) {
+                        if (cfg.visCheck && get_Health(localCharacter) > 0) {
+                            if (isCharacterVisible(currentCharacter, pSys)) {
+                                canSet = true;
+                            }
+                        }
+                        Vector3 localPosition = get_Position(getTransform(localCharacter));
+                        Vector3 currentCharacterPosition = get_Position(
+                                getTransform(currentCharacter));
+                        Vector3 currentEntDist = Vector3::Distance(localPosition,
+                                                                   currentCharacterPosition);
+                        if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
+                            if (cfg.visCheck && !canSet) continue;
+                            closestEntDist = Vector3::Magnitude(currentEntDist);
+                            closestCharacter = currentCharacter;
+                        }
+                    }
+                }
             }
         }
-
     }
     return closestCharacter;
 }
@@ -280,69 +320,88 @@ void UpdateWeapon(void* obj, float deltatime){
                     *(float *) ((uint64_t) CharacterSettingsData + 0x64) = 0;
                     *(float *) ((uint64_t) CharacterSettingsData + 0x5C) = 0;
                 }
+            }
 
-                if(forceSetSpeed == true){
-                    if(speed){
-                        speed = false;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x64) = 12.500000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x60) = 2.000000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x5C) = 0.100000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x14) = 5.100000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x1C) = 1.850000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x4C) = 4.100000;
-                        *(float *) ((uint64_t) CharacterSettingsData + 0x50) = 3.700000;
-                        wait(1.5);
-                        speed = true;
-                    }
-                    forceSetSpeed = false;
+            void *WeaponDefData = *(void **) ((uint64_t) CharacterData + 0x80);
+            if(WeaponDefData != nullptr){
+                //add reload time
+                if(recoil){
+                    *(float *) ((uint64_t) WeaponDefData + 0x100) = recoilval;
+                    *(float *) ((uint64_t) WeaponDefData + 0xF0) = recoilval;
+                }
+
+                if(moneyreward){
+                    *(int *) ((uint64_t) WeaponDefData + 0x48) = 100;
+                }
+
+                if(forcebuy){
+                    *(bool*)((uint64_t) WeaponDefData + 0x40) = true;
+                    *(int *) ((uint64_t) WeaponDefData + 0x44) = 200;
+                }
+
+                if(mindamage){
+                    *(float *) ((uint64_t) WeaponDefData + 0x50) = mindamage;
+                }
+
+                if(maxdamage){
+                    *(float *) ((uint64_t) WeaponDefData + 0x4C) = maxdamage;
+                }
+
+                if(firerate){
+                    *(float *) ((uint64_t) WeaponDefData + 0x64) = firerateval;
+                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
+                }
+
+                if(burstfire){
+                    *(int *) ((uint64_t) WeaponDefData + 0x11C) = burstfireval;
+                    *(float *) ((uint64_t) WeaponDefData + 0x120) = 0;
+                }
+
+                if(ammo){
+                    *(bool*)((uint64_t) WeaponDefData + 0x94) = false;
+                }
+
+                if(fscope){
+                    *(int *) ((uint64_t) WeaponDefData + 0x98) = 1;
+                }
+
+                if(wallbang){
+                    *(int *) ((uint64_t) WeaponDefData + 0x7C) = 3;
+                }
+
+                if(armorpen){
+                    *(int *) ((uint64_t) WeaponDefData + 0x80) = 4;
+                }
+
+                if(pickup){
+                    *(float *) ((uint64_t) WeaponDefData + 0x88) = 0;
+                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
+                }
+
+                if(burstfire){
+                    *(int *) ((uint64_t) WeaponDefData + 0x11C) = burstfireval;
+                    *(int *) ((uint64_t) WeaponDefData + 0x120) = 0;
+                }
+
+                if(shake){
+                    *(float *) ((uint64_t) WeaponDefData + 0x110) = 0;
+                }
+
+                if(gbounciness){
+                    *(float *) ((uint64_t) WeaponDefData + 0x14C) = bounceval;
+                }
+
+                if(eoi){
+                    *(bool*)((uint64_t) WeaponDefData + 0x140) = true;
+                }
+
+                if(iea){
+                    *(bool*)((uint64_t) WeaponDefData + 0x144) = 99999;
                 }
             }
         }
     }
     oldUpdateWeapon(obj, deltatime);
-
-}
-
-void ReturnValues(void* obj, float MinDamage, float MaxDamage, float FireRate, float deployTime, int ArmorPenetration, int WallPenetration, int BurstFireShots/*, bool CanBuy*/, float RecoilYFactor, float RecoilXFactor, /*float RecoilPerShot, float RecoilRecover*/ float ShakeFactor, float burstSpread, float SpreadFactor,/* float SpreadPerShot*/ float SpreadRecover) {
-    *(float *) ((uint64_t) obj + 0x50) = MinDamage;
-    *(float *) ((uint64_t) obj + 0x4C) = MaxDamage;
-    *(float *) ((uint64_t) obj + 0x64) = FireRate;
-    *(float *) ((uint64_t) obj + 0x88) = deployTime;
-    *(int *) ((uint64_t) obj + 0x80) = ArmorPenetration;
-    *(int *) ((uint64_t) obj + 0x7C) = WallPenetration;
-    *(int *) ((uint64_t) obj + 0x11C) = BurstFireShots;
-  //  *(bool *) ((uint64_t) obj + 0x40) = CanBuy;
-     *(float *) ((uint64_t) obj + 0xF0) = RecoilYFactor;
-    *(float *) ((uint64_t) obj + 0x100) = RecoilXFactor;
-   // *(float *) ((uint64_t) obj + 0x104) = RecoilPerShot;
-  //  *(float *) ((uint64_t) obj + 0x108) = RecoilRecover;
-    *(float *) ((uint64_t) obj + 0x110) = ShakeFactor;
-    *(float *) ((uint64_t) obj + 0x6C) = burstSpread;
-    *(float *) ((uint64_t) obj + 0xD8) = SpreadFactor;
-    //*(float *) ((uint64_t) obj + 0xDC) = SpreadPerShot;
-    *(float *) ((uint64_t) obj + 0xE0) = SpreadRecover;
-}
-
-void (*oCopyHashData)(void* obj, void* from, void* to);
-void CopyHashData(void* obj, void* from, void* to)
-{
-    if(obj != nullptr) {
-        forceSetSpeed = true;
-        void *fromCharSett = *(void **) ((uint64_t) from + 0x38);
-        if (fromCharSett != nullptr) {
-            if (speedval != 5.100000 || jumpval != 4.100000 || noslow) {
-                *(float *) ((uint64_t) fromCharSett + 0x64) = 12.500000;
-                *(float *) ((uint64_t) fromCharSett + 0x60) = 2.000000;
-                *(float *) ((uint64_t) fromCharSett + 0x5C) = 0.100000;
-                *(float *) ((uint64_t) fromCharSett + 0x14) = 5.100000;
-                *(float *) ((uint64_t) fromCharSett + 0x1C) = 1.850000;
-                *(float *) ((uint64_t) fromCharSett + 0x4C) = 4.100000;
-                *(float *) ((uint64_t) fromCharSett + 0x50) = 3.700000;
-                forceSetSpeed = true;
-            }
-        }
-    }
-    oCopyHashData(obj, from, to);
 }
 
 void RenderOverlayFlashbang(void* obj){
@@ -374,80 +433,33 @@ void RenderOverlaySmoke(void* obj) {
     oldRenderOverlaySmoke(obj);
 }
 
-void DrawRenderer(void* obj){
-    if(obj != nullptr){
-        LOGE("DRENDER");
-        void* m_offset = *(void**)((uint64_t) obj + 0x64);
-        if(viewmodel){
-            *(float*)((uint64_t)m_offset + 0x0) = viemodelposx;
-            *(float*)((uint64_t)m_offset + 0x4) = viemodelposy;
-            *(float*)((uint64_t)m_offset + 0x8) = viemodelposz;
-        }
+int getCurrentWeaponCategory(void* character)
+{
+    void* characterData = *(void**)((uint64_t)character + 0x98);
+    void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
+    if (m_wpn)
+    {
+        return *(int*)((uint64_t)m_wpn + 0x38);
     }
-    oldDrawRenderer(obj);
+    return -1;
 }
 
-void(*oldFpsLimitUpdate)(void* obj);
-void FpsLimitUpdate(void* obj){
-    if(obj != nullptr){
-        *(int*)((uint64_t) obj + 0x18) = 999;
-    }
-    oldFpsLimitUpdate(obj);
+bool isCharacterShooting(void* character)
+{
+    void* characterData = *(void**)((uint64_t)character + 0x98);;
+    return *(bool*)((uint64_t)characterData + 0x6C);
 }
 
-
-Vector3 get_gravity(){
-    if(gravity){
-        return gravityval;
-    }
-    oldget_gravity();
-}
-
-Vector3 get_height(){
-    if(fly){
-        return flyval;
-    }
-    oldget_height();
-}
-
-void Init(void* obj){
-    if(obj != nullptr){
-        LOGE("CALLED");
-        void* GraphicsProfile = *(void**)((uint64_t) obj + 0x38);
-        if(GraphicsProfile != nullptr){
-            LOGE("GPROFILE");
-            int scscale = (int)((uint64_t) GraphicsProfile + 0x30);
-            LOGE("SSCALE, %d", scscale);
-            screenscale = scscale / 100;
-        }
-    }
-    oldInit(obj);
-}
-
-void BackendManager(void* obj){
-    if(obj != nullptr && isPurchasingSkins){
-        for (int i = 0; i < 9999; i++)
-        {
-            LOGE("trying to force purchase skins...");
-            RequestPurchaseSkin(obj, i, 0, false);
-        }
-        isPurchasingSkins = false;
-    }
-    oldBackendManager(obj);
-}
-
-Vector2 isInFov(Vector2 rotation, Vector2 newAngle)
+Vector2 isInFov(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg)
 {
     Vector2 difference = newAngle - rotation;
-    if(sqrt(difference.X * difference.X + difference.Y * difference.Y) > fovValue)
+
+    if (difference.Y > 180) difference.Y -= 360;
+    if (difference.Y < -180) difference.Y += 360;
+
+    if(sqrt(difference.X * difference.X + difference.Y * difference.Y) > cfg.fovValue)
     {
-        rotation += 180;
-        newAngle += 180;
-        difference = newAngle - rotation;
-        if(sqrt(difference.X * difference.X + difference.Y * difference.Y) > fovValue)
-        {
-            return Vector2(0,0);
-        }
+        return Vector2(0,0);
     }
     return difference;
 }
@@ -458,38 +470,100 @@ void setRotation(void* character, Vector2 rotation)
     Vector2 difference;
     difference.X = 0;
     difference.Y = 0;
-    if(pSys) {
+    AimbotCfg cfg;
+    if (localCharacter) {
+        int currWeapon = getCurrentWeaponCategory(localCharacter);
+        if (currWeapon != -1) {
+            switch (currWeapon) {
+                case 0:
+                    LOGE("NO WAY, PISTOL CFG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    cfg = pistolCfg;
+                    break;
+                case 1:
+                    cfg = arCFg;
+                    break;
+                case 2:
+                    cfg = smgCfg;
+                    break;
+                case 3:
+                    cfg = shotgunCfg;
+                    break;
+                case 4:
+                    cfg = sniperCfg;
+                    break;
+            }
+        }
+    }
+    void* closestEnt = nullptr;
+    if(pSys != nullptr) {
         if (character && localCharacter != nullptr && get_IsInitialized(localCharacter)) {
+
+            closestEnt = getValidEnt3(cfg, rotation);
+
             if (get_Health(localCharacter) > 0) {
-                void *closestCharacter = getValidEnt();
-                if (aimbot && closestCharacter) {
+                if (cfg.aimbot && closestEnt) {
+
                     Vector3 localHead = getBonePosition(localCharacter, 10);
-                    Vector3 enemyBone = getBonePosition(closestCharacter, 10);
+                    if(getIsCrouched(localCharacter))
+                    {
+                        localHead = localHead - Vector3(0, 0.5, 0);
+                    }
+                    Vector3 enemyBone;
+                    if(aimPos == 0){
+                        enemyBone = getBonePosition(closestEnt, HEAD);
+                    } else if(aimPos == 1){
+                        enemyBone = getBonePosition(closestEnt, CHEST);
+                    }
+                    else if(aimPos == 2){
+                        enemyBone = getBonePosition(closestEnt, STOMACH);
+                    }
 
                     Vector3 deltavec = enemyBone - localHead;
-                    float deltLength = sqrt(deltavec.X * deltavec.X + deltavec.Y * deltavec.Y +
-                                            deltavec.Z * deltavec.Z);
+                    float deltLength = sqrt(deltavec.X * deltavec.X + deltavec.Y * deltavec.Y + deltavec.Z * deltavec.Z);
 
                     newAngle.X = -asin(deltavec.Y / deltLength) * (180.0 / PI);
                     newAngle.Y = atan2(deltavec.X, deltavec.Z) * 180.0 / PI;
 
                 }
-                if (aimbot && character == localCharacter && closestCharacter &&
-                    get_Health(localCharacter) > 0) {
-                    if (fovCheck) {
-                        difference = isInFov(rotation, newAngle);
-                    } else {
-                        difference = newAngle - rotation;
+
+                if (cfg.aimbot && character == localCharacter && closestEnt && get_Health(localCharacter) > 0) {
+                    if (cfg.onShoot) {
+                        if (isCharacterShooting(localCharacter)) {
+                            if (cfg.fovCheck) {
+                                difference = isInFov(rotation, newAngle, cfg);
+                            } else {
+                                difference = newAngle - rotation;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (cfg.fovCheck) {
+                            difference = isInFov(rotation, newAngle, cfg);
+                        } else {
+                            difference = newAngle - rotation;
+                        }
+
                     }
 
-                    if (aimbotSmooth) {
-                        difference = difference / smoothValue;
+                    if (cfg.aimbotSmooth) {
+                        difference = difference / cfg.smoothAmount;
                     }
+
                 }
             }
         }
+        if(cfg.triggerbot && closestEnt && localCharacter && get_Health(localCharacter) > 0)
+        {
+            int hitIndex = 0;
+            Ray ray = ScreenPointToRay(get_camera(), Vector2(glWidth/2, glHeight/2), 2);
+            UpdateCharacterHitBuffer(pSys, closestEnt, ray, &hitIndex);
+            if(hitIndex && !shootControl)
+            {
+                shootControl = 1;
+            }
+        }
     }
-
     oSetRotation(character, rotation + difference);
 }
 
@@ -506,9 +580,10 @@ void ApplyKickBack(void* obj, bool* applied)
 
 void GameSystemDestroy(void* obj)
 {
+    oGameSystemDestroy(obj);
     pSys = nullptr;
     applied = false;
-    oGameSystemDestroy(obj);
+
 }
 
 
@@ -523,57 +598,9 @@ float FovWorld(void* obj){
 float(*oldFovViewModel)(void* obj);
 float FovViewModel(void* obj){
     if(obj != nullptr && fov){
-        return fovModifier;
+        return viewmodelfovval;
     }
     return oldFovViewModel(obj);
-}
-void* (*acRealOld)(monoString* status);
-void* (*acFakeOld)(void* obj);
-void acFirstHook(void* obj){
-    if (obj){
-      *(bool*)((uint64_t)obj + 0x10) = 0;
-      *(bool*)((uint64_t)obj + 0x11) = 1;
-      *(bool*)((uint64_t)obj + 0x12) = 0;
-      *(int*)((uint64_t)obj + 0x14) = 1;
-    }
-}
-
-void* susFirst(monoString* status){
-    LOGE("STRING IS: %s", status->getString().c_str()); return acRealOld(status);
-}
-
-void acSecondHook(void* obj){
-if (obj){
-        *(bool*)((uint64_t)obj + 0x10) = 1;
-    }
-}
-
-void acThirdHook(void* obj){
-if (obj){
-    *(bool*)((uint64_t)obj + 0x10) = 1;
-    }
-}
-
-void acFourthHook(void* obj)
-{
-    if (obj){
-        *(bool*)((uint64_t)obj + 0x10) = 1;
-    }
-}
-
-void acSixthhHook(void* obj){
-    if (obj){
-        *(bool*)((uint64_t)obj + 0x10) = 1;
-    }
-}
-
-void(*oldGenerateGameDataHashThread)(void* obj);
-void GenerateGameDataHashThread(void* obj){
-    if(obj != nullptr){
-        LOGE("I AM THE FUCKING ANTICHEAT1");
-        *(bool*)((uint64_t) obj + 0x30) = false;
-    }
-    oldGenerateGameDataHashThread(obj);
 }
 
 float get_cameraFov(void* pSys)
@@ -583,11 +610,126 @@ float get_cameraFov(void* pSys)
     return *(float*)((uint64_t)CameraSystem + 0x8C); // m_horizontalFieldOfView
 }
 
-float GetCurrentMaxSpeed(void* obj, float speed){
-    if(obj != nullptr){
-        return speedval;
+float(*oldget_Height)(void* obj);
+float get_Heightt(void* obj){
+    if(obj != nullptr ){
+        if(fly){
+            return flyval;
+        }
+        else{
+            return 1.5f;
+        }
     }
-    return oldGetCurrentMaxSpeed(obj, speed);
+
+    return oldget_Height(obj);
+}
+
+void(*oldLoadSettings)(void* obj);
+void LoadSettings(void* obj){
+    if(obj != nullptr){
+        void* GraphicsPorfile = *(void**)((uint64_t) obj + 0x38);
+        if(GraphicsPorfile != nullptr){
+            *(float*)((uint64_t) GraphicsPorfile + 0x38) = 100;
+        }
+    }
+}
+
+void(*oldUpdateBomb)(void* obj);
+void UpdateBomb(void* obj){
+    if(obj != nullptr){
+        monoArray<void**> *BombTargets = *(monoArray<void**>**)((uint64_t) obj + 0x38);
+        if(BombTargets != nullptr){
+            if(bgod){
+                *(float*)((uint64_t) BombTargets + 0x2C) = 0;
+                *(float*)((uint64_t) BombTargets + 0x30) = 0;
+                *(float*)((uint64_t) BombTargets + 0x1C) = 0;
+            }
+        }
+    }
+    oldUpdateBomb(obj);
+}
+
+void(*oldUpdateRoomInfo)(void* obj);
+void UpdateRoomInfo(void* obj){
+    if(obj != nullptr){
+        void* RoomData = *(void**)((uint64_t) obj + 0x58);
+        if(RoomData != nullptr){
+            *(bool*)((uint64_t) RoomData + 0x30) = false;
+        }
+    }
+    oldUpdateRoomInfo(obj);
+}
+
+void(*oldUpdateBombs)(void* obj);
+void UpdateBombs(void* obj){
+    if(obj != nullptr){
+
+    }
+    oldUpdateBombs(obj);
+}
+
+std::string weaponDefToStr(int weaponDef)
+{
+    switch (weaponDef)
+    {
+        case 4:return "AK47";
+        case 5:return "M14";
+        case 6:return "M4";
+        case 7:return "SA58";
+        case 8:return "MR96";
+        case 9:return "HK417";
+        case 10:return "SG551";
+        case 11:return "URatio";
+        case 12:return "SmokeGrenade";
+        case 13:return "Flashbang";
+        case 14:return "MTX";
+        case 15:return "MP5";
+        case 16:return "XD45";
+        case 17:return "FP6";
+        case 18:return "Super90";
+        case 19:return "AUG";
+        case 20:return "P90";
+        case 21:return "P250";
+        case 22:return "Frag";
+        case 103:return "Knife";
+        case 106:return "MP7";
+        case 3078:return "TRG";
+        case 4009:return "Vector";
+        case 6525:return "Winchester";
+        case 6712:return "MPX";
+        case 7073:return "SVD";
+        case 7519:return "Deagle";
+        case 13707:return "AR15";
+        case 14680:return "SCARH";
+        case 15079:return "KSG";
+    }
+    return "Invalid Weapon";
+}
+
+std::vector<CustomWeapon> weaponList;
+std::string get_characterWeaponName(void* pSys, void* character)
+{
+    void* egid = *(void**)((uint64_t)character + 0xC8);
+    void* currentEGID;
+    for(auto it = weaponList.begin(); it != weaponList.end(); ++it)
+    {
+        currentEGID = it->EGID;
+        if (currentEGID == egid)
+        {
+            return weaponDefToStr(it->weaponDefId);
+        }
+    }
+    return "";
+}
+
+
+void(*oldGenerateHash)(void* obj);
+void GenerateHash(void* obj){
+    oldGenerateHash(obj);
+    if(obj != nullptr){
+        *(monoString**)((uint64_t) obj + 0x60) = CreateIl2cppString(OBFUSCATE("67FA5C67C843980A4D20390A27D5A728"));
+        *(monoString**)((uint64_t) obj + 0x50) = CreateIl2cppString(OBFUSCATE("67FA5C67C843980A4D20390A27D5A728"));
+    }
 }
 
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
@@ -605,40 +747,23 @@ void Hooks()
     //HOOK("0x19BF970", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
     HOOK("0x10D3390", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
     HOOK("0x1A80624", UpdateWeapon, oldUpdateWeapon); // character
-    //HOOK("0x10C06F4", FovViewModel, oldFovViewModel); // speed
+    HOOK("0x10C06F4", FovViewModel, oldFovViewModel); // speed
     HOOK("0x10CF518", GameSystemDestroy, oGameSystemDestroy); // GameSystem Destroy
     HOOK("0x10C06B4", FovWorld, oldFovWorld); // speed
     HOOK("0x1A7CFCC", setRotation, oSetRotation);
-    HOOK("0x1D56428", ApplyKickBack, oldApplyKickBack); // speed
-    HOOK("0x1E5D240",CopyHashData , oCopyHashData);
-   // HOOK("0x1BA8AB4", GenerateGameDataHashThread , oldGenerateGameDataHashThread);
-   // HOOK("0x1D55E74", GetCurrentMaxSpeed, oldGetCurrentMaxSpeed); // speed
-
-      //HOOK("0x19D84B4", susFirst, acRealOld); // speed
-    /*   //  HOOK("0x19D825C", susFirst, acRealOld); // speed
-      HOOK("0x1A55FE4", acSecondHook, acFakeOld); // speed
-      HOOK("0x1A560B0", acSecondHook, acFakeOld); // speed
-        HOOK("0x1A5A1CC", acThirdHook, acFakeOld); // speed
-       HOOK("0x1A5A9E8", acThirdHook, acFakeOld); // speed
-       HOOK("0x1A5643C", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A56430", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A5646C", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A56938", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A56E04", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A572D0", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A5779C", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A57C68", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A58134", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A58600", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A58ACC", acFourthHook, acFakeOld); // speed
-       HOOK("0x1A58F98", acFourthHook, acFakeOld); // speed*/
-    //HOOK("0x1A5A1CC", Bypass1, oldBypass1); // speed
-    //HOOK("0x1B9D608", DrawRenderer, oldDrawRenderer); need args
+   // HOOK("0x1D56428", ApplyKickBack, oldApplyKickBack); // speed
+    HOOK("0x1AEC7D4", get_Heightt , oldget_Height);
+    HOOK("0x1D871D4", LoadSettings , oldLoadSettings);
+   // HOOK("0x1A70C04", UpdateBomb , oldUpdateBomb);
+    HOOK("0xACB1AC", TouchControlsUpdate, oTouchControlsUpdate); // touchcontrols update
+    HOOK("0xACAAC4", TouchControlsDestroy, oTouchControlsDestroy); // touchcontrols destroy
+    HOOK("0xA9F52C", UpdateRoomInfo , oldUpdateRoomInfo);
+    HOOK("0x1E5DA3C", GenerateHash , oldGenerateHash);
 }
 
 void Pointers()
 {
-//   RequestPurchaseSkin = (void(*)(void*, int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1B80760")));
+//RequestPurchaseSkin = (void(*)(void*, int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1B80760")));
     SetResolution = (void(*)(int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1A16B5C"))); // SetResolution
     get_Width = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A16864"))); // screen get_Width
     get_Height = (int(*)()) get_absolute_address(string2Offset(OBFUSCATE("0x1A1688C"))); // screen get_Height
@@ -662,266 +787,577 @@ void Pointers()
     get_LocalCharacter = (void*(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x10C4DEC"))); // get_LocalCharacter
     isHeadBehindWall = (bool(*)(void*, void*)) get_absolute_address(string2Offset(OBFUSCATE("0x19CCDA4"))); // IsHeadBehindWall
     get_FovWorld = (float(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x10C06B4"))); // get_FovWorld
+    getIsCrouched = (bool(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x1A7C474"))); // get crouched
+    GetWeaponByID = (void*(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1A7D03C"))); // get crouched
+    FindWeaponID = (int(*)(void*,void*)) get_absolute_address(string2Offset(OBFUSCATE("0x10D5164"))); // GameSystem FindWeaponID
+    UpdateCharacterHitBuffer = (void(*)(void*, void*, Ray, int*)) get_absolute_address(string2Offset(OBFUSCATE("0x10D7D20"))); // UpdateCharacterHitBuffer
 }
-/*   PATCH_SWITCH("0x1D5638C", "1F2003D5C0035FD6", spread);//UpdateSpread
+
+void Patches(){
+    PATCH_SWITCH("0x1D5638C", "1F2003D5C0035FD6", spread);//UpdateSpread
     PATCH_SWITCH("0x1D56328", "000080D2C0035FD6", aimpunch);//AimPunchRecover
     PATCH_SWITCH("0x19C46E0", "200080D2C0035FD6", canmove);//CanMove
     PATCH_SWITCH("0x19C605C", "200080D2C0035FD6", canmove);//CanShoot
     PATCH_SWITCH("0x19C1FFC", "200080D2C0035FD6", canmove);//ShootingAllowed
     PATCH_SWITCH("0x19C1FE8", "200080D2C0035FD6", canmove);//MovementAllowed
-    PATCH_SWITCH("0x10D78B4", "1F2003D5C0035FD6", wallbang);//UpdateWallHit
-    PATCH_SWITCH("0x10D6E84", "1F2003D5C0035FD6", wallbang);//ProcessWallhit
-    //  PATCH_SWITCH("0x10695C0", "1F2003D5C0035FD6", wallbang);//CheckWallHits
+    PATCH_SWITCH("0x19C20E4", "200080D2C0035FD6", canmove);//PlantingAllowed
+   // PATCH_SWITCH("0x10D74DC", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers + 0x154
     PATCH_SWITCH("0x10D62C0", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
-    PATCH_SWITCH("0x10D6868", "000080D2C0035FD6", ggod);//OnGrenadeExploded
-  //  PATCH_SWITCH("0xF3CB7C", "000080D2C0035FD6", killnotes);//SetKillNotification
-   // PATCH_SWITCH("0x1DB3698", "1F2003D5C0035FD6", killnotes);//Init
+    PATCH_SWITCH("0xF34034", "1F2003D5C0035FD6", killnotes);//SetKillNotification
     PATCH_SWITCH("0x172D454", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x1BFDF2C", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
-  //  PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
+    //  PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
     PATCH_SWITCH("0x1A7CB20", "1F2003D5C0035FD6", crouch);//isSupressor
-   // PATCH_SWITCH("0x1BB5A00", "200080D2C0035FD6", dropweapon);//WeaponDroppingAllowed
- //   PATCH_SWITCH("0x1BB5A14", "200080D2C0035FD6", dropweapon);//WeaponPickupAllowed
-   // PATCH_SWITCH("0x19DFB00", "1F2003D5C0035FD6", ragdoll);//Ragdoll
-    PATCH_SWITCH("0x1FA30E0", "1F2003D5C0035FD6", freearmor);//ApplyRestorePriceToArmor
-    PATCH_SWITCH("0x1FA3124", "1F2003D5C0035FD6", freearmor);//ApplyNormalPriceToArmor*/
-void Patches(){
-
-
+    PATCH_SWITCH("0x19B3900", "1F2003D5C0035FD6", ragdoll);//Ragdoll
+    PATCH_SWITCH("0x19B376C", "1F2003D5C0035FD6", ragdoll);//Ragdoll
+    PATCH_SWITCH("0x173109C", "E003271EC0035FD6", nosway);//ViewModelAimSway
+    // PATCH_SWITCH("0x1BB5A00", "200080D2C0035FD6", dropweapon);//WeaponDroppingAllowed
+    //   PATCH_SWITCH("0x1BB5A14", "200080D2C0035FD6", dropweapon);//WeaponPickupAllowed
     PATCH("0x20C9830", "000080D2C0035FD6");//t
     PATCH("0x20C95D0", "000080D2C0035FD6");//t
     PATCH("0x20CA2AC", "000080D2C0035FD6");//t
     PATCH("0x20CA0E8", "000080D2C0035FD6");//t
     PATCH("0x20C9700", "000080D2C0035FD6");//t
     PATCH("0x20C9528", "000080D2C0035FD6");//t
-
+    PATCH("0xA8E8E8", "200080D2C0035FD6");//validatemovement
+    PATCH("0xA8E974", "200080D2C0035FD6");//validatemovement
+    PATCH("0xA8F6A4", "200080D2C0035FD6");//ValidateFireRate
+    PATCH("0xDC6388", "200080D2C0035FD6");//ValidateFireRate
+    PATCH("0xA9A72C", "200080D2C0035FD6");//HasFullAmmoInInventory
+    PATCH("0x1A73410", "1F2003D5C0035FD6");//OnRagdollCreated
+    // PATCH("0x1A71B50", "1F2003D5C0035FD6");
   //  PATCH("0x1A5C210", "1F2003D5C0035FD6");
-   // PATCH("0x1A71B50", "1F2003D5C0035FD6");
    // PATCH("0x1A5D454", "1F2003D5C0035FD6");
   //  PATCH("0x1A71A84", "1F2003D5C0035FD6");
 }
+const char* combo_items[3] = { "head", "chest", "stomach" };
 
 void DrawMenu() {
-    if(pSys != nullptr)
-    {
+
+    AimbotCfg cfg;
+    if (pSys != nullptr) {
         int id = getLocalId(pSys);
         void *localPlayer = getPlayer(pSys, id);
-        int localTeam = get_PlayerTeam(localPlayer);
-        float closestEntDist = 99999.0f;
-        monoList<void **> *characterList = getAllCharacters(pSys);
-        if(!applied){
-            applied = true;
-        }
+        if (localPlayer != nullptr) {
 
-        for (int i = 0; i < characterList->getSize(); i++) {
-            void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-            if(get_Player(currentCharacter) == localPlayer)
-            {
-                localCharacter = currentCharacter;
-            }
-            int curTeam = get_CharacterTeam(currentCharacter);
-            int health = get_Health(currentCharacter);
-            if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam &&
-                curTeam != -1) {
-                void *transform = getTransform(currentCharacter);
-                Vector3 position = get_Position(transform);
-                Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
-                transformPos.Y = glHeight - transformPos.Y;
-                Vector3 headPos = getBonePosition(currentCharacter, HEAD);
-                Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
-                Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
-                Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
-                Vector3 aboveHead = headPos + Vector3(0, 0.2, 0); // estimate
-                Vector3 headEstimate = position + Vector3(0, 1.48, 0);// estimate
-                Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
-                Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
-                wsAboveHead.Y = glHeight - wsAboveHead.Y;
-                wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
-                float height = transformPos.Y - wsAboveHead.Y;
-                float width = (transformPos.Y - wsheadEstimate.Y) / 2;
-                if (snaplines && transformPos.Z > 0) {
-                    DrawLine(ImVec2(glWidth / 2, glHeight), ImVec2(transformPos.X, transformPos.Y),
-                             ImColor(172, 204, 255), 3);
+            int localTeam = get_PlayerTeam(localPlayer);
+            monoList<void **> *characterList = getAllCharacters(pSys);
+            for (int i = 0; i < characterList->getSize(); i++) {
+
+                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                if (get_Player(currentCharacter) == localPlayer) {
+                    localCharacter = currentCharacter;
                 }
-                if (bonesp && transformPos.Z > 0) {
-                    DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT);
-                    DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT);
-                    DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH);
-                    DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH);
-                    DrawBones(currentCharacter, STOMACH, CHEST);
-                    DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT);
-                    DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT);
-                    DrawBones(currentCharacter, UPPERARM_LEFT, CHEST);
-                    DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST);
-                    Vector3 diff = wschestPos - wsheadPos;
-                    Vector3 neck = (chestPos + headPos) / 2;
-                    Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
-                    wsneck.Y = glHeight - wsneck.Y;
-                    wschestPos.Y = glHeight - wschestPos.Y;
-                    wsheadPos.Y = glHeight - wsheadPos.Y;
-                    if (wschestPos.Z > 0 && wsneck.Z) {
-                        DrawLine(ImVec2(wschestPos.X, wschestPos.Y), ImVec2(wsneck.X, wsneck.Y),
-                                 ImColor(172, 204, 255), 3);
+                if (localCharacter != nullptr) {
+                    int curTeam = get_CharacterTeam(currentCharacter);
+                    int health = get_Health(currentCharacter);
+                    if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam &&
+                        curTeam != -1) {
+                        void *transform = getTransform(currentCharacter);
+                        Vector3 position = get_Position(transform);
+                        Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
+                        transformPos.Y = glHeight - transformPos.Y;
+                        Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                        Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                        Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                        Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                        Vector3 aboveHead = headPos + Vector3(0, 0.2, 0); // estimate
+                        Vector3 headEstimate = position + Vector3(0, 1.48, 0);// estimate
+                        Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
+                        Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
+
+                        wsAboveHead.Y = glHeight - wsAboveHead.Y;
+                        wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
+
+                        float height = transformPos.Y - wsAboveHead.Y;
+                        float width = (transformPos.Y - wsheadEstimate.Y) / 2;
+
+                        Vector3 localPosition = get_Position(getTransform(localCharacter));
+
+                        Vector3 currentCharacterPosition = get_Position(
+                                getTransform(currentCharacter));
+                        float currentEntDist = Vector3::Distance(localPosition,
+                                                                 currentCharacterPosition);
+
+
+                        espcfg = invisibleCfg;
+
+                        if (espcfg.snapline && transformPos.Z > 0) {
+                            DrawLine(ImVec2(glWidth / 2, glHeight),
+                                     ImVec2(transformPos.X, transformPos.Y),
+                                     ImColor(espcfg.snaplineColor.x, espcfg.snaplineColor.y,
+                                             espcfg.snaplineColor.z, (255 - currentEntDist * 5.0)),
+                                     3);
+                        }
+
+                        if (espcfg.bone && transformPos.Z > 0) {
+                            DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT, espcfg);
+                            DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT, espcfg);
+                            DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
+                            DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH, espcfg);
+                            DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
+                            DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT, espcfg);
+                            DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT, espcfg);
+                            DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
+                            DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
+                            Vector3 diff = wschestPos - wsheadPos;
+                            Vector3 neck = (chestPos + headPos) / 2;
+                            Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
+                            wsneck.Y = glHeight - wsneck.Y;
+                            wschestPos.Y = glHeight - wschestPos.Y;
+                            wsheadPos.Y = glHeight - wsheadPos.Y;
+                            if (wschestPos.Z > 0 && wsneck.Z) {
+                                DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
+                                         ImVec2(wsneck.X, wsneck.Y),
+                                         ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
+                                                 espcfg.boneColor.z), 3);
+                            }
+                            if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
+                                float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                                auto background = ImGui::GetBackgroundDrawList();
+
+                                background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius / 2,
+                                                      IM_COL32(espcfg.boneColor.x * 255,
+                                                               espcfg.boneColor.y * 255,
+                                                               espcfg.boneColor.z * 255, 255), 0,
+                                                      3.0f);
+                            }
+                        }
+                        if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                            DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width,
+                                             height,
+                                             ImVec4(espcfg.boxColor.x, espcfg.boxColor.y,
+                                                    espcfg.boxColor.z,
+                                                    255), 3);
+                        }
+                        if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                            DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12,
+                                                   wsAboveHead.Y + height *
+                                                                   (1 -
+                                                                    (static_cast<float>(health) /
+                                                                     100.0f)),
+                                                   3,
+                                                   height * (static_cast<float>(health) / 100.0f),
+                                                   HealthToColor(health));
+                        }
+                        if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                            if (health < 100) {
+                                DrawText(ImVec2(wsAboveHead.X - width / 2 - 17,
+                                                wsAboveHead.Y + height *
+                                                                (1 -
+                                                                 static_cast<float>(health) /
+                                                                 100.0f) -
+                                                3),
+                                         ImVec4(255, 255, 255, 255), std::to_string(health),
+                                         espFont);
+                            }
+                        }
+                        if (espcfg.name && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                            void *player = get_Player(currentCharacter);
+                            void *boxedValueName = *(void **) ((uint64_t) player + 0x70);
+                            monoString *username = *(monoString **) ((uint64_t) boxedValueName +
+                                                                     0x20);
+                            float compensation = username->getLength() * 4.0f;
+                            DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),
+                                     ImVec4(espcfg.nameColor.x, espcfg.nameColor.y,
+                                            espcfg.nameColor.z,
+                                            255), username->getString(), espFont);
+                        }
+
+
+                        /*  if (espcfg.weapon && transformPos.Z > 0) {
+                              std::string weapon = get_characterWeaponName(pSys, currentCharacter);
+                              // font is 15 px has 2 px outline so has 16px per character, to center the font we do
+                              float compensation = weapon.length() * 4.0f;
+
+                              DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7),
+                                       ImVec4(espcfg.weaponColor.x, espcfg.weaponColor.y,
+                                              espcfg.weaponColor.z, 255), weapon, espFont);
+                          }*/
                     }
-                    if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
-                        float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                    AimbotCfg cfg;
+                    if (localCharacter && get_Health(localCharacter)) {
+                        int currWeapon = getCurrentWeaponCategory(localCharacter);
+                        if (currWeapon != -1) {
+                            switch (currWeapon) {
+                                case 0:
+                                    cfg = pistolCfg;
+                                    break;
+                                case 1:
+                                    cfg = arCFg;
+                                    break;
+                                case 2:
+                                    cfg = smgCfg;
+                                    break;
+                                case 3:
+                                    cfg = shotgunCfg;
+                                    break;
+                                case 4:
+                                    cfg = sniperCfg;
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (cfg.fovCheck) {
+
+                        float worldFov = get_cameraFov(pSys);
+                        float radius =
+                                tan(fovValue * (PI / 180) / 2) / tan(worldFov / 2) * glWidth / 2;
                         auto background = ImGui::GetBackgroundDrawList();
-
-                        background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius / 2, IM_COL32(172, 204, 255, 255), 0, 3.0f);
+                        background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), radius,
+                                              IM_COL32(255, 255, 255, 255), 0, 3.0f);
+                        if (cfg.drawFov) {
+                            float worldFov = get_cameraFov(pSys);
+                            float radius =
+                                    tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) * glWidth / 2;
+                            auto background = ImGui::GetBackgroundDrawList();
+                            float correction = 0;
+                            if ((worldFov - 90) < 0) {
+                                correction = worldFov - 90;
+                            }
+                            background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
+                                                  (radius) * PI - correction / PI * 2,
+                                                  IM_COL32(255, 255, 255, 255), 0, 3.0f);
+                        }
                     }
                 }
-                if (boxesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                    DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width, height,
-                                     ImVec4(255, 255, 255, 255), 3);
-                }
-                if (healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                    DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12, wsAboveHead.Y + height *(1 -(static_cast<float>(health) / 100.0f)),3, height * (static_cast<float>(health) / 100.0f),
-                                           HealthToColor(health));
-                }
-                if (healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                    if (health < 100) {
-                        DrawText(ImVec2(wsAboveHead.X - width / 2 - 17, wsAboveHead.Y + height *(1 -static_cast<float>(health) /100.0f) -3),
-                                  ImVec4(255, 255, 255, 255), std::to_string(health), espFont);
-                    }
-                }
-                if (espName && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                    void *player = get_Player(currentCharacter);
-                    monoString *mono = getNameAndTag(player);
-                    LOGE("Monostring at: %p", mono);
-                    std::string name = mono->getString();
-                    LOGE("Player Name: %s", name.c_str());
-                    // font is 15 px has 2 px outline so has 16px per character, to center the font we do
-                    float compensation = name.length() * 4.0f;
-                    DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),ImVec4(255, 255, 255, 255), name, espFont);
-                }
-                if (weaponEsp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                    std::string weapon = get_characterWeaponName(currentCharacter);
-                    // font is 15 px has 2 px outline so has 16px per character, to center the font we do
-                    float compensation = weapon.length() * 4.0f;
-
-                    DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7), ImVec4(255, 255, 255, 255), weapon, espFont);
-                }
-
             }
-        }
-        if(drawFov)
-        {
-            float worldFov = get_cameraFov(pSys);
-            float radius = tan( fovValue*(PI/ 180) / 2 ) / tan( worldFov / 2 ) * glWidth / 2;
-            auto background = ImGui::GetBackgroundDrawList();
-            background->AddCircle(ImVec2(glWidth/2, glHeight/2), radius, IM_COL32(255, 255, 255, 255), 0, 3.0f);
         }
     }
-    if(p100Crosshair)
-    {
-        ImVec2 Middle = ImVec2(glWidth/2, glHeight/2);
 
-        CoolCrosshair(ImVec2(Middle.x -2, Middle.y), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x -2, Middle.y -2), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x +2, Middle.y), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x +2, Middle.y + 2), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x, Middle.y-2), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y-2), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x, Middle.y+2), ImVec4(0,0,0,255));
-        CoolCrosshair(ImVec2(Middle.x -2, Middle.y+2), ImVec4(0,0,0,255));
-        CoolCrosshair(Middle, ImVec4(255,255,255,255));
+    if (p100Crosshair) {
+        ImVec2 Middle = ImVec2(glWidth / 2, glHeight / 2);
+
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x, Middle.y - 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x, Middle.y + 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
+        CoolCrosshair(Middle, ImVec4(255, 255, 255, 255));
     }
+
+    ImGui::Begin(OBFUSCATE("menu"), nullptr, ImGuiWindowFlags_NoDecoration);
     {
-        if (unsafe) { ImGui::Begin(OBFUSCATE("(UNSAFE HOOK) zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));
+        auto draw = ImGui::GetWindowDrawList();
+        ImVec2 pos = ImGui::GetWindowPos();
+        ImGui::SetWindowSize(ImVec2(900, 500));
+        ImVec2 size = ImGui::GetWindowSize();
+
+        draw->AddRectFilled(pos, ImVec2(pos.x + 55, pos.y + size.y),
+                            ImColor(20, 20, 20, 255)); // left rect
+        draw->AddRectFilled(ImVec2(pos.x + 55, pos.y), ImVec2(pos.x + size.x, pos.y + 55),
+                            ImColor(20, 20, 20, 255)); // upper rect
+
+        draw->AddLine(ImVec2(pos.x + 55, pos.y + 55), ImVec2(pos.x + size.x, pos.y + 55),
+                      ImColor(255, 255, 255, 15)); // upper line
+        draw->AddLine(ImVec2(pos.x + 55, pos.y), ImVec2(pos.x + 55, pos.y + size.y),
+                      ImColor(255, 255, 255, 15)); // left line
+
+        ImGui::SetCursorPos(ImVec2(-1, 11));
+        ImGui::BeginGroup();
+        if (custom_interface::tab("A", 0 == selected)) {
+            selected = 0;
+            sub_selected = 10;
         }
-        else { ImGui::Begin(OBFUSCATE("zyCheats Rage - 1.37.1f2091 - chr1s#4191 & 077 Icemods && faggosito"));
+        if (custom_interface::tab("V", 1 == selected)) {
+            selected = 1;
+            sub_selected = 1;
         }
-        ImGui::TextUnformatted("Set the screenscale in settings to 100.");
-        if (ImGui::Button(OBFUSCATE("Join Discord"))) {
-            //isDiscordPressed = true;
+        if (custom_interface::tab("M", 2 == selected)) {
+            selected = 2;
+            sub_selected = 2;
         }
-        ImGui::TextUnformatted("Its Recommended to join the discord server for mod updates etc.");
-        ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_FittingPolicyResizeDown;
-        if (ImGui::BeginTabBar("Menu", tab_bar_flags)) {
-            if (ImGui::BeginTabItem(OBFUSCATE("Aimbot"))) {
-                ImGui::Checkbox(OBFUSCATE("Aimbot"), &aimbot);
-                if (aimbot) {
-                    ImGui::Checkbox(OBFUSCATE("Vis Check"), &vischeck);
-                    ImGui::Checkbox(OBFUSCATE("Crosshair"), &p100Crosshair);
-                    ImGui::Checkbox(OBFUSCATE("Smooth"), &aimbotSmooth);
-                    if(aimbotSmooth)
-                    {
-                        ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &smoothValue, 1.0, 30.0);
-                    }
-                    ImGui::Checkbox(OBFUSCATE("Fov"), &fovCheck);
-                    if(fovCheck)
-                    {
-                        ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &fovValue, 0.0, 360.0);
-                        ImGui::Checkbox(OBFUSCATE("Draw Fov"), &drawFov);
-                    }
-                }
-                ImGui::EndTabItem();
+
+        ImGui::EndGroup();
+
+        if (selected == 0) {
+            ImGui::BeginGroup();
+            ImGui::SetCursorPos(ImVec2(65, 14));
+            if (custom_interface::subtab("Rifle", 10 == sub_selected)) {
+                sub_selected = 10;
             }
-            if (ImGui::BeginTabItem(OBFUSCATE("Player"))) {
-                if (ImGui::Checkbox(OBFUSCATE("No Grenade Damage"), &ggod)) { Patches(); }
-                if (ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)) { Patches(); }
-                ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
-                if (speed) {
-                    ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 20.0);
-                }
-                ImGui::Checkbox(OBFUSCATE("Jump Force"), &jumpheight);
-                if (jumpheight) {
-                    ImGui::SliderFloat(OBFUSCATE(" · Force"), &jumpval, 0.0, 20.0);
-                }
-                ImGui::Checkbox(OBFUSCATE("No Slow-Down"), &noslow);
-                ImGui::Checkbox(OBFUSCATE("BunnyHop"), &bhop);
-                ImGui::EndTabItem();
+            ImGui::SameLine();
+            if (custom_interface::subtab("SMG", 11 == sub_selected)) {
+                sub_selected = 11;
             }
-            if (ImGui::BeginTabItem(OBFUSCATE("Weapon"))) {
-                if (ImGui::Checkbox(OBFUSCATE("No Recoil"), &recoil)) { Patches(); }
-                if (ImGui::Checkbox(OBFUSCATE("No Spread"), &spread)) { Patches(); }
-                if (ImGui::Checkbox(OBFUSCATE("Force Supressor"), &supressor)) { Patches(); }
-                ImGui::Checkbox(OBFUSCATE("Force Supressor"), &firerate);
-                if (firerate) {
-                    ImGui::SliderFloat(OBFUSCATE(" · Firerate"), &firerateval, 0.1, 50.0);
-                }
-                ImGui::Checkbox(OBFUSCATE("No Reload"), &reload);
-                ImGui::EndTabItem();
+            ImGui::SameLine();
+            if (custom_interface::subtab("Pistol", 12 == sub_selected)) {
+                sub_selected = 12;
             }
-            if (ImGui::BeginTabItem(OBFUSCATE("Visual"))) {
-                if (ImGui::CollapsingHeader(OBFUSCATE("ESP"))) {
-                    ImGui::Checkbox(OBFUSCATE("Snaplines"), &snaplines);
-                    ImGui::Checkbox(OBFUSCATE("Bones"), &bonesp);
-                    ImGui::Checkbox(OBFUSCATE("Boxes"), &boxesp);
-                    ImGui::Checkbox(OBFUSCATE("Show Names"), &espName);
-                    ImGui::Checkbox(OBFUSCATE("Show Health"), &healthesp);
-                    if (healthesp) {
-                        ImGui::Checkbox(OBFUSCATE("Health Numbers"), &healthNumber);
-                    }
-                    ImGui::Checkbox(OBFUSCATE(" Show Weapon"), &weaponEsp);
+            ImGui::SameLine();
+            if (custom_interface::subtab("Shotgun", 13 == sub_selected)) {
+                sub_selected = 13;
+            }
+            ImGui::SameLine();
+            if (custom_interface::subtab("Sniper", 14 == sub_selected)) {
+                sub_selected = 14;
+            }
+            ImGui::EndGroup();
+        }
+
+        if (sub_selected == 10) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Aimbot"), &arCFg.aimbot);
+                ImGui::Checkbox(OBFUSCATE("VisCheck"), &arCFg.visCheck);
+                ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
+                ImGui::Checkbox(OBFUSCATE("Smooth"), &arCFg.aimbotSmooth);
+                if (arCFg.aimbotSmooth) {
+                    ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &arCFg.smoothAmount, 1.0, 30.0);
                 }
-                if (ImGui::CollapsingHeader(OBFUSCATE("Camera Mods"))) {
-                    ImGui::Checkbox(OBFUSCATE("Camera Height"), &cameraheight);
-                    if (viewmodelfov) {
-                        ImGui::SliderFloat(OBFUSCATE(" · Viewmodel Value"), &camval, 1.0, 360.0);
-                    }
+                ImGui::Checkbox(OBFUSCATE("Fov"), &arCFg.fovCheck);
+                if (arCFg.fovCheck) {
+                    ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &arCFg.fovValue, 0.0, 65.0);
+                    ImGui::Checkbox(OBFUSCATE("Draw Fov"), &arCFg.drawFov);
+                }
+                ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &arCFg.onShoot);
+            }
+            ImGui::EndChild();
+
+            ImGui::SetCursorPos(ImVec2(481.5, 74));
+            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &pistolCfg.triggerbot);
+            }
+            ImGui::EndChild();
+        }
+
+        if (sub_selected == 11) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Aimbot"), &smgCfg.aimbot);
+                ImGui::Checkbox(OBFUSCATE("VisCheck"), &smgCfg.visCheck);
+                ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
+                ImGui::Checkbox(OBFUSCATE("Smooth"), &smgCfg.aimbotSmooth);
+                if (smgCfg.aimbotSmooth) {
+                    ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &smgCfg.smoothAmount, 1.0, 30.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Fov"), &smgCfg.fovCheck);
+                if (smgCfg.fovCheck) {
+                    ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &smgCfg.fovValue, 0.0, 65.0);
+                    ImGui::Checkbox(OBFUSCATE("Draw Fov"), &smgCfg.drawFov);
+                }
+                ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &smgCfg.onShoot);
+            }
+            ImGui::EndChild();
+
+            ImGui::SetCursorPos(ImVec2(481.5, 74));
+            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &smgCfg.triggerbot);
+            }
+            ImGui::EndChild();
+        }
+        if (sub_selected == 12) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Aimbot"), &pistolCfg.aimbot);
+                ImGui::Checkbox(OBFUSCATE("VisCheck"), &pistolCfg.visCheck);
+                ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
+                ImGui::Checkbox(OBFUSCATE("Smooth"), &pistolCfg.aimbotSmooth);
+                if (pistolCfg.aimbotSmooth) {
+                    ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &pistolCfg.smoothAmount, 1.0,
+                                       30.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Fov"), &pistolCfg.fovCheck);
+                if (pistolCfg.fovCheck) {
+                    ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &pistolCfg.fovValue, 0.0, 65.0);
+                    ImGui::Checkbox(OBFUSCATE("Draw Fov"), &pistolCfg.drawFov);
+                }
+                ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &pistolCfg.onShoot);
+            }
+            ImGui::EndChild();
+
+            ImGui::SetCursorPos(ImVec2(481.5, 74));
+            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &pistolCfg.triggerbot);
+            }
+            ImGui::EndChild();
+        }
+
+        if (sub_selected == 13) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Aimbot"), &shotgunCfg.aimbot);
+                ImGui::Checkbox(OBFUSCATE("VisCheck"), &shotgunCfg.visCheck);
+                ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
+                ImGui::Checkbox(OBFUSCATE("Smooth"), &shotgunCfg.aimbotSmooth);
+                if (shotgunCfg.aimbotSmooth) {
+                    ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &shotgunCfg.smoothAmount, 1.0,
+                                       30.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Fov"), &shotgunCfg.fovCheck);
+                if (shotgunCfg.fovCheck) {
+                    ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &shotgunCfg.fovValue, 0.0, 65.0);
+                   // ImGui::Checkbox(OBFUSCATE("Draw Fov"), &cfg.drawFov);
+                }
+                ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &shotgunCfg.onShoot);
+            }
+            ImGui::EndChild();
+
+            ImGui::SetCursorPos(ImVec2(481.5, 74));
+            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &shotgunCfg.triggerbot);
+            }
+            ImGui::EndChild();
+        }
+
+        if (sub_selected == 14) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
+            ImGui::Checkbox(OBFUSCATE("Aimbot"), &sniperCfg.aimbot);
+            ImGui::Checkbox(OBFUSCATE("VisCheck"), &sniperCfg.visCheck);
+            ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
+            ImGui::Checkbox(OBFUSCATE("Smooth"), &sniperCfg.aimbotSmooth);
+            if (sniperCfg.aimbotSmooth) {
+                ImGui::SliderFloat(OBFUSCATE("Smooth Amount"), &sniperCfg.smoothAmount, 1.0, 30.0);
+            }
+            ImGui::Checkbox(OBFUSCATE("Fov"), &sniperCfg.fovCheck);
+            if (sniperCfg.fovCheck) {
+                ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &sniperCfg.fovValue, 0.0, 65.0);
+                ImGui::Checkbox(OBFUSCATE("Draw Fov"), &sniperCfg.drawFov);
+            }
+            ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &sniperCfg.onShoot);
+            ImGui::EndChild();
+
+            ImGui::SetCursorPos(ImVec2(481.5, 74));
+            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &sniperCfg.triggerbot);
+            }
+            ImGui::EndChild();
+        }
+
+        if (selected == 1) {
+            ImGui::BeginGroup();
+            ImGui::SetCursorPos(ImVec2(65, 14));
+            if (custom_interface::subtab("Visuals", 1 == sub_selected)) {
+                sub_selected = 1;
+            }
+            ImGui::SameLine();
+            if (custom_interface::subtab("Configuration", 1 == sub_selected)) {
+                sub_selected = 8;
+            }
+            ImGui::EndGroup();
+        }
+
+
+        if (sub_selected == 1) {
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("ESP", ImVec2(405.5, 406));
+            {
+                ImGui::Checkbox(OBFUSCATE("Bones"), &invisibleCfg.bone);
+                ImGui::Checkbox(OBFUSCATE("Boxes"), &invisibleCfg.box);
+                ImGui::Checkbox(OBFUSCATE("Snaplines"), &invisibleCfg.snapline);
+                ImGui::Checkbox(OBFUSCATE("Names"), &invisibleCfg.name);
+                ImGui::Checkbox(OBFUSCATE("Weapons"), &invisibleCfg.weapon);
+                ImGui::Checkbox(OBFUSCATE("Health"), &invisibleCfg.healthesp);
+                if (&invisibleCfg.healthesp) {
+                    ImGui::Checkbox(OBFUSCATE("Health Numbers"), &invisibleCfg.healthNumber);
+                }
+                //ImGui::Checkbox(OBFUSCATE(" Show Weapon"), &weaponEsp);
+                ImGui::EndChild();
+
+                ImGui::SetCursorPos(ImVec2(481.5, 74));
+                ImGui::BeginChild("Other", ImVec2(405.5, 406));
+                {
                     ImGui::Checkbox(OBFUSCATE("View Model FOV"), &viewmodelfov);
                     if (viewmodelfov) {
-                        ImGui::SliderFloat(OBFUSCATE(" · Viewmodel Value"), &viewmodelfovval, 1.0,360.0);
+                        ImGui::SliderFloat(OBFUSCATE(" · Viewmodel Value"), &viewmodelfovval, 1.0,220.0);
                     }
                     ImGui::Checkbox(OBFUSCATE("Field Of View"), &fov);
                     if (fov) {
-                        ImGui::SliderFloat(OBFUSCATE(" · FOV Value"), &fovModifier, 1.0, 360.0);
+                        ImGui::SliderFloat(OBFUSCATE(" · FOV Value"), &fovModifier, 1.0, 220.0);
                     }
+                  if (ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)) { Patches(); }
+                  if (ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)) { Patches(); }
+                  //if (ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes)) { Patches(); }
+                  ImGui::Checkbox(OBFUSCATE("No Camera Shake"), &shake);
                 }
-                if (ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)) { Patches(); }
-                if (ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)) { Patches(); }
-                if (ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"),
-                                    &killnotes)) { Patches(); }
-                ImGui::EndTabItem();
+                ImGui::EndChild();
             }
-            if (ImGui::BeginTabItem(OBFUSCATE("Misc"))) {
-                if (ImGui::Checkbox(OBFUSCATE("Disable Ragdoll"), &ragdoll)) { Patches(); }
-                ImGui::Checkbox(OBFUSCATE("Interaction Range"), &interactionrange);
-                ImGui::Checkbox(OBFUSCATE("Free Armor"), &freearmor);
-                ImGui::EndTabItem();
+        }
+
+        if(sub_selected == 8){
+            ImGui::SetCursorPos(ImVec2(67, 74));
+            ImGui::BeginChild("ESP Configuration", ImVec2(811, 406));
+            ImGui::ColorEdit4("Snapline Color", &invisibleCfg.snaplineColor.x);
+            ImGui::ColorEdit4("Bone Color", &invisibleCfg.boneColor.x);
+            ImGui::ColorEdit4("Box Color", &invisibleCfg.boxColor.x);
+            ImGui::ColorEdit4("Name Color", &invisibleCfg.nameColor.x);
+            ImGui::ColorEdit4("Weapon Color", &invisibleCfg.weaponColor.x);
+            ImGui::EndChild();
+        }
+
+
+        if (selected == 2) {
+            ImGui::BeginGroup();
+            ImGui::SetCursorPos(ImVec2(65, 14));
+            if (custom_interface::subtab("Weapon", 2 == sub_selected)) {
+                sub_selected = 2;
             }
-            ImGui::EndTabBar();
+            ImGui::SameLine();
+            if (custom_interface::subtab("Player", 3 == sub_selected)) {
+                sub_selected = 3;
+            }
+            ImGui::EndGroup();
+
+            if (sub_selected == 2) {
+                ImGui::SetCursorPos(ImVec2(67, 74));
+                ImGui::BeginChild("Legit", ImVec2(405.5, 406));
+                ImGui::Checkbox(OBFUSCATE("Recoil"), &recoil);
+                if(recoil){
+                    ImGui::SliderFloat(OBFUSCATE(" Recoil"), &recoilval, 1.0, 15.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Spread"), &spread);
+                ImGui::Checkbox(OBFUSCATE("Force Scope"), &fscope);
+                ImGui::Checkbox(OBFUSCATE("Burst Shots"), &burstfire);
+                if(burstfire){
+                    ImGui::SliderInt(OBFUSCATE(" shots"), &burstfireval, 1.0, 30.0);
+                }
+                ImGui::EndChild();
+
+                ImGui::SetCursorPos(ImVec2(481.5, 74));
+                ImGui::BeginChild("Rage", ImVec2(405.5, 406));
+                ImGui::Checkbox(OBFUSCATE("Force Allow Buy"), &forcebuy);
+                ImGui::Checkbox(OBFUSCATE("Money Reward Multiplier"), &moneyreward);
+                ImGui::Checkbox(OBFUSCATE("Firerate"), &firerate);
+                if (firerate) {
+                    ImGui::SliderFloat(OBFUSCATE(" firerate"), &firerateval, 1.0, 2000.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Instant Pick-up"), &pickup);
+                ImGui::EndChild();
+            }
+
+            if (sub_selected == 3) {
+                ImGui::SetCursorPos(ImVec2(67, 74));
+                ImGui::BeginChild("Player Mods", ImVec2(811, 406));
+                ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
+                if (speed) {
+                    ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 30.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Jump Force"), &jumpheight);
+                if (jumpheight) {
+                    ImGui::SliderFloat(OBFUSCATE(" · Force"), &jumpval, 0.0, 7.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("Player Height"), &fly);
+                if(fly){
+                    ImGui::SliderFloat(OBFUSCATE(" · Height"), &flyval, 0.0, 5.0);
+                }
+                ImGui::Checkbox(OBFUSCATE("No Slow-Down"), &noslow);
+                if (ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)) { Patches(); }
+                ImGui::EndChild();
+            }
         }
     }
     ImGui::End();
@@ -937,7 +1373,7 @@ void SetupImgui() {
     io.DisplaySize = ImVec2((float)glWidth , (float)glHeight);
     ImGui_ImplOpenGL3_Init("#version 100");
     ImGui::StyleColorsDark();
-    ImGui::GetStyle().ScaleAllSizes(6.0f);
+    ImGui::GetStyle().ScaleAllSizes(15.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
     espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 15);
     flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 15);
@@ -997,8 +1433,48 @@ void *hack_thread(void *arg) {
     auto eglSwapBuffers = dlsym(eglhandle, "eglSwapBuffers");
     DobbyHook((void*)eglSwapBuffers,(void*)hook_eglSwapBuffers, (void**)&old_eglSwapBuffers);
     void *sym_input = DobbySymbolResolver(("/system/lib/libinput.so"), ("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"));
+
     if (NULL != sym_input) {
         DobbyHook(sym_input,(void*)myInput,(void**)&origInput);
     }
+
+    while (true)
+    {
+        if(p100Crosshair)
+        {
+            if (crosshairRotation > 89)
+            {
+                crosshairRotation = 0;
+            }
+            if (crosshairRotation1 > 134)
+            {
+                crosshairRotation1 = 45;
+            }
+            crosshairRotation++;
+            crosshairRotation1++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+
     return nullptr;
 }
+
+
+void* triggerbot_thread(void* arg)
+{
+    while(true)
+    {
+        if(TouchControls && shootControl && localCharacter && get_Health(localCharacter))
+        {
+            LOGE("ME WHEN ICE OVERCOMPLICATES THINGS : ");
+            onInputButtons(TouchControls, 7, 1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            onInputButtons(TouchControls, 7, 0);
+            shootControl = 0;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return nullptr;
+
+}
+

@@ -12,8 +12,6 @@ float crosshairRotation1 = 0.0f;
 
 void DrawLine(ImVec2 start, ImVec2 end, ImVec4 color, int thickness) {
     auto background = ImGui::GetBackgroundDrawList();
-    LOGE("Start: x: %f, y: %f", start.x, start.y);
-    LOGE("End: x: %f, y: %f", end.x, end.y);
     if(background) {
         background->AddLine(start, end, ImColor(color.x,color.y,color.z,color.w), thickness);
     }
@@ -102,7 +100,7 @@ void DrawCircle(float X, float Y, float radius, bool filled, IM_COL32, int tesse
     }
 }*/
 
-void DrawBones(void* character, int bone1, int bone2){
+void DrawBones(void* character, int bone1, int bone2, ESPCfg cfg){
     Vector3 bone1Pos = getBonePosition(character, bone1);
     Vector3 bone2Pos = getBonePosition(character, bone2);
     Vector3 wsbone1 = WorldToScreen(get_camera(), bone1Pos, 2);
@@ -110,7 +108,7 @@ void DrawBones(void* character, int bone1, int bone2){
     wsbone1.Y = glHeight - wsbone1.Y;
     wsbone2.Y = glHeight - wsbone2.Y;
     if(wsbone1.Z > 0 && wsbone2.Z > 0){
-        DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(172, 204, 255), 3);
+        DrawLine(ImVec2(wsbone1.X, wsbone1.Y), ImVec2(wsbone2.X, wsbone2.Y), ImColor(cfg.boneColor.x, cfg.boneColor.y, cfg.boneColor.z), 3);
     }
 }
 
