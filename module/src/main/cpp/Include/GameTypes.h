@@ -38,6 +38,25 @@ enum WeaponCategory
     Utility
 };
 
+struct HitData
+{
+    bool hitCharacter;
+    bool traced;
+    Vector3 hitWorldPos;
+    int victimID;
+    BodyPart hitBodyPart;
+    Vector3 hitLocalPos;
+    int hitAngle;
+    Vector3 hitWorldNormal;
+    int hitMaterialDef;
+};
+
+struct Character
+{
+    void* character;
+    int id;
+};
+
 struct ESPCfg
 {
     bool snapline = 0;
@@ -52,6 +71,22 @@ struct ESPCfg
     ImVec4 nameColor = ImColor(255,255,255);
     bool weapon = 0;
     ImVec4 weaponColor = ImColor(255,255,255);
+};
+
+struct TransformData
+{
+     Vector3 position;
+     Vector3 velocity;
+     Vector2 rotation;
+};
+
+struct BurstData
+{
+    Ray currentRay;
+    void* weaponEgid;
+    int damagePercent;
+    bool trace;
+    float maxRange;
 };
 
 struct AimbotCfg
@@ -74,7 +109,6 @@ struct CustomWeapon
     int liveId = -1;
     int weaponDefId = -1;
 };
-
 
 struct Color
 {

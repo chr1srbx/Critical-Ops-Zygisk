@@ -30,6 +30,7 @@ int (*getLocalId)(void* obj);
 void* (*getPlayer)(void* obj, int id);
 void* (*getLocalPlayer)(void* obj);
 int (*getCharacterCount)(void* obj);
+void(*oldLoadSettings)(void* obj);
 int (*get_Health)(void* character);
 void* (*get_Player)(void* character);
 void (*RaycastCharacter)(void* pSys, void* shooter , Ray ray, int hitdex);
@@ -47,7 +48,12 @@ void (*UpdateCharacterHitBuffer)(void* pSys, void* character, Ray ray, int* hitI
 bool (*getIsCrouched)(void* character);
 void* (*GetWeaponByID)(void* character, int id);
 int (*FindWeaponID)(void* pSys, void* EGID);
-
+void* (*TraceShot)(void* pSys, void* shooter, Ray ray);
+std::uintptr_t (*get_AllHits)(void* peesys);
+int (*get_LocalID)(void* obj);
+void (*set_Position)(void* obj, Vector3 pos);
+void (*AddMoney)(void* player, int amount);
+void* (*get_LocalPlayer)(void* pSys);
 
 // Custom functions
 void* getTransform(void* character);
@@ -81,6 +87,14 @@ void (*oTouchControlsUpdate)(void* obj);
 void (*oTouchControlsDestroy)(void* obj);
 void* (*oCreateWeapon)(void* pSys, int weaponId, monoString* ownerName, int weaponDefId, int weaponSkinId);
 void (*oDestroyWeapon)(void* pSys, int weaponId);
+float(*oldget_Height)(void* obj);
+float(*oldFovViewModel)(void* obj);
+float(*oldFovWorld)(void* obj);
+void (*oldCheckCharacterVisibility)(void* obj, bool* visibility);
+void(*oldGenerateHash)(void* obj);
+void*(*oldReloadCreate)(void* obj, void* character, float reloadTime, float reloadInsertTime, int reloadType);
+void* (*oldCreateRagdoll)(void* obj, BodyPart bodyPart, Vector3 force);
+void(*oldUpdateGame)(void* obj, float dt);
 
 // Hooks
 float get_fieldOfView(void *instance);

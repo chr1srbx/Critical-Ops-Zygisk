@@ -112,8 +112,6 @@ void DrawBones(void* character, int bone1, int bone2, ESPCfg cfg){
     }
 }
 
-
-
 void DrawText(ImVec2 position, ImVec4 color, std::string text, ImFont* font) {
     auto background = ImGui::GetBackgroundDrawList();
     if(background) {

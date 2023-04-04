@@ -37,6 +37,7 @@
 
 #define GamePackageName "com.criticalforceentertainment.criticalops"
 
+
 monoString* CreateIl2cppString(const char* str)
 {
     static monoString* (*CreateIl2cppString)(const char* str, int *startIndex, int *length) =
@@ -48,34 +49,27 @@ monoString* CreateIl2cppString(const char* str)
 
 ESPCfg visibleCfg, invisibleCfg, espcfg;
 AimbotCfg pistolCfg, smgCfg, arCFg, shotgunCfg, sniperCfg;
+bool firsttime = false;
 static int selected = 0;
-static int sub_selected = 0;
-
+static int sub_selected = 10;
+const char *Shader = OBFUSCATE("unity_SHC");
 void* TouchControls = nullptr;
 void* pSys = nullptr;
 void* pSpeed = nullptr;
 void* localCharacter = nullptr;
-bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, kickback, crouch, wallbang,
+bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, kickback, crouch, wallbang, rain, rain1,
         fov, ggod, killnotes,crosshair, moneyreward, mindamage, maxdamage, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
         canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity, dropweapon,ragdoll, crouchheight, cameraheight, interactionrange, jumpheight, bhop,
-        noslow, shake, eoi, gbounciness, ammo, firerate, iea, p100Crosshair, vischeck, fovCheck, fscope, applied = false, nosway, burstfire,
-        pickup, bgod, armorpen;
+        noslow, shake, eoi, gbounciness, ammo, firerate, iea, p100Crosshair, tradar, fovCheck, fscope, applied = false, nosway, burstfire,rain2,
+        pickup, silentknife, armorpen, chams, headhitbox, bodyhitbox, silentknife1, addmone;
 
 float speedval = 5.100000, fovModifier, recoilval, spreadval, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval = 4.100000,
 firerateval = 500, fovValue = 360, bounceval, gundmgm;
-int screenscale = 0, callCount = 0, burstfireval, LocalTeam, aimPos = 0, shootControl = 0;
+int ammocount = 0, callCount = 0, burstfireval, LocalTeam, aimPos = 0, shootControl = 0;
 
 extern int glHeight;
 extern int glWidth;
 ImFont* espFont;
-ImFont* flagFont;
-
-float get_fieldOfView(void *instance) {
-    if (instance != nullptr && fov) {
-        return fovModifier;
-    }
-    return old_get_fieldOfView(instance);
-}
 
 void* getTransform(void* character)
 {
@@ -112,7 +106,6 @@ void TouchControlsDestroy(void* obj)
     return oTouchControlsDestroy(obj);
 }
 
-
 Vector3 getBonePosition(void* character, int bone){
     void* curBone = get_CharacterBodyPart(character, bone);
     void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
@@ -127,13 +120,6 @@ float NormalizeAngle (float angle){
     while (angle<0)
         angle += 360;
     return angle;
-}
-
-Vector2 NormalizeAngles (Vector2 angles)
-{
-    angles.X = NormalizeAngle(angles.X);
-    angles.Y = NormalizeAngle(angles.Y);
-    return angles;
 }
 
 int isGame(JNIEnv *env, jstring appDataDir) {
@@ -348,8 +334,7 @@ void UpdateWeapon(void* obj, float deltatime){
                 }
 
                 if(firerate){
-                    *(float *) ((uint64_t) WeaponDefData + 0x64) = firerateval;
-                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
+                    *(float *) ((uint64_t) WeaponDefData + 0x64) = 2000;
                 }
 
                 if(burstfire){
@@ -361,12 +346,15 @@ void UpdateWeapon(void* obj, float deltatime){
                     *(bool*)((uint64_t) WeaponDefData + 0x94) = false;
                 }
 
+
+
+
                 if(fscope){
                     *(int *) ((uint64_t) WeaponDefData + 0x98) = 1;
                 }
 
                 if(wallbang){
-                    *(int *) ((uint64_t) WeaponDefData + 0x7C) = 3;
+                    //*(int *) ((uint64_t) WeaponDefData + 0x7C) = 3;
                 }
 
                 if(armorpen){
@@ -404,9 +392,19 @@ void UpdateWeapon(void* obj, float deltatime){
     oldUpdateWeapon(obj, deltatime);
 }
 
+void UpdateGame(void* obj, float dt){
+    if(obj != nullptr){
+        if(addmone){
+            AddMoney(get_LocalPlayer(pSys), 1000);
+            addmone = false;
+        }
+    }
+    oldUpdateGame(obj, dt);
+}
+
 void RenderOverlayFlashbang(void* obj){
     if(obj != nullptr && flash){
-        *(float*)((uint64_t) obj + string2Offset(OBFUSCATE("0x38"))) = 0;//m_flashTime
+        *(float*)((uint64_t) obj + 0x38) = 0;//m_flashTime
     }
     oldRenderOverlayFlashbang(obj);
 }
@@ -476,7 +474,6 @@ void setRotation(void* character, Vector2 rotation)
         if (currWeapon != -1) {
             switch (currWeapon) {
                 case 0:
-                    LOGE("NO WAY, PISTOL CFG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     cfg = pistolCfg;
                     break;
                 case 1:
@@ -558,6 +555,7 @@ void setRotation(void* character, Vector2 rotation)
             int hitIndex = 0;
             Ray ray = ScreenPointToRay(get_camera(), Vector2(glWidth/2, glHeight/2), 2);
             UpdateCharacterHitBuffer(pSys, closestEnt, ray, &hitIndex);
+
             if(hitIndex && !shootControl)
             {
                 shootControl = 1;
@@ -567,27 +565,13 @@ void setRotation(void* character, Vector2 rotation)
     oSetRotation(character, rotation + difference);
 }
 
-
-void(*oldApplyKickBack)(void* obj, bool* applied);
-void ApplyKickBack(void* obj, bool* applied)
-{
-    if(obj != nullptr && recoil){
-        *applied = true;
-        return;
-    }
-    oldApplyKickBack(obj, applied);
-}
-
 void GameSystemDestroy(void* obj)
 {
     oGameSystemDestroy(obj);
     pSys = nullptr;
-    applied = false;
-
+    localCharacter = nullptr;
 }
 
-
-float(*oldFovWorld)(void* obj);
 float FovWorld(void* obj){
     if(obj != nullptr && fov){
         return fovModifier;
@@ -595,7 +579,6 @@ float FovWorld(void* obj){
     return oldFovWorld(obj);
 }
 
-float(*oldFovViewModel)(void* obj);
 float FovViewModel(void* obj){
     if(obj != nullptr && fov){
         return viewmodelfovval;
@@ -610,7 +593,7 @@ float get_cameraFov(void* pSys)
     return *(float*)((uint64_t)CameraSystem + 0x8C); // m_horizontalFieldOfView
 }
 
-float(*oldget_Height)(void* obj);
+
 float get_Heightt(void* obj){
     if(obj != nullptr ){
         if(fly){
@@ -624,7 +607,7 @@ float get_Heightt(void* obj){
     return oldget_Height(obj);
 }
 
-void(*oldLoadSettings)(void* obj);
+
 void LoadSettings(void* obj){
     if(obj != nullptr){
         void* GraphicsPorfile = *(void**)((uint64_t) obj + 0x38);
@@ -632,40 +615,6 @@ void LoadSettings(void* obj){
             *(float*)((uint64_t) GraphicsPorfile + 0x38) = 100;
         }
     }
-}
-
-void(*oldUpdateBomb)(void* obj);
-void UpdateBomb(void* obj){
-    if(obj != nullptr){
-        monoArray<void**> *BombTargets = *(monoArray<void**>**)((uint64_t) obj + 0x38);
-        if(BombTargets != nullptr){
-            if(bgod){
-                *(float*)((uint64_t) BombTargets + 0x2C) = 0;
-                *(float*)((uint64_t) BombTargets + 0x30) = 0;
-                *(float*)((uint64_t) BombTargets + 0x1C) = 0;
-            }
-        }
-    }
-    oldUpdateBomb(obj);
-}
-
-void(*oldUpdateRoomInfo)(void* obj);
-void UpdateRoomInfo(void* obj){
-    if(obj != nullptr){
-        void* RoomData = *(void**)((uint64_t) obj + 0x58);
-        if(RoomData != nullptr){
-            *(bool*)((uint64_t) RoomData + 0x30) = false;
-        }
-    }
-    oldUpdateRoomInfo(obj);
-}
-
-void(*oldUpdateBombs)(void* obj);
-void UpdateBombs(void* obj){
-    if(obj != nullptr){
-
-    }
-    oldUpdateBombs(obj);
 }
 
 std::string weaponDefToStr(int weaponDef)
@@ -706,24 +655,15 @@ std::string weaponDefToStr(int weaponDef)
     return "Invalid Weapon";
 }
 
-std::vector<CustomWeapon> weaponList;
-std::string get_characterWeaponName(void* pSys, void* character)
-{
-    void* egid = *(void**)((uint64_t)character + 0xC8);
-    void* currentEGID;
-    for(auto it = weaponList.begin(); it != weaponList.end(); ++it)
-    {
-        currentEGID = it->EGID;
-        if (currentEGID == egid)
-        {
-            return weaponDefToStr(it->weaponDefId);
-        }
+
+void CheckCharacterVisiblity(void* obj, bool* visibility){
+    oldCheckCharacterVisibility(obj, visibility);
+    if(obj != nullptr){
+        *visibility = true;
     }
-    return "";
 }
 
 
-void(*oldGenerateHash)(void* obj);
 void GenerateHash(void* obj){
     oldGenerateHash(obj);
     if(obj != nullptr){
@@ -738,6 +678,8 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     return;
 }
 
+const char* combo_items[3] = { "head", "chest", "stomach" };
+const char* expand[3] = { "head", "body" };
 // Initilizers with patterns <3
 void Hooks()
 {
@@ -751,15 +693,21 @@ void Hooks()
     HOOK("0x10CF518", GameSystemDestroy, oGameSystemDestroy); // GameSystem Destroy
     HOOK("0x10C06B4", FovWorld, oldFovWorld); // speed
     HOOK("0x1A7CFCC", setRotation, oSetRotation);
-   // HOOK("0x1D56428", ApplyKickBack, oldApplyKickBack); // speed
+    //HOOK("0x10D101C", CreateCharacter, oCreateCharacter);
+   // HOOK("0x10D3DCC", DestroyCharacter, oDestroyCharacter);
+    //HOOK("0x1E5F1CC", AddHit, oAddHit);
     HOOK("0x1AEC7D4", get_Heightt , oldget_Height);
     HOOK("0x1D871D4", LoadSettings , oldLoadSettings);
-   // HOOK("0x1A70C04", UpdateBomb , oldUpdateBomb);
+    //HOOK("0x10D738C", ProcessHitBuffers , oldProcessHitBuffers);
     HOOK("0xACB1AC", TouchControlsUpdate, oTouchControlsUpdate); // touchcontrols update
     HOOK("0xACAAC4", TouchControlsDestroy, oTouchControlsDestroy); // touchcontrols destroy
-    HOOK("0xA9F52C", UpdateRoomInfo , oldUpdateRoomInfo);
+    //HOOK("0x10D80B0", RaycastCharacterr , oldRaycastCharacter);
+   // HOOK("0x1F5E8B0", SendShoot , oldSendShoot);
+    HOOK("0x1D80CB8", UpdateGame , oldUpdateGame);
+    HOOK("0x19B2708", CheckCharacterVisiblity , oldCheckCharacterVisibility);
     HOOK("0x1E5DA3C", GenerateHash , oldGenerateHash);
 }
+
 
 void Pointers()
 {
@@ -791,6 +739,14 @@ void Pointers()
     GetWeaponByID = (void*(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1A7D03C"))); // get crouched
     FindWeaponID = (int(*)(void*,void*)) get_absolute_address(string2Offset(OBFUSCATE("0x10D5164"))); // GameSystem FindWeaponID
     UpdateCharacterHitBuffer = (void(*)(void*, void*, Ray, int*)) get_absolute_address(string2Offset(OBFUSCATE("0x10D7D20"))); // UpdateCharacterHitBuffer
+    ScreenPointToRay = (Ray(*)(void*, Vector2, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1A1E008"))); // ScreenPointToRay
+    onInputButtons = (void(*)(void*, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0xACDF74"))); // OnInputButton
+    TraceShot = (void*(*)(void*,void*, Ray)) get_absolute_address(string2Offset(OBFUSCATE("0x10D57B0"))); // OnInputButton
+    get_AllHits =(std::uintptr_t(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x1E5EFF0"))); // Character GetBodyPart
+    get_LocalID = (int(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x10C2848")));
+    set_Position = (void(*)(void*, Vector3)) get_absolute_address(string2Offset(OBFUSCATE("0x1A44C7C")));
+    AddMoney = (void(*)(void*, int)) get_absolute_address(string2Offset(OBFUSCATE("0x1D58174")));
+    get_LocalPlayer =(void*(*)(void*)) get_absolute_address(string2Offset(OBFUSCATE("0x1D58174")));
 }
 
 void Patches(){
@@ -801,59 +757,63 @@ void Patches(){
     PATCH_SWITCH("0x19C1FFC", "200080D2C0035FD6", canmove);//ShootingAllowed
     PATCH_SWITCH("0x19C1FE8", "200080D2C0035FD6", canmove);//MovementAllowed
     PATCH_SWITCH("0x19C20E4", "200080D2C0035FD6", canmove);//PlantingAllowed
-   // PATCH_SWITCH("0x10D74DC", "1F2003D5C0035FD6", wallbang);//ProcessHitBuffers + 0x154
+    PATCH_SWITCH("0x19C20E4", "200080D2C0035FD6", canmove);//PlantingAllowed
     PATCH_SWITCH("0x10D62C0", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
     PATCH_SWITCH("0xF34034", "1F2003D5C0035FD6", killnotes);//SetKillNotification
     PATCH_SWITCH("0x172D454", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x1BFDF2C", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
-    //  PATCH_SWITCH("0x1D8507C", "200080D2C0035FD6", supressor);//isSupressor
     PATCH_SWITCH("0x1A7CB20", "1F2003D5C0035FD6", crouch);//isSupressor
-    PATCH_SWITCH("0x19B3900", "1F2003D5C0035FD6", ragdoll);//Ragdoll
-    PATCH_SWITCH("0x19B376C", "1F2003D5C0035FD6", ragdoll);//Ragdoll
     PATCH_SWITCH("0x173109C", "E003271EC0035FD6", nosway);//ViewModelAimSway
-    // PATCH_SWITCH("0x1BB5A00", "200080D2C0035FD6", dropweapon);//WeaponDroppingAllowed
-    //   PATCH_SWITCH("0x1BB5A14", "200080D2C0035FD6", dropweapon);//WeaponPickupAllowed
+    PATCH_SWITCH("0x10D7444", "1F2003D5", wallbang);//ProcessHitBuffers + 0xB8
+    PATCH_SWITCH("0x10D7F3C", "01F0271E", headhitbox);//UpdateCharacterHitBuffer + 0x21C
+    PATCH_SWITCH("0x10D7F40", "01F0271E", bodyhitbox);//UpdateCharacterHitBuffer + 0x220
+    PATCH_SWITCH("0x1A7B7B8", "200080D2C0035FD6", headhitbox);//Intersects
+    PATCH_SWITCH("0x1A7B7B8", "200080D2C0035FD6", bodyhitbox);//Intersects
+    PATCH_SWITCH("0x10C29A4", "E0031FAA", radar);//FetchFollowedCharacterTeamIndex + 0x8C
+    PATCH_SWITCH("0x10D61E8", "01F0271E", silentknife);//MeleeHit + 0x808
+    PATCH_SWITCH("0x10D5C24", "08F0271E", silentknife1);//MeleeHit + 0x244
+    PATCH_SWITCH("0x19B278C", "1F01086B", tradar);//CheckCharacterVisiblity + 0x84
+    PATCH_SWITCH("0x1AE98AC", "000080D2C0035FD6", tradar);//Linecast(Vector3 start, Vector3 end, int layerMask)
+    PATCH_SWITCH("0x1DAFBAC", "000080D2C0035FD6", killnotes);
     PATCH("0x20C9830", "000080D2C0035FD6");//t
     PATCH("0x20C95D0", "000080D2C0035FD6");//t
     PATCH("0x20CA2AC", "000080D2C0035FD6");//t
     PATCH("0x20CA0E8", "000080D2C0035FD6");//t
     PATCH("0x20C9700", "000080D2C0035FD6");//t
     PATCH("0x20C9528", "000080D2C0035FD6");//t
-    PATCH("0xA8E8E8", "200080D2C0035FD6");//validatemovement
-    PATCH("0xA8E974", "200080D2C0035FD6");//validatemovement
-    PATCH("0xA8F6A4", "200080D2C0035FD6");//ValidateFireRate
-    PATCH("0xDC6388", "200080D2C0035FD6");//ValidateFireRate
-    PATCH("0xA9A72C", "200080D2C0035FD6");//HasFullAmmoInInventory
-    PATCH("0x1A73410", "1F2003D5C0035FD6");//OnRagdollCreated
+    PATCH("0x1D74F1C", "200080D2C0035FD6");
+  //  PATCH("0x10D7444", "1F2003D5");
     // PATCH("0x1A71B50", "1F2003D5C0035FD6");
   //  PATCH("0x1A5C210", "1F2003D5C0035FD6");
    // PATCH("0x1A5D454", "1F2003D5C0035FD6");
   //  PATCH("0x1A71A84", "1F2003D5C0035FD6");
 }
-const char* combo_items[3] = { "head", "chest", "stomach" };
 
-void DrawMenu() {
-
+void ESP()
+{
     AimbotCfg cfg;
     if (pSys != nullptr) {
+        if (!firsttime) {
+            wait(2);
+            firsttime = true;
+        }
+
         int id = getLocalId(pSys);
-        void *localPlayer = getPlayer(pSys, id);
+        void* localPlayer = getPlayer(pSys, id);
         if (localPlayer != nullptr) {
-
             int localTeam = get_PlayerTeam(localPlayer);
-            monoList<void **> *characterList = getAllCharacters(pSys);
+            monoList<void**>* characterList = getAllCharacters(pSys);
             for (int i = 0; i < characterList->getSize(); i++) {
-
-                void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                void* currentCharacter = (monoList<void**>*)characterList->getItems()[i];
                 if (get_Player(currentCharacter) == localPlayer) {
                     localCharacter = currentCharacter;
                 }
+
                 if (localCharacter != nullptr) {
                     int curTeam = get_CharacterTeam(currentCharacter);
                     int health = get_Health(currentCharacter);
-                    if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam &&
-                        curTeam != -1) {
-                        void *transform = getTransform(currentCharacter);
+                    if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam && curTeam != -1) {
+                        void* transform = getTransform(currentCharacter);
                         Vector3 position = get_Position(transform);
                         Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
                         transformPos.Y = glHeight - transformPos.Y;
@@ -862,7 +822,7 @@ void DrawMenu() {
                         Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
                         Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
                         Vector3 aboveHead = headPos + Vector3(0, 0.2, 0); // estimate
-                        Vector3 headEstimate = position + Vector3(0, 1.48, 0);// estimate
+                        Vector3 headEstimate = position + Vector3(0, 1.48, 0); // estimate
                         Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
                         Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
 
@@ -874,11 +834,8 @@ void DrawMenu() {
 
                         Vector3 localPosition = get_Position(getTransform(localCharacter));
 
-                        Vector3 currentCharacterPosition = get_Position(
-                                getTransform(currentCharacter));
-                        float currentEntDist = Vector3::Distance(localPosition,
-                                                                 currentCharacterPosition);
-
+                        Vector3 currentCharacterPosition = get_Position(getTransform(currentCharacter));
+                        float currentEntDist = Vector3::Distance(localPosition, currentCharacterPosition);
 
                         espcfg = invisibleCfg;
 
@@ -910,71 +867,52 @@ void DrawMenu() {
                                 DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
                                          ImVec2(wsneck.X, wsneck.Y),
                                          ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
-                                                 espcfg.boneColor.z), 3);
+                                                 espcfg.boneColor.z),
+                                         3);
                             }
+
                             if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
                                 float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
                                 auto background = ImGui::GetBackgroundDrawList();
 
-                                background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius / 2,
-                                                      IM_COL32(espcfg.boneColor.x * 255,
-                                                               espcfg.boneColor.y * 255,
-                                                               espcfg.boneColor.z * 255, 255), 0,
-                                                      3.0f);
+                                background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius / 2, IM_COL32(espcfg.boneColor.x * 255,espcfg.boneColor.y * 255,espcfg.boneColor.z * 255, 255),0,3.0f);
                             }
                         }
+
                         if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
                             DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width,
                                              height,
-                                             ImVec4(espcfg.boxColor.x, espcfg.boxColor.y,
-                                                    espcfg.boxColor.z,
-                                                    255), 3);
+                                             ImVec4(espcfg.boxColor.x, espcfg.boxColor.y, espcfg.boxColor.z,255),3);
                         }
+
                         if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12,
-                                                   wsAboveHead.Y + height *
-                                                                   (1 -
-                                                                    (static_cast<float>(health) /
-                                                                     100.0f)),
-                                                   3,
-                                                   height * (static_cast<float>(health) / 100.0f),
-                                                   HealthToColor(health));
+                            DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12, wsAboveHead.Y + height * (1 - (static_cast<float>(health) / 100.0f)), 3, height * (static_cast<float>(health) / 100.0f), HealthToColor(health));
                         }
+
                         if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
                             if (health < 100) {
-                                DrawText(ImVec2(wsAboveHead.X - width / 2 - 17,
-                                                wsAboveHead.Y + height *
-                                                                (1 -
-                                                                 static_cast<float>(health) /
-                                                                 100.0f) -
-                                                3),
-                                         ImVec4(255, 255, 255, 255), std::to_string(health),
-                                         espFont);
+                                DrawText(ImVec2(wsAboveHead.X - width / 2 - 17, wsAboveHead.Y + height * (1 - static_cast<float>(health) / 100.0f) - 3), ImVec4(255, 255, 255, 255), std::to_string(health), espFont);
                             }
                         }
+
                         if (espcfg.name && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            void *player = get_Player(currentCharacter);
-                            void *boxedValueName = *(void **) ((uint64_t) player + 0x70);
-                            monoString *username = *(monoString **) ((uint64_t) boxedValueName +
-                                                                     0x20);
+                            void* player = get_Player(currentCharacter);
+                            void* boxedValueName = *(void**)((uint64_t)player + 0x70);
+                            monoString* username = *(monoString**)((uint64_t)boxedValueName + 0x20);
                             float compensation = username->getLength() * 4.0f;
-                            DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),
-                                     ImVec4(espcfg.nameColor.x, espcfg.nameColor.y,
-                                            espcfg.nameColor.z,
-                                            255), username->getString(), espFont);
+                            DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),ImVec4(espcfg.nameColor.x, espcfg.nameColor.y, espcfg.nameColor.z,255), username->getString(), espFont);
                         }
 
+                        /* if (espcfg.weapon && transformPos.Z > 0) { 	std::string weapon = get_characterWeaponName(pSys, currentCharacter);
+						     	// font is 15 px has 2 px outline so has 16px per character, to center the font we do
+						      float compensation = weapon.length() *4.0f;
 
-                        /*  if (espcfg.weapon && transformPos.Z > 0) {
-                              std::string weapon = get_characterWeaponName(pSys, currentCharacter);
-                              // font is 15 px has 2 px outline so has 16px per character, to center the font we do
-                              float compensation = weapon.length() * 4.0f;
-
-                              DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7),
-                                       ImVec4(espcfg.weaponColor.x, espcfg.weaponColor.y,
-                                              espcfg.weaponColor.z, 255), weapon, espFont);
-                          }*/
+						      DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7),
+						               ImVec4(espcfg.weaponColor.x, espcfg.weaponColor.y,
+						                      espcfg.weaponColor.z, 255), weapon, espFont);
+						  }*/
                     }
+
                     AimbotCfg cfg;
                     if (localCharacter && get_Health(localCharacter)) {
                         int currWeapon = getCurrentWeaponCategory(localCharacter);
@@ -1000,25 +938,20 @@ void DrawMenu() {
                     }
 
                     if (cfg.fovCheck) {
-
                         float worldFov = get_cameraFov(pSys);
-                        float radius =
-                                tan(fovValue * (PI / 180) / 2) / tan(worldFov / 2) * glWidth / 2;
+                        float radius = tan(fovValue * (PI / 180) / 2) / tan(worldFov / 2) * glWidth / 2;
                         auto background = ImGui::GetBackgroundDrawList();
-                        background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), radius,
-                                              IM_COL32(255, 255, 255, 255), 0, 3.0f);
+                        background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), radius, IM_COL32(255, 255, 255, 255), 0, 3.0f);
                         if (cfg.drawFov) {
                             float worldFov = get_cameraFov(pSys);
-                            float radius =
-                                    tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) * glWidth / 2;
+                            float radius = tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) * glWidth / 2;
                             auto background = ImGui::GetBackgroundDrawList();
                             float correction = 0;
                             if ((worldFov - 90) < 0) {
                                 correction = worldFov - 90;
                             }
-                            background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
-                                                  (radius) * PI - correction / PI * 2,
-                                                  IM_COL32(255, 255, 255, 255), 0, 3.0f);
+
+                            background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), (radius)*PI - correction / PI * 2, IM_COL32(255, 255, 255, 255), 0, 3.0f);
                         }
                     }
                 }
@@ -1039,7 +972,9 @@ void DrawMenu() {
         CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
         CoolCrosshair(Middle, ImVec4(255, 255, 255, 255));
     }
+}
 
+void DrawMenu() {
     ImGui::Begin(OBFUSCATE("menu"), nullptr, ImGuiWindowFlags_NoDecoration);
     {
         auto draw = ImGui::GetWindowDrawList();
@@ -1105,6 +1040,7 @@ void DrawMenu() {
             {
                 ImGui::Checkbox(OBFUSCATE("Aimbot"), &arCFg.aimbot);
                 ImGui::Checkbox(OBFUSCATE("VisCheck"), &arCFg.visCheck);
+                ImGui::TextUnformatted(OBFUSCATE(""));
                 ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
                 ImGui::Checkbox(OBFUSCATE("Smooth"), &arCFg.aimbotSmooth);
                 if (arCFg.aimbotSmooth) {
@@ -1122,7 +1058,7 @@ void DrawMenu() {
             ImGui::SetCursorPos(ImVec2(481.5, 74));
             ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
             {
-                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &pistolCfg.triggerbot);
+                ImGui::Checkbox(OBFUSCATE("Triggerbot"), &arCFg.triggerbot);
             }
             ImGui::EndChild();
         }
@@ -1133,6 +1069,7 @@ void DrawMenu() {
             {
                 ImGui::Checkbox(OBFUSCATE("Aimbot"), &smgCfg.aimbot);
                 ImGui::Checkbox(OBFUSCATE("VisCheck"), &smgCfg.visCheck);
+                ImGui::TextUnformatted(OBFUSCATE(""));
                 ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
                 ImGui::Checkbox(OBFUSCATE("Smooth"), &smgCfg.aimbotSmooth);
                 if (smgCfg.aimbotSmooth) {
@@ -1160,6 +1097,7 @@ void DrawMenu() {
             {
                 ImGui::Checkbox(OBFUSCATE("Aimbot"), &pistolCfg.aimbot);
                 ImGui::Checkbox(OBFUSCATE("VisCheck"), &pistolCfg.visCheck);
+                ImGui::TextUnformatted(OBFUSCATE(""));
                 ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
                 ImGui::Checkbox(OBFUSCATE("Smooth"), &pistolCfg.aimbotSmooth);
                 if (pistolCfg.aimbotSmooth) {
@@ -1189,6 +1127,7 @@ void DrawMenu() {
             {
                 ImGui::Checkbox(OBFUSCATE("Aimbot"), &shotgunCfg.aimbot);
                 ImGui::Checkbox(OBFUSCATE("VisCheck"), &shotgunCfg.visCheck);
+                ImGui::TextUnformatted(OBFUSCATE(""));
                 ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
                 ImGui::Checkbox(OBFUSCATE("Smooth"), &shotgunCfg.aimbotSmooth);
                 if (shotgunCfg.aimbotSmooth) {
@@ -1198,7 +1137,7 @@ void DrawMenu() {
                 ImGui::Checkbox(OBFUSCATE("Fov"), &shotgunCfg.fovCheck);
                 if (shotgunCfg.fovCheck) {
                     ImGui::SliderFloat(OBFUSCATE("Fov Amount"), &shotgunCfg.fovValue, 0.0, 65.0);
-                   // ImGui::Checkbox(OBFUSCATE("Draw Fov"), &cfg.drawFov);
+                    ImGui::Checkbox(OBFUSCATE("Draw Fov"), &shotgunCfg.drawFov);
                 }
                 ImGui::Checkbox(OBFUSCATE("Aim on shoot"), &shotgunCfg.onShoot);
             }
@@ -1217,6 +1156,7 @@ void DrawMenu() {
             ImGui::BeginChild("Aim Assistance", ImVec2(405.5, 406));
             ImGui::Checkbox(OBFUSCATE("Aimbot"), &sniperCfg.aimbot);
             ImGui::Checkbox(OBFUSCATE("VisCheck"), &sniperCfg.visCheck);
+            ImGui::TextUnformatted(OBFUSCATE(""));
             ImGui::Combo(OBFUSCATE("Aim Position"), &aimPos, combo_items, 3);
             ImGui::Checkbox(OBFUSCATE("Smooth"), &sniperCfg.aimbotSmooth);
             if (sniperCfg.aimbotSmooth) {
@@ -1245,7 +1185,7 @@ void DrawMenu() {
                 sub_selected = 1;
             }
             ImGui::SameLine();
-            if (custom_interface::subtab("Configuration", 1 == sub_selected)) {
+            if (custom_interface::subtab("Configuration", 8 == sub_selected)) {
                 sub_selected = 8;
             }
             ImGui::EndGroup();
@@ -1256,11 +1196,12 @@ void DrawMenu() {
             ImGui::SetCursorPos(ImVec2(67, 74));
             ImGui::BeginChild("ESP", ImVec2(405.5, 406));
             {
+                ImGui::Checkbox(OBFUSCATE("Chams"), &chams);
                 ImGui::Checkbox(OBFUSCATE("Bones"), &invisibleCfg.bone);
                 ImGui::Checkbox(OBFUSCATE("Boxes"), &invisibleCfg.box);
                 ImGui::Checkbox(OBFUSCATE("Snaplines"), &invisibleCfg.snapline);
                 ImGui::Checkbox(OBFUSCATE("Names"), &invisibleCfg.name);
-                ImGui::Checkbox(OBFUSCATE("Weapons"), &invisibleCfg.weapon);
+             //   ImGui::Checkbox(OBFUSCATE("Weapons"), &invisibleCfg.weapon);
                 ImGui::Checkbox(OBFUSCATE("Health"), &invisibleCfg.healthesp);
                 if (&invisibleCfg.healthesp) {
                     ImGui::Checkbox(OBFUSCATE("Health Numbers"), &invisibleCfg.healthNumber);
@@ -1271,7 +1212,9 @@ void DrawMenu() {
                 ImGui::SetCursorPos(ImVec2(481.5, 74));
                 ImGui::BeginChild("Other", ImVec2(405.5, 406));
                 {
-                    ImGui::Checkbox(OBFUSCATE("View Model FOV"), &viewmodelfov);
+                   if(ImGui::Checkbox(OBFUSCATE("Radar"), &radar)){ Patches(); }
+                   if(ImGui::Checkbox(OBFUSCATE("Team Radar"), &tradar)){ Patches(); }
+                   ImGui::Checkbox(OBFUSCATE("View Model FOV"), &viewmodelfov);
                     if (viewmodelfov) {
                         ImGui::SliderFloat(OBFUSCATE(" · Viewmodel Value"), &viewmodelfovval, 1.0,220.0);
                     }
@@ -1281,6 +1224,7 @@ void DrawMenu() {
                     }
                   if (ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)) { Patches(); }
                   if (ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)) { Patches(); }
+                  ImGui::Checkbox(OBFUSCATE("Nazi Crosshair"), &p100Crosshair);
                   //if (ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes)) { Patches(); }
                   ImGui::Checkbox(OBFUSCATE("No Camera Shake"), &shake);
                 }
@@ -1303,11 +1247,11 @@ void DrawMenu() {
         if (selected == 2) {
             ImGui::BeginGroup();
             ImGui::SetCursorPos(ImVec2(65, 14));
-            if (custom_interface::subtab("Weapon", 2 == sub_selected)) {
+            if (custom_interface::subtab(OBFUSCATE("Weapon"), 2 == sub_selected)) {
                 sub_selected = 2;
             }
             ImGui::SameLine();
-            if (custom_interface::subtab("Player", 3 == sub_selected)) {
+            if (custom_interface::subtab(OBFUSCATE("Player"), 3 == sub_selected)) {
                 sub_selected = 3;
             }
             ImGui::EndGroup();
@@ -1319,7 +1263,7 @@ void DrawMenu() {
                 if(recoil){
                     ImGui::SliderFloat(OBFUSCATE(" Recoil"), &recoilval, 1.0, 15.0);
                 }
-                ImGui::Checkbox(OBFUSCATE("Spread"), &spread);
+                if(ImGui::Checkbox(OBFUSCATE("Spread"), &spread)){ Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Force Scope"), &fscope);
                 ImGui::Checkbox(OBFUSCATE("Burst Shots"), &burstfire);
                 if(burstfire){
@@ -1329,19 +1273,19 @@ void DrawMenu() {
 
                 ImGui::SetCursorPos(ImVec2(481.5, 74));
                 ImGui::BeginChild("Rage", ImVec2(405.5, 406));
-                ImGui::Checkbox(OBFUSCATE("Force Allow Buy"), &forcebuy);
-                ImGui::Checkbox(OBFUSCATE("Money Reward Multiplier"), &moneyreward);
+                if(ImGui::Checkbox(OBFUSCATE("Expand Head Hitbox"), &headhitbox)){Patches();};
+                if(ImGui::Checkbox(OBFUSCATE("Expand Body Hitbox"), &bodyhitbox)){Patches();};
+                if(ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang)) { Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Firerate"), &firerate);
-                if (firerate) {
-                    ImGui::SliderFloat(OBFUSCATE(" firerate"), &firerateval, 1.0, 2000.0);
-                }
                 ImGui::Checkbox(OBFUSCATE("Instant Pick-up"), &pickup);
+                if(ImGui::Checkbox(OBFUSCATE("Always Backstab"), &silentknife)){Patches();};
+                if(ImGui::Checkbox(OBFUSCATE("Long Knife Range"), &silentknife1)){Patches();};
                 ImGui::EndChild();
             }
 
             if (sub_selected == 3) {
                 ImGui::SetCursorPos(ImVec2(67, 74));
-                ImGui::BeginChild("Player Mods", ImVec2(811, 406));
+                if(ImGui::Button(OBFUSCATE("Mone"))){addmone = true;}
                 ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
                 if (speed) {
                     ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 30.0);
@@ -1352,17 +1296,16 @@ void DrawMenu() {
                 }
                 ImGui::Checkbox(OBFUSCATE("Player Height"), &fly);
                 if(fly){
-                    ImGui::SliderFloat(OBFUSCATE(" · Height"), &flyval, 0.0, 5.0);
+                    ImGui::SliderFloat(OBFUSCATE(" · Height"), &flyval, 0.0, 6.0);
                 }
                 ImGui::Checkbox(OBFUSCATE("No Slow-Down"), &noslow);
-                if (ImGui::Checkbox(OBFUSCATE("Spoof Crouch"), &crouch)) { Patches(); }
+                ImGui::Checkbox(OBFUSCATE("Instant Crouch"), &crouch);
                 ImGui::EndChild();
             }
         }
     }
     ImGui::End();
 }
-
 
 void SetupImgui() {
     IMGUI_CHECKVERSION();
@@ -1375,9 +1318,10 @@ void SetupImgui() {
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(15.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
-    espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 15);
-    flagFont = io.Fonts->AddFontFromMemoryCompressedTTF(Minecraftia_Regular, compressedMinecraftia_RegularSize, 15);
+    espFont = io.Fonts->AddFontFromMemoryCompressedTTF(RetroGaming, compressedRetroGamingSize, 20);
 }
+
+
 
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     eglQuerySurface(dpy, surface, EGL_WIDTH, &glWidth);
@@ -1395,6 +1339,8 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     ImGui::NewFrame();
 
     DrawMenu();
+    ESP();
+    DrawText(ImVec2(10,10), ImVec4(255, 255, 255, 255), "PrimeTools BETA", espFont);
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -1403,6 +1349,52 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     return old_eglSwapBuffers(dpy, surface);
 }
 
+GLint (*old_glGetUniformLocation)(GLuint program, const GLchar *name);
+GLint glGetUniformLocation(GLuint program, const GLchar *name) // returns location of a shader/uniform.
+{
+    return old_glGetUniformLocation(program, name);
+}
+
+bool Shaders()
+{
+    GLint program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+
+    return old_glGetUniformLocation(program, Shader) != -1;
+}
+
+void (*old_glDrawElements)(GLenum mode, GLsizei count, GLenum type, const void *indices);
+void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices)
+{
+    old_glDrawElements(mode, count, type, indices);
+
+    if(Shaders() > 0)
+    {
+        if (chams) {
+            LOGE("COEMS");
+            glDepthRangef(1, 0.5);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_CONSTANT_COLOR, GL_CONSTANT_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(255, 255, 255, 1);
+            glDepthFunc(GL_ALWAYS);
+            old_glDrawElements(GL_TRIANGLES, count, type, indices);
+            glColorMask(124, 252, 0, 255);
+            glBlendFunc(GL_DST_COLOR, GL_ONE);
+            glDepthFunc(GL_LESS);
+            glBlendColor(0.0, 0.0, 0.0, 0.0);
+        }
+        old_glDrawElements(mode, count, type, indices);
+
+        glDepthRangef(0.5, 1);
+        glColorMask(1, 1, 1, 1);
+        glDisable(GL_BLEND);
+    }
+
+}
+
+
 void *hack_thread(void *arg) {
     int tries = 0;
     do {
@@ -1410,6 +1402,8 @@ void *hack_thread(void *arg) {
         auto maps =  KittyMemory::getMapsByName("split_config.arm64_v8a.apk");
         for(std::vector<ProcMap>::iterator it = maps.begin(); it != maps.end(); ++it) {
             auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 00 F2 79 00 00 00 00 00 40 00 00 00 00 00 00 00 88 D8 E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+            auto libcf = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 30 11 00 00 00 00 00 00 40 00 00 00 00 00 00 00 48 41 00 00 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+            auto libgl = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 00 F2 79 00 00 00 00 00 40 00 00 00 00 00 00 00 88 D8 E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
             if(address != 0)
             {
                 libBaseAddress = address;
@@ -1431,7 +1425,15 @@ void *hack_thread(void *arg) {
     Patches();
     auto eglhandle = dlopen("libunity.so", RTLD_LAZY);
     auto eglSwapBuffers = dlsym(eglhandle, "eglSwapBuffers");
+    auto renderHandle = dlopen("libGLES.so", RTLD_LAZY);
+    LOGE("RenderHandle %p", renderHandle);
+    auto glDrawElement = dlsym(renderHandle, "glDrawElements");
+    auto glGetUniformLocations = dlsym(renderHandle, "glGetUniformLocation");
+    LOGE("glDrawElement %p", glDrawElement);
+    LOGE("glGetUniformLocation %p", glGetUniformLocation);
     DobbyHook((void*)eglSwapBuffers,(void*)hook_eglSwapBuffers, (void**)&old_eglSwapBuffers);
+    DobbyHook((void*)glDrawElement,(void*)glDrawElements, (void**)&old_glDrawElements);
+    DobbyHook((void*)glGetUniformLocations,(void*)glGetUniformLocation, (void**)&old_glGetUniformLocation);
     void *sym_input = DobbySymbolResolver(("/system/lib/libinput.so"), ("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"));
 
     if (NULL != sym_input) {
@@ -1459,14 +1461,12 @@ void *hack_thread(void *arg) {
     return nullptr;
 }
 
-
 void* triggerbot_thread(void* arg)
 {
     while(true)
     {
         if(TouchControls && shootControl && localCharacter && get_Health(localCharacter))
         {
-            LOGE("ME WHEN ICE OVERCOMPLICATES THINGS : ");
             onInputButtons(TouchControls, 7, 1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             onInputButtons(TouchControls, 7, 0);
@@ -1475,6 +1475,5 @@ void* triggerbot_thread(void* arg)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     return nullptr;
-
 }
 
