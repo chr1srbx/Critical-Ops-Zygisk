@@ -1,22 +1,22 @@
-Executable : C:\Users\chris\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe
+Executable : C:\Users\0x7is\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe
 arguments : 
--HD:\Github\Mods\zygiskpg-paid\module\src\main\cpp
+-HD:\Documents\cops-menu\module\src\main\cpp
 -DCMAKE_BUILD_TYPE=Release
--DCMAKE_TOOLCHAIN_FILE=C:\Users\chris\AppData\Local\Android\Sdk\ndk\25.0.8775105\build\cmake\android.toolchain.cmake
+-DCMAKE_TOOLCHAIN_FILE=C:\Users\0x7is\AppData\Local\Android\Sdk\ndk\25.0.8775105\build\cmake\android.toolchain.cmake
 -DANDROID_ABI=arm64-v8a
--DANDROID_NDK=C:\Users\chris\AppData\Local\Android\Sdk\ndk\25.0.8775105
+-DANDROID_NDK=C:\Users\0x7is\AppData\Local\Android\Sdk\ndk\25.0.8775105
 -DANDROID_PLATFORM=android-23
 -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a
--DCMAKE_ANDROID_NDK=C:\Users\chris\AppData\Local\Android\Sdk\ndk\25.0.8775105
+-DCMAKE_ANDROID_NDK=C:\Users\0x7is\AppData\Local\Android\Sdk\ndk\25.0.8775105
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
--DCMAKE_LIBRARY_OUTPUT_DIRECTORY=D:\Github\Mods\zygiskpg-paid\module\build\intermediates\cmake\release\obj\arm64-v8a
--DCMAKE_RUNTIME_OUTPUT_DIRECTORY=D:\Github\Mods\zygiskpg-paid\module\build\intermediates\cmake\release\obj\arm64-v8a
--DCMAKE_MAKE_PROGRAM=C:\Users\chris\AppData\Local\Android\Sdk\cmake\3.18.1\bin\ninja.exe
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=D:\Documents\cops-menu\module\build\intermediates\cmake\release\obj\arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=D:\Documents\cops-menu\module\build\intermediates\cmake\release\obj\arm64-v8a
+-DCMAKE_MAKE_PROGRAM=C:\Users\0x7is\AppData\Local\Android\Sdk\cmake\3.18.1\bin\ninja.exe
 -DCMAKE_SYSTEM_NAME=Android
 -DCMAKE_SYSTEM_VERSION=23
--DCMAKE_FIND_ROOT_PATH=D:\Github\Mods\zygiskpg-paid\module\.cxx\cmake\release\prefab\arm64-v8a\prefab
--DMODULE_NAME:STRING=ZygiskPG
--BD:\Github\Mods\zygiskpg-paid\module\.cxx\cmake\release\arm64-v8a
+-DCMAKE_FIND_ROOT_PATH=D:\Documents\cops-menu\module\.cxx\cmake\release\prefab\arm64-v8a\prefab
+-DMODULE_NAME:STRING=ZyCheatsC
+-BD:\Documents\cops-menu\module\.cxx\cmake\release\arm64-v8a
 -GNinja
 jvmArgs : 
 

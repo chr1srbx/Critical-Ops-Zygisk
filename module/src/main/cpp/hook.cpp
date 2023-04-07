@@ -71,20 +71,37 @@ ImFont* espFont;
 
 void* getTransform(void* character)
 {
-    return *(void**)((uint64_t)character + 0x70);
+    if(character)
+    {
+        return *(void**)((uint64_t)character + 0x70);
+    }
+    LOGE("crashed here");
+    return nullptr;
 }
 
 int get_CharacterTeam(void* character)
 {
     void* player = get_Player(character);
+    if (player)
+    {
+        void* boxedValueName = *(void**)((uint64_t)player + 0x118);
+        if (boxedValueName)
+        {
+            return *(int*)((uint64_t)boxedValueName + 0x1C);
+        }
+    }
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(int*)((uint64_t)boxedValueName + 0x1C);
+    return -1;
 }
 
 int get_PlayerTeam(void* player)
 {
     void* boxedValueName = *(void**)((uint64_t)player + 0x118);
-    return *(int*)((uint64_t)boxedValueName + 0x1C);
+    if (boxedValueName)
+    {
+        return *(int*)((uint64_t)boxedValueName + 0x1C);
+    }
+    return -1;
 }
 
 void TouchControlsUpdate(void* obj)
@@ -146,7 +163,6 @@ int isGame(JNIEnv *env, jstring appDataDir) {
     }
 }
 
-
 bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg)
 {
     if (!cfg.fovCheck) return true;
@@ -202,15 +218,19 @@ void* getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
                                 canSet = true;
                             }
                         }
-                        Vector3 localPosition = get_Position(getTransform(localCharacter));
-                        Vector3 currentCharacterPosition = get_Position(
-                                getTransform(currentCharacter));
-                        Vector3 currentEntDist = Vector3::Distance(localPosition,
-                                                                   currentCharacterPosition);
-                        if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
-                            if (cfg.visCheck && !canSet) continue;
-                            closestEntDist = Vector3::Magnitude(currentEntDist);
-                            closestCharacter = currentCharacter;
+
+                        void *transform = getTransform(localCharacter);
+                        if (tarnsform) {
+                            Vector3 localPosition = get_Position(transform);
+                            Vector3 currentCharacterPosition = get_Position(
+                                    getTransform(currentCharacter));
+                            Vector3 currentEntDist = Vector3::Distance(localPosition,
+                                                                       currentCharacterPosition);
+                            if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
+                                if (cfg.visCheck && !canSet) continue;
+                                closestEntDist = Vector3::Magnitude(currentEntDist);
+                                closestCharacter = currentCharacter;
+                            }
                         }
                     }
                 }
@@ -219,7 +239,6 @@ void* getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
     }
     return closestCharacter;
 }
-
 
 void GameSystemUpdate(void* obj){
     if(obj != nullptr){
@@ -416,7 +435,11 @@ void set_Spread(void* obj, float value){
 bool isCharacterVisible(void* character, void* pSys)
 {
     void* localCharacter = get_LocalCharacter(pSys);
-    return !isHeadBehindWall(localCharacter, character);
+    if (localCharacter)
+    {
+        return !isHeadBehindWall(localCharacter, character);
+    }
+    return 0
 }
 
 void RenderOverlaySmoke(void* obj) {
@@ -429,18 +452,23 @@ void RenderOverlaySmoke(void* obj) {
 int getCurrentWeaponCategory(void* character)
 {
     void* characterData = *(void**)((uint64_t)character + 0x98);
-    void* m_wpn = *(void**)((uint64_t)characterData + 0x80);
-    if (m_wpn)
-    {
-        return *(int*)((uint64_t)m_wpn + 0x38);
+    if (characterData) {
+        void *m_wpn = *(void **) ((uint64_t) characterData + 0x80);
+        if (m_wpn) {
+            return *(int *) ((uint64_t) m_wpn + 0x38);
+        }
     }
     return -1;
 }
 
 bool isCharacterShooting(void* character)
 {
-    void* characterData = *(void**)((uint64_t)character + 0x98);;
-    return *(bool*)((uint64_t)characterData + 0x6C);
+    void* characterData = *(void**)((uint64_t)character + 0x98);
+    if (characterData)
+    {
+        return *(bool*)((uint64_t)characterData + 0x6C);
+    }
+    return 0;
 }
 
 Vector2 isInFov(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg)
@@ -794,159 +822,224 @@ void ESP()
         }
 
         int id = getLocalId(pSys);
-        void* localPlayer = getPlayer(pSys, id);
-        if (localPlayer != nullptr) {
-            int localTeam = get_PlayerTeam(localPlayer);
-            monoList<void**>* characterList = getAllCharacters(pSys);
-            for (int i = 0; i < characterList->getSize(); i++) {
-                void* currentCharacter = (monoList<void**>*)characterList->getItems()[i];
-                if (get_Player(currentCharacter) == localPlayer) {
-                    localCharacter = currentCharacter;
-                }
+        if (id) {
+            void *localPlayer = getPlayer(pSys, id);
 
-                if (localCharacter != nullptr) {
-                    int curTeam = get_CharacterTeam(currentCharacter);
-                    int health = get_Health(currentCharacter);
-                    if (health > 0 && get_IsInitialized(currentCharacter) && localTeam != curTeam && curTeam != -1) {
-                        void* transform = getTransform(currentCharacter);
-                        Vector3 position = get_Position(transform);
-                        Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
-                        transformPos.Y = glHeight - transformPos.Y;
-                        Vector3 headPos = getBonePosition(currentCharacter, HEAD);
-                        Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
-                        Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
-                        Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
-                        Vector3 aboveHead = headPos + Vector3(0, 0.2, 0); // estimate
-                        Vector3 headEstimate = position + Vector3(0, 1.48, 0); // estimate
-                        Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
-                        Vector3 wsheadEstimate = WorldToScreen(get_camera(), headEstimate, 2);
-
-                        wsAboveHead.Y = glHeight - wsAboveHead.Y;
-                        wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
-
-                        float height = transformPos.Y - wsAboveHead.Y;
-                        float width = (transformPos.Y - wsheadEstimate.Y) / 2;
-
-                        Vector3 localPosition = get_Position(getTransform(localCharacter));
-
-                        Vector3 currentCharacterPosition = get_Position(getTransform(currentCharacter));
-                        float currentEntDist = Vector3::Distance(localPosition, currentCharacterPosition);
-
-                        espcfg = invisibleCfg;
-
-                        if (espcfg.snapline && transformPos.Z > 0) {
-                            DrawLine(ImVec2(glWidth / 2, glHeight),
-                                     ImVec2(transformPos.X, transformPos.Y),
-                                     ImColor(espcfg.snaplineColor.x, espcfg.snaplineColor.y,
-                                             espcfg.snaplineColor.z, (255 - currentEntDist * 5.0)),
-                                     3);
+            if (localPlayer != nullptr) {
+                int localTeam = get_PlayerTeam(localPlayer);
+                monoList<void **> *characterList = getAllCharacters(pSys);
+                if (characterList) {
+                    for (int i = 0; i < characterList->getSize(); i++) {
+                        void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
+                        if (get_Player(currentCharacter) == localPlayer) {
+                            localCharacter = currentCharacter;
                         }
 
-                        if (espcfg.bone && transformPos.Z > 0) {
-                            DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT, espcfg);
-                            DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT, espcfg);
-                            DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
-                            DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH, espcfg);
-                            DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
-                            DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT, espcfg);
-                            DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT, espcfg);
-                            DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
-                            DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
-                            Vector3 diff = wschestPos - wsheadPos;
-                            Vector3 neck = (chestPos + headPos) / 2;
-                            Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
-                            wsneck.Y = glHeight - wsneck.Y;
-                            wschestPos.Y = glHeight - wschestPos.Y;
-                            wsheadPos.Y = glHeight - wsheadPos.Y;
-                            if (wschestPos.Z > 0 && wsneck.Z) {
-                                DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
-                                         ImVec2(wsneck.X, wsneck.Y),
-                                         ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
-                                                 espcfg.boneColor.z),
-                                         3);
+                        if (localCharacter != nullptr && currentCharacter) {
+                            int curTeam = get_CharacterTeam(currentCharacter);
+                            int health = get_Health(currentCharacter);
+                            if (health > 0 && get_IsInitialized(currentCharacter) &&
+                                localTeam != curTeam && curTeam != -1) {
+                                void *transform = getTransform(currentCharacter);
+                                void* localTransform = getTransform(localCharacter);
+                                if (transform && localTransform) {
+                                    Vector3 position = get_Position(transform);
+                                    Vector3 transformPos = WorldToScreen(get_camera(), position, 2);
+                                    transformPos.Y = glHeight - transformPos.Y;
+                                    Vector3 headPos = getBonePosition(currentCharacter, HEAD);
+                                    Vector3 chestPos = getBonePosition(currentCharacter, CHEST);
+                                    Vector3 wschestPos = WorldToScreen(get_camera(), chestPos, 2);
+                                    Vector3 wsheadPos = WorldToScreen(get_camera(), headPos, 2);
+                                    Vector3 aboveHead = headPos + Vector3(0, 0.2, 0); // estimate
+                                    Vector3 headEstimate =
+                                            position + Vector3(0, 1.48, 0); // estimate
+                                    Vector3 wsAboveHead = WorldToScreen(get_camera(), aboveHead, 2);
+                                    Vector3 wsheadEstimate = WorldToScreen(get_camera(),
+                                                                           headEstimate,
+                                                                           2);
+
+                                    wsAboveHead.Y = glHeight - wsAboveHead.Y;
+                                    wsheadEstimate.Y = glHeight - wsheadEstimate.Y;
+
+                                    float height = transformPos.Y - wsAboveHead.Y;
+                                    float width = (transformPos.Y - wsheadEstimate.Y) / 2;
+
+                                    Vector3 localPosition = get_Position(
+                                            localTransform);
+
+                                    Vector3 currentCharacterPosition = get_Position(transform);
+                                    float currentEntDist = Vector3::Distance(localPosition,
+                                                                             currentCharacterPosition);
+
+                                    espcfg = invisibleCfg;
+
+                                    if (espcfg.snapline && transformPos.Z > 0) {
+                                        DrawLine(ImVec2(glWidth / 2, glHeight),
+                                                 ImVec2(transformPos.X, transformPos.Y),
+                                                 ImColor(espcfg.snaplineColor.x,
+                                                         espcfg.snaplineColor.y,
+                                                         espcfg.snaplineColor.z,
+                                                         (255 - currentEntDist * 5.0)),
+                                                 3);
+                                    }
+
+                                    if (espcfg.bone && transformPos.Z > 0) {
+                                        DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT,
+                                                  espcfg);
+                                        DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT,
+                                                  espcfg);
+                                        DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
+                                        DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH,
+                                                  espcfg);
+                                        DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
+                                        DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT,
+                                                  espcfg);
+                                        DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT,
+                                                  espcfg);
+                                        DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
+                                        DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
+                                        Vector3 diff = wschestPos - wsheadPos;
+                                        Vector3 neck = (chestPos + headPos) / 2;
+                                        Vector3 wsneck = WorldToScreen(get_camera(), neck, 2);
+                                        wsneck.Y = glHeight - wsneck.Y;
+                                        wschestPos.Y = glHeight - wschestPos.Y;
+                                        wsheadPos.Y = glHeight - wsheadPos.Y;
+                                        if (wschestPos.Z > 0 && wsneck.Z) {
+                                            DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
+                                                     ImVec2(wsneck.X, wsneck.Y),
+                                                     ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
+                                                             espcfg.boneColor.z),
+                                                     3);
+                                        }
+
+                                        if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
+                                            float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                                            auto background = ImGui::GetBackgroundDrawList();
+
+                                            background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y),
+                                                                  radius / 2,
+                                                                  IM_COL32(espcfg.boneColor.x * 255,
+                                                                           espcfg.boneColor.y * 255,
+                                                                           espcfg.boneColor.z * 255,
+                                                                           255),
+                                                                  0, 3.0f);
+                                        }
+                                    }
+
+                                    if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                                        DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y,
+                                                         width,
+                                                         height,
+                                                         ImVec4(espcfg.boxColor.x,
+                                                                espcfg.boxColor.y,
+                                                                espcfg.boxColor.z, 255), 3);
+                                    }
+
+                                    if (espcfg.healthesp && transformPos.Z > 0 &&
+                                        wsAboveHead.Z > 0) {
+                                        DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12,
+                                                               wsAboveHead.Y + height * (1 -
+                                                                                         (static_cast<float>(health) /
+                                                                                          100.0f)),
+                                                               3,
+                                                               height *
+                                                               (static_cast<float>(health) /
+                                                                100.0f),
+                                                               HealthToColor(health));
+                                    }
+
+                                    if (espcfg.healthNumber && transformPos.Z > 0 &&
+                                        wsAboveHead.Z > 0) {
+                                        if (health < 100) {
+                                            DrawText(ImVec2(wsAboveHead.X - width / 2 - 17,
+                                                            wsAboveHead.Y +
+                                                            height * (1 -
+                                                                      static_cast<float>(health) /
+                                                                      100.0f) -
+                                                            3),
+                                                     ImVec4(255, 255, 255, 255),
+                                                     std::to_string(health),
+                                                     espFont);
+                                        }
+                                    }
+
+                                    if (espcfg.name && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                                        void *player = get_Player(currentCharacter);
+                                        void *boxedValueName = *(void **) ((uint64_t) player +
+                                                                           0x70);
+                                        monoString *username = *(monoString **) (
+                                                (uint64_t) boxedValueName +
+                                                0x20);
+                                        float compensation = username->getLength() * 4.0f;
+                                        DrawText(ImVec2(wsheadPos.X - compensation,
+                                                        wsAboveHead.Y - 20),
+                                                 ImVec4(espcfg.nameColor.x, espcfg.nameColor.y,
+                                                        espcfg.nameColor.z, 255),
+                                                 username->getString(),
+                                                 espFont);
+                                    }
+
+                                    /* if (espcfg.weapon && transformPos.Z > 0) { 	std::string weapon = get_characterWeaponName(pSys, currentCharacter);
+                                             // font is 15 px has 2 px outline so has 16px per character, to center the font we do
+                                          float compensation = weapon.length() *4.0f;
+
+                                          DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7),
+                                                   ImVec4(espcfg.weaponColor.x, espcfg.weaponColor.y,
+                                                          espcfg.weaponColor.z, 255), weapon, espFont);
+                                      }*/
+                                }
                             }
 
-                            if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
-                                float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                            AimbotCfg cfg;
+                            if (localCharacter && get_Health(localCharacter)) {
+                                int currWeapon = getCurrentWeaponCategory(localCharacter);
+                                if (currWeapon != -1) {
+                                    switch (currWeapon) {
+                                        case 0:
+                                            cfg = pistolCfg;
+                                            break;
+                                        case 1:
+                                            cfg = arCFg;
+                                            break;
+                                        case 2:
+                                            cfg = smgCfg;
+                                            break;
+                                        case 3:
+                                            cfg = shotgunCfg;
+                                            break;
+                                        case 4:
+                                            cfg = sniperCfg;
+                                            break;
+                                    }
+                                }
+                            }
+
+                            if (cfg.fovCheck) {
+                                float worldFov = get_cameraFov(pSys);
+                                float radius =
+                                        tan(fovValue * (PI / 180) / 2) / tan(worldFov / 2) *
+                                        glWidth /
+                                        2;
                                 auto background = ImGui::GetBackgroundDrawList();
+                                background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), radius,
+                                                      IM_COL32(255, 255, 255, 255), 0, 3.0f);
+                                if (cfg.drawFov) {
+                                    float worldFov = get_cameraFov(pSys);
+                                    float radius =
+                                            tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) *
+                                            glWidth /
+                                            2;
+                                    auto background = ImGui::GetBackgroundDrawList();
+                                    float correction = 0;
+                                    if ((worldFov - 90) < 0) {
+                                        correction = worldFov - 90;
+                                    }
 
-                                background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y), radius / 2, IM_COL32(espcfg.boneColor.x * 255,espcfg.boneColor.y * 255,espcfg.boneColor.z * 255, 255),0,3.0f);
+                                    background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
+                                                          (radius) * PI - correction / PI * 2,
+                                                          IM_COL32(255, 255, 255, 255), 0, 3.0f);
+                                }
                             }
-                        }
-
-                        if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width,
-                                             height,
-                                             ImVec4(espcfg.boxColor.x, espcfg.boxColor.y, espcfg.boxColor.z,255),3);
-                        }
-
-                        if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12, wsAboveHead.Y + height * (1 - (static_cast<float>(health) / 100.0f)), 3, height * (static_cast<float>(health) / 100.0f), HealthToColor(health));
-                        }
-
-                        if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            if (health < 100) {
-                                DrawText(ImVec2(wsAboveHead.X - width / 2 - 17, wsAboveHead.Y + height * (1 - static_cast<float>(health) / 100.0f) - 3), ImVec4(255, 255, 255, 255), std::to_string(health), espFont);
-                            }
-                        }
-
-                        if (espcfg.name && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-                            void* player = get_Player(currentCharacter);
-                            void* boxedValueName = *(void**)((uint64_t)player + 0x70);
-                            monoString* username = *(monoString**)((uint64_t)boxedValueName + 0x20);
-                            float compensation = username->getLength() * 4.0f;
-                            DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),ImVec4(espcfg.nameColor.x, espcfg.nameColor.y, espcfg.nameColor.z,255), username->getString(), espFont);
-                        }
-
-                        /* if (espcfg.weapon && transformPos.Z > 0) { 	std::string weapon = get_characterWeaponName(pSys, currentCharacter);
-						     	// font is 15 px has 2 px outline so has 16px per character, to center the font we do
-						      float compensation = weapon.length() *4.0f;
-
-						      DrawText(ImVec2(wsAboveHead.X - compensation, transformPos.Y + 7),
-						               ImVec4(espcfg.weaponColor.x, espcfg.weaponColor.y,
-						                      espcfg.weaponColor.z, 255), weapon, espFont);
-						  }*/
-                    }
-
-                    AimbotCfg cfg;
-                    if (localCharacter && get_Health(localCharacter)) {
-                        int currWeapon = getCurrentWeaponCategory(localCharacter);
-                        if (currWeapon != -1) {
-                            switch (currWeapon) {
-                                case 0:
-                                    cfg = pistolCfg;
-                                    break;
-                                case 1:
-                                    cfg = arCFg;
-                                    break;
-                                case 2:
-                                    cfg = smgCfg;
-                                    break;
-                                case 3:
-                                    cfg = shotgunCfg;
-                                    break;
-                                case 4:
-                                    cfg = sniperCfg;
-                                    break;
-                            }
-                        }
-                    }
-
-                    if (cfg.fovCheck) {
-                        float worldFov = get_cameraFov(pSys);
-                        float radius = tan(fovValue * (PI / 180) / 2) / tan(worldFov / 2) * glWidth / 2;
-                        auto background = ImGui::GetBackgroundDrawList();
-                        background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), radius, IM_COL32(255, 255, 255, 255), 0, 3.0f);
-                        if (cfg.drawFov) {
-                            float worldFov = get_cameraFov(pSys);
-                            float radius = tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) * glWidth / 2;
-                            auto background = ImGui::GetBackgroundDrawList();
-                            float correction = 0;
-                            if ((worldFov - 90) < 0) {
-                                correction = worldFov - 90;
-                            }
-
-                            background->AddCircle(ImVec2(glWidth / 2, glHeight / 2), (radius)*PI - correction / PI * 2, IM_COL32(255, 255, 255, 255), 0, 3.0f);
                         }
                     }
                 }

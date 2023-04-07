@@ -1,26 +1,26 @@
 {
   "buildFiles": [
-    "D:\\Github\\Mods\\zygiskpg-paid\\module\\src\\main\\cpp\\CMakeLists.txt"
+    "D:\\Documents\\cops-menu\\module\\src\\main\\cpp\\CMakeLists.txt"
   ],
   "cleanCommandsComponents": [
     [
-      "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+      "C:\\Users\\0x7is\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
       "-C",
-      "D:\\Github\\Mods\\zygiskpg-paid\\module\\.cxx\\cmake\\release\\arm64-v8a",
+      "D:\\Documents\\cops-menu\\module\\.cxx\\cmake\\release\\arm64-v8a",
       "clean"
     ]
   ],
   "buildTargetsCommandComponents": [
-    "C:\\Users\\chris\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
+    "C:\\Users\\0x7is\\AppData\\Local\\Android\\Sdk\\cmake\\3.18.1\\bin\\ninja.exe",
     "-C",
-    "D:\\Github\\Mods\\zygiskpg-paid\\module\\.cxx\\cmake\\release\\arm64-v8a",
+    "D:\\Documents\\cops-menu\\module\\.cxx\\cmake\\release\\arm64-v8a",
     "{LIST_OF_TARGETS_TO_BUILD}"
   ],
   "libraries": {
-    "ZygiskPG::@6890427a1f51a3e7e1df": {
-      "artifactName": "ZygiskPG",
+    "ZyCheatsC::@6890427a1f51a3e7e1df": {
+      "artifactName": "ZyCheatsC",
       "abi": "arm64-v8a",
-      "output": "D:\\Github\\Mods\\zygiskpg-paid\\module\\build\\intermediates\\cmake\\release\\obj\\arm64-v8a\\libZygiskPG.so",
+      "output": "D:\\Documents\\cops-menu\\module\\build\\intermediates\\cmake\\release\\obj\\arm64-v8a\\libZyCheatsC.so",
       "runtimeFiles": []
     }
   }
