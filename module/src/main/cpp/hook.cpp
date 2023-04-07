@@ -47,25 +47,23 @@ monoString* CreateIl2cppString(const char* str)
     return CreateIl2cppString(str, startIndex, length);
 }
 
-ESPCfg visibleCfg, invisibleCfg, espcfg;
+ESPCfg invisibleCfg, espcfg;
 AimbotCfg pistolCfg, smgCfg, arCFg, shotgunCfg, sniperCfg;
 bool firsttime = false;
 static int selected = 0;
 static int sub_selected = 10;
-const char *Shader = OBFUSCATE("unity_SHC");
+const char *Shader = OBFUSCATE("_PBS_Character_Indirect_Base");
 void* TouchControls = nullptr;
 void* pSys = nullptr;
-void* pSpeed = nullptr;
 void* localCharacter = nullptr;
-bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, kickback, crouch, wallbang, rain, rain1,
-        fov, ggod, killnotes,crosshair, moneyreward, mindamage, maxdamage, viewmodel, viewmodelfov, boxesp, healthesp, healthNumber, espName, weaponEsp, armroFlag, spawnbullets,
-        canmove,isPurchasingSkins, fly, removecharacter, tutorial, freeshop, gravity, dropweapon,ragdoll, crouchheight, cameraheight, interactionrange, jumpheight, bhop,
-        noslow, shake, eoi, gbounciness, ammo, firerate, iea, p100Crosshair, tradar, fovCheck, fscope, applied = false, nosway, burstfire,rain2,
-        pickup, silentknife, armorpen, chams, headhitbox, bodyhitbox, silentknife1, addmone;
+bool unsafe,recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, crouch, wallbang, rain, rain1,
+        fov, ggod, killnotes,crosshair, moneyreward, mindamage, maxdamage, viewmodelfov, spawnbullets,
+        canmove,isPurchasingSkins, fly, removecharacter, jumpheight, noslow, shake, eoi, gbounciness, ammo, firerate, iea,
+        p100Crosshair, tradar, fscope, applied = false, nosway, burstfire, pickup, silentknife, armorpen, chams,
+        headhitbox, bodyhitbox, silentknife1, addmone;
 
-float speedval = 5.100000, fovModifier, recoilval, spreadval, viemodelposz, viewmodelfovval, gravityval, flyval ,crouchval, camval, jumpval = 4.100000,
-firerateval = 500, fovValue = 360, bounceval, gundmgm;
-int ammocount = 0, callCount = 0, burstfireval, LocalTeam, aimPos = 0, shootControl = 0;
+float speedval = 5.100000, fovModifier, recoilval, viewmodelfovval, flyval , jumpval = 4.100000, fovValue = 360, bounceval, gundmgm;
+int burstfireval, aimPos = 0, shootControl = 0;
 
 extern int glHeight;
 extern int glWidth;
@@ -107,19 +105,20 @@ void TouchControlsDestroy(void* obj)
 }
 
 Vector3 getBonePosition(void* character, int bone){
-    void* curBone = get_CharacterBodyPart(character, bone);
-    void* hitSphere = *(void**)((uint64_t)curBone + 0x20);
-    void* transform = *(void**)((uint64_t)hitSphere + 0x30);
-    Vector3 bonePos = get_Position(transform);
-    return bonePos;
-}
-
-float NormalizeAngle (float angle){
-    while (angle>360)
-        angle -= 360;
-    while (angle<0)
-        angle += 360;
-    return angle;
+    void* hitSphere = NULL;
+    void* transform = NULL;
+    Vector3 bonePos = Vector3(0, 0, 0);
+    if(character != nullptr){
+        void* curBone = get_CharacterBodyPart(character, bone);
+        if(curBone != nullptr){hitSphere = *(void**)((uint64_t)curBone + 0x20);}
+        if(hitSphere != nullptr){transform = *(void**)((uint64_t)hitSphere + 0x30); }
+        if(transform){
+            bonePos = get_Position(transform);
+            return bonePos;
+        }
+       return Vector3(0,0,0);
+    }
+    return Vector3(0,0,0);
 }
 
 int isGame(JNIEnv *env, jstring appDataDir) {
@@ -147,11 +146,6 @@ int isGame(JNIEnv *env, jstring appDataDir) {
     }
 }
 
-void* ShaderFind(std::string name)
-{
-    LOGE("Shader logged: %s", name.c_str());
-    oldShaderFind(name);
-}
 
 bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg)
 {
@@ -335,6 +329,7 @@ void UpdateWeapon(void* obj, float deltatime){
 
                 if(firerate){
                     *(float *) ((uint64_t) WeaponDefData + 0x64) = 2000;
+                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
                 }
 
                 if(burstfire){
@@ -974,6 +969,31 @@ void ESP()
     }
 }
 
+
+void DrawKeySystemMenu(){
+    ImGui::Begin(OBFUSCATE("keysystemMenu"), nullptr, ImGuiWindowFlags_NoDecoration);
+    auto draw = ImGui::GetWindowDrawList();
+    ImVec2 pos = ImGui::GetWindowPos();
+    ImGui::SetWindowSize(ImVec2(900, 500));
+    ImVec2 size = ImGui::GetWindowSize();
+
+    ImGui::TextUnformatted("Key System");
+    ImGui::Separator();
+    ImGui::TextUnformatted("Complete the Key System to access PrimeTools.");
+
+    auto keyStatus = "...tiahhs string";
+    ImGui::TextUnformatted("Key Status: ");
+    ImGui::SameLine();
+    ImGui::TextUnformatted(keyStatus);
+
+    if(ImGui::Button("Get Key"))
+    {
+        // Tiahh's code...
+    }
+
+    ImGui::End();
+}
+
 void DrawMenu() {
     ImGui::Begin(OBFUSCATE("menu"), nullptr, ImGuiWindowFlags_NoDecoration);
     {
@@ -1266,9 +1286,6 @@ void DrawMenu() {
                 if(ImGui::Checkbox(OBFUSCATE("Spread"), &spread)){ Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Force Scope"), &fscope);
                 ImGui::Checkbox(OBFUSCATE("Burst Shots"), &burstfire);
-                if(burstfire){
-                    ImGui::SliderInt(OBFUSCATE(" shots"), &burstfireval, 1.0, 30.0);
-                }
                 ImGui::EndChild();
 
                 ImGui::SetCursorPos(ImVec2(481.5, 74));
@@ -1285,7 +1302,7 @@ void DrawMenu() {
 
             if (sub_selected == 3) {
                 ImGui::SetCursorPos(ImVec2(67, 74));
-                if(ImGui::Button(OBFUSCATE("Mone"))){addmone = true;}
+                ImGui::BeginChild("Player Modifications", ImVec2(813, 406));
                 ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
                 if (speed) {
                     ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 30.0);
@@ -1299,7 +1316,6 @@ void DrawMenu() {
                     ImGui::SliderFloat(OBFUSCATE(" · Height"), &flyval, 0.0, 6.0);
                 }
                 ImGui::Checkbox(OBFUSCATE("No Slow-Down"), &noslow);
-                ImGui::Checkbox(OBFUSCATE("Instant Crouch"), &crouch);
                 ImGui::EndChild();
             }
         }
@@ -1339,6 +1355,7 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     ImGui::NewFrame();
 
     DrawMenu();
+   // DrawKeySystemMenu();
     ESP();
     DrawText(ImVec2(10,10), ImVec4(255, 255, 255, 255), "PrimeTools BETA", espFont);
 
@@ -1348,6 +1365,7 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     return old_eglSwapBuffers(dpy, surface);
 }
+
 
 GLint (*old_glGetUniformLocation)(GLuint program, const GLchar *name);
 GLint glGetUniformLocation(GLuint program, const GLchar *name) // returns location of a shader/uniform.
@@ -1371,7 +1389,6 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices
     if(Shaders() > 0)
     {
         if (chams) {
-            LOGE("COEMS");
             glDepthRangef(1, 0.5);
 
             glEnable(GL_BLEND);
@@ -1402,8 +1419,6 @@ void *hack_thread(void *arg) {
         auto maps =  KittyMemory::getMapsByName("split_config.arm64_v8a.apk");
         for(std::vector<ProcMap>::iterator it = maps.begin(); it != maps.end(); ++it) {
             auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 00 F2 79 00 00 00 00 00 40 00 00 00 00 00 00 00 88 D8 E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-            auto libcf = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 30 11 00 00 00 00 00 00 40 00 00 00 00 00 00 00 48 41 00 00 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-            auto libgl = KittyScanner::findHexFirst(it->startAddress, it->endAddress,"7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 00 F2 79 00 00 00 00 00 40 00 00 00 00 00 00 00 88 D8 E1 02 00 00 00 00", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
             if(address != 0)
             {
                 libBaseAddress = address;
@@ -1425,12 +1440,9 @@ void *hack_thread(void *arg) {
     Patches();
     auto eglhandle = dlopen("libunity.so", RTLD_LAZY);
     auto eglSwapBuffers = dlsym(eglhandle, "eglSwapBuffers");
-    auto renderHandle = dlopen("libGLES.so", RTLD_LAZY);
-    LOGE("RenderHandle %p", renderHandle);
+    auto renderHandle = dlopen("/system/lib64/libGLESv2.so", RTLD_LAZY);
     auto glDrawElement = dlsym(renderHandle, "glDrawElements");
     auto glGetUniformLocations = dlsym(renderHandle, "glGetUniformLocation");
-    LOGE("glDrawElement %p", glDrawElement);
-    LOGE("glGetUniformLocation %p", glGetUniformLocation);
     DobbyHook((void*)eglSwapBuffers,(void*)hook_eglSwapBuffers, (void**)&old_eglSwapBuffers);
     DobbyHook((void*)glDrawElement,(void*)glDrawElements, (void**)&old_glDrawElements);
     DobbyHook((void*)glGetUniformLocations,(void*)glGetUniformLocation, (void**)&old_glGetUniformLocation);
