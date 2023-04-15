@@ -53,6 +53,7 @@ add_library(${MODULE_NAME}
         )
 
 set(DOBBY_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}/libdobby.a)
+set(CURL_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}/libcurl.a)
 
 find_library(log-lib log)
 find_library(egl EGL)
@@ -76,6 +77,7 @@ target_link_libraries(
         ${DOBBY_LIB}
         ${OPENGL_LIB}
         ${GLESV2_LIB}
+        ${CURL_LIB}
         ${android}
         ${egl}  )
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")

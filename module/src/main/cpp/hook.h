@@ -96,6 +96,7 @@ void*(*oldReloadCreate)(void* obj, void* character, float reloadTime, float relo
 void* (*oldCreateRagdoll)(void* obj, BodyPart bodyPart, Vector3 force);
 void(*oldUpdateGame)(void* obj, float dt);
 
+
 // Hooks
 float get_fieldOfView(void *instance);
 void* ShaderFind(std::string name);
