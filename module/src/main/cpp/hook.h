@@ -54,6 +54,8 @@ int (*get_LocalID)(void* obj);
 void (*set_Position)(void* obj, Vector3 pos);
 void (*AddMoney)(void* player, int amount);
 void* (*get_LocalPlayer)(void* pSys);
+monoString* (*getDeviceUniqueIdentifier)();
+void (*OpenURL)(monoString* url);
 
 // Custom functions
 void* getTransform(void* character);

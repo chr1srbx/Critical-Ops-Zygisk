@@ -16,7 +16,7 @@ set(CXX_FLAGS "${CXX_FLAGS} -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG")
 
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(C_FLAGS "${C_FLAGS} -O2 -fvisibility=hidden -fvisibility-inlines-hidden")
-    set(LINKER_FLAGS "${LINKER_FLAGS} -Wl,-exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-all")
+    set(LINKER_FLAGS "${LINKER_FLAGS} -Wl,-exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-al")
 else ()
     set(C_FLAGS "${C_FLAGS} -O0")
 endif ()
@@ -75,9 +75,9 @@ endif (${ANDROID_PLATFORM_LEVEL} LESS 12)
 target_link_libraries(
         ${MODULE_NAME} log
         ${DOBBY_LIB}
+        ${CURL_LIB}
         ${OPENGL_LIB}
         ${GLESV2_LIB}
-        ${CURL_LIB}
         ${android}
         ${egl}  )
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
