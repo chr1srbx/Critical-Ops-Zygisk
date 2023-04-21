@@ -11,7 +11,7 @@ message("Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_CXX_STANDARD 20)
 
 set(LINKER_FLAGS "-ffixed-x18 -Wl,--hash-style=both")
-set(C_FLAGS "-Werror=format -fdata-sections -ffunction-sections")
+set(C_FLAGS "-Werror=format -fdata-sections -ffunction-sections -lz")
 set(CXX_FLAGS "${CXX_FLAGS} -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG")
 
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")

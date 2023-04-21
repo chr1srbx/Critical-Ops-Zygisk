@@ -5141,6 +5141,10 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
     if (flags & ImGuiColorEditFlags_NoInputs)
         flags = (flags & (~ImGuiColorEditFlags_DisplayMask_)) | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_NoOptions;
 
+    // Context menu: display and modify options (before defaults are applied)
+    if (!(flags & ImGuiColorEditFlags_NoOptions))
+        ColorEditOptionsPopup(col, flags);
+
     // Read stored options
     if (!(flags & ImGuiColorEditFlags_DisplayMask_))
         flags |= (g.ColorEditOptions & ImGuiColorEditFlags_DisplayMask_);
@@ -5175,43 +5179,98 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
 
     const ImVec2 pos = window->DC.CursorPos;
     const float inputs_offset_x = (style.ColorButtonPosition == ImGuiDir_Left) ? w_button : 0.0f;
+    window->DC.CursorPos.x = pos.x + inputs_offset_x;
 
+    if ((flags & (ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV)) != 0 && (flags & ImGuiColorEditFlags_NoInputs) == 0)
+    {
+        // RGB/HSV 0..255 Sliders
+        const float w_item_one  = ImMax(1.0f, IM_FLOOR((w_inputs - (style.ItemInnerSpacing.x) * (components - 1)) / (float)components));
+        const float w_item_last = ImMax(1.0f, IM_FLOOR(w_inputs - (w_item_one + style.ItemInnerSpacing.x) * (components - 1)));
+
+        const bool hide_prefix = (w_item_one <= CalcTextSize((flags & ImGuiColorEditFlags_Float) ? "M:0.000" : "M:000").x);
+        static const char* ids[4] = { "##X", "##Y", "##Z", "##W" };
+        const int fmt_idx = hide_prefix ? 0 : (flags & ImGuiColorEditFlags_DisplayHSV) ? 2 : 1;
+
+        for (int n = 0; n < components; n++)
+        {
+            if (n > 0)
+                SameLine(0, style.ItemInnerSpacing.x);
+            SetNextItemWidth((n + 1 < components) ? w_item_one : w_item_last);
+
+            // FIXME: When ImGuiColorEditFlags_HDR flag is passed HS values snap in weird ways when SV values go below 0.
+            if (!(flags & ImGuiColorEditFlags_NoOptions))
+                OpenPopupOnItemClick("context", ImGuiPopupFlags_MouseButtonRight);
+        }
+    }
+    else if ((flags & ImGuiColorEditFlags_DisplayHex) != 0 && (flags & ImGuiColorEditFlags_NoInputs) == 0)
+    {
+        // RGB Hexadecimal Input
+        char buf[64];
+        if (alpha)
+            ImFormatString(buf, IM_ARRAYSIZE(buf), "#%02X%02X%02X%02X", ImClamp(i[0], 0, 255), ImClamp(i[1], 0, 255), ImClamp(i[2], 0, 255), ImClamp(i[3], 0, 255));
+        else
+            ImFormatString(buf, IM_ARRAYSIZE(buf), "#%02X%02X%02X", ImClamp(i[0], 0, 255), ImClamp(i[1], 0, 255), ImClamp(i[2], 0, 255));
+        SetNextItemWidth(w_inputs);
+        if (InputText("##Text", buf, IM_ARRAYSIZE(buf), ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase))
+        {
+            value_changed = true;
+            char* p = buf;
+            while (*p == '#' || ImCharIsBlankA(*p))
+                p++;
+            i[0] = i[1] = i[2] = 0;
+            i[3] = 0xFF; // alpha default to 255 is not parsed by scanf (e.g. inputting #FFFFFF omitting alpha)
+            int r;
+            if (alpha)
+                r = sscanf(p, "%02X%02X%02X%02X", (unsigned int*)&i[0], (unsigned int*)&i[1], (unsigned int*)&i[2], (unsigned int*)&i[3]); // Treat at unsigned (%X is unsigned)
+            else
+                r = sscanf(p, "%02X%02X%02X", (unsigned int*)&i[0], (unsigned int*)&i[1], (unsigned int*)&i[2]);
+            IM_UNUSED(r); // Fixes C6031: Return value ignored: 'sscanf'.
+        }
+        if (!(flags & ImGuiColorEditFlags_NoOptions))
+            OpenPopupOnItemClick("context", ImGuiPopupFlags_MouseButtonRight);
+    }
 
     ImGuiWindow* picker_active_window = NULL;
     if (!(flags & ImGuiColorEditFlags_NoSmallPreview))
     {
         const float button_offset_x = ((flags & ImGuiColorEditFlags_NoInputs) || (style.ColorButtonPosition == ImGuiDir_Left)) ? 0.0f : w_inputs + style.ItemInnerSpacing.x;
+        window->DC.CursorPos = ImVec2(pos.x + button_offset_x, pos.y);
 
         const ImVec4 col_v4(col[0], col[1], col[2], alpha ? col[3] : 1.0f);
-        if (ColorButton(label, col_v4, flags, ImVec2(12.5f, 12)))
+        if (ColorButton("##ColorButton", col_v4, flags))
         {
             if (!(flags & ImGuiColorEditFlags_NoPicker))
             {
                 // Store current color and open a picker
                 g.ColorPickerRef = col_v4;
                 OpenPopup("picker");
-                SetNextWindowPos(g.LastItemData.Rect.GetBL() + ImVec2(5.0f, style.ItemSpacing.y - 10));
+                SetNextWindowPos(g.LastItemData.Rect.GetBL() + ImVec2(0.0f, style.ItemSpacing.y));
             }
         }
         if (!(flags & ImGuiColorEditFlags_NoOptions))
             OpenPopupOnItemClick("context", ImGuiPopupFlags_MouseButtonRight);
 
-        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 0.f);
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(ImColor(11, 11, 11)));
-        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(ImColor(255, 255, 255, 15)));
-        if (BeginPopup("picker", ImGuiWindowFlags_NoMove))
+        if (BeginPopup("picker"))
         {
             picker_active_window = g.CurrentWindow;
-            Spacing();
-            Spacing();
+            if (label != label_display_end)
+            {
+                TextEx(label, label_display_end);
+                Spacing();
+            }
             ImGuiColorEditFlags picker_flags_to_forward = ImGuiColorEditFlags_DataTypeMask_ | ImGuiColorEditFlags_PickerMask_ | ImGuiColorEditFlags_InputMask_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_AlphaBar;
             ImGuiColorEditFlags picker_flags = (flags_untouched & picker_flags_to_forward) | ImGuiColorEditFlags_DisplayMask_ | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf;
-            SetNextItemWidth(square_sz * 8.0f); // Use 256 + bar sizes?
+            SetNextItemWidth(square_sz * 10.0f); // Use 256 + bar sizes?
             value_changed |= ColorPicker4("##picker", col, picker_flags, &g.ColorPickerRef.x);
             EndPopup();
         }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor(2);
+    }
+
+    if (label != label_display_end && !(flags & ImGuiColorEditFlags_NoLabel))
+    {
+        const float text_offset_x = (flags & ImGuiColorEditFlags_NoInputs) ? w_button : w_full + style.ItemInnerSpacing.x;
+        window->DC.CursorPos = ImVec2(pos.x + text_offset_x, pos.y + style.FramePadding.y);
+        TextEx(label, label_display_end);
     }
 
     // Convert back
@@ -5271,6 +5330,7 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
 
     return value_changed;
 }
+
 
 bool ImGui::ColorPicker3(const char* label, float col[3], ImGuiColorEditFlags flags)
 {
