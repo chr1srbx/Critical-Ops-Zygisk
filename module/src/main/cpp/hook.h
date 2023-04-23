@@ -56,13 +56,6 @@ void (*AddMoney)(void* player, int amount);
 void* (*get_LocalPlayer)(void* pSys);
 monoString* (*getDeviceUniqueIdentifier)();
 void (*OpenURL)(monoString* url);
-void* (*getCharacterIndicatorData)(void* obj, void* character);
-int(*getTeamIndex)(PlayerAdapter* player);
-monoString* (*get_Username)(PlayerAdapter* player);
-monoString* (*get_ClanTag)(PlayerAdapter* player);
-void* (*CreateMessage)(monoString* message, ChatMessageType type, bool commandUIUsed);
-void (*SendMessage) (void* obj);
-
 
 // Custom functions
 void* getTransform(void* character);
@@ -77,6 +70,7 @@ long get_invincibilityTime(void* character);
 int getCurrentWeaponCategory(void* character);
 Vector2 isInFov(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg);
 bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg);
+
 
 
 // oHooks

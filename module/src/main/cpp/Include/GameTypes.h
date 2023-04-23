@@ -26,12 +26,6 @@ enum BodyPart
     HEAD
 };
 
-struct PlayerAdapter
-{
-    int pad_0[3];
-    void* Player; // 0x10
-};
-
 enum WeaponCategory
 {
     Pistol,
@@ -61,19 +55,6 @@ struct Character
 {
     void* character;
     int id;
-};
-
-enum ChatMessageType
-{
-    PUBLIC_CHAT,
-    TEAM_CHAT,
-    RADIO,
-    NOTIFICATION,
-    LOCAL_NOTIFICATION,
-    BROADCAST,
-    FRIENDS,
-    PARTY,
-    CLAN
 };
 
 struct ESPCfg
