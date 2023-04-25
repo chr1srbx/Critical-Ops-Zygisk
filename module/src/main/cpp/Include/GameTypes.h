@@ -87,6 +87,7 @@ struct ESPCfg
     bool healthesp = 0;
     bool healthNumber = 0;
     bool name = 0;
+    bool distance;
     ImVec4 nameColor = ImColor(255,255,255);
     bool weapon = 0;
     ImVec4 weaponColor = ImColor(255,255,255);

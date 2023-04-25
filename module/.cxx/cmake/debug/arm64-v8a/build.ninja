@@ -11,7 +11,7 @@
 # =============================================================================
 
 # =============================================================================
-# Project: ZyCheatsC
+# Project: PrimeTools
 # Configurations: Debug
 # =============================================================================
 
@@ -35,168 +35,168 @@ CONFIGURATION = Debug
 include CMakeFiles/rules.ninja
 
 # =============================================================================
-# Object build statements for SHARED_LIBRARY target ZyCheatsC
+# Object build statements for SHARED_LIBRARY target PrimeTools
 
 
 #############################################
-# Order-only phony target for ZyCheatsC
+# Order-only phony target for PrimeTools
 
-build cmake_object_order_depends_target_ZyCheatsC: phony || CMakeFiles/ZyCheatsC.dir
+build cmake_object_order_depends_target_PrimeTools: phony || CMakeFiles/PrimeTools.dir
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/imgui.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/imgui.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\imgui.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/imgui.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/imgui.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\imgui.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/imgui_draw.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/imgui_draw.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\imgui_draw.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/imgui_draw.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/imgui_draw.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\imgui_draw.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/imgui_demo.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/imgui_demo.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\imgui_demo.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/imgui_demo.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/imgui_demo.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\imgui_demo.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/imgui_widgets.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/imgui_widgets.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\imgui_widgets.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/imgui_widgets.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/imgui_widgets.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\imgui_widgets.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/imgui_tables.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/imgui_tables.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\imgui_tables.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/imgui_tables.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/imgui_tables.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\imgui_tables.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/user_interface.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/user_interface.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\user_interface.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/user_interface.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/user_interface.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\user_interface.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/backends/imgui_impl_opengl3.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends/imgui_impl_opengl3.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\backends\imgui_impl_opengl3.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/backends/imgui_impl_opengl3.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends/imgui_impl_opengl3.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\backends\imgui_impl_opengl3.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui\backends
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui\backends
 
-build CMakeFiles/ZyCheatsC.dir/ImGui/backends/imgui_impl_android.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends/imgui_impl_android.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\ImGui\backends\imgui_impl_android.cpp.o.d
+build CMakeFiles/PrimeTools.dir/ImGui/backends/imgui_impl_android.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends/imgui_impl_android.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\ImGui\backends\imgui_impl_android.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\ImGui\backends
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\ImGui\backends
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyArm64.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/KittyArm64.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\KittyArm64.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/KittyArm64.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/KittyArm64.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\KittyArm64.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyMemory.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/KittyMemory.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\KittyMemory.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/KittyMemory.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/KittyMemory.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\KittyMemory.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyScanner.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/KittyScanner.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\KittyScanner.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/KittyScanner.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/KittyScanner.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\KittyScanner.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyUtils.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/KittyUtils.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\KittyUtils.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/KittyUtils.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/KittyUtils.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\KittyUtils.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/MemoryBackup.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/MemoryBackup.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\MemoryBackup.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/MemoryBackup.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/MemoryBackup.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\MemoryBackup.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/KittyMemory/MemoryPatch.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory/MemoryPatch.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\KittyMemory\MemoryPatch.cpp.o.d
+build CMakeFiles/PrimeTools.dir/KittyMemory/MemoryPatch.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/KittyMemory/MemoryPatch.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\KittyMemory\MemoryPatch.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir\KittyMemory
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir\KittyMemory
 
-build CMakeFiles/ZyCheatsC.dir/main.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/main.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\main.cpp.o.d
+build CMakeFiles/PrimeTools.dir/main.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/main.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\main.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir
 
-build CMakeFiles/ZyCheatsC.dir/hook.cpp.o: CXX_COMPILER__ZyCheatsC_Debug D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/hook.cpp || cmake_object_order_depends_target_ZyCheatsC
-  DEFINES = -DZyCheatsC_EXPORTS
-  DEP_FILE = CMakeFiles\ZyCheatsC.dir\hook.cpp.o.d
+build CMakeFiles/PrimeTools.dir/hook.cpp.o: CXX_COMPILER__PrimeTools_Debug D$:/GitHub/cops-menu/module/src/main/cpp/hook.cpp || cmake_object_order_depends_target_PrimeTools
+  DEFINES = -DPrimeTools_EXPORTS
+  DEP_FILE = CMakeFiles\PrimeTools.dir\hook.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info  -fPIC -std=gnu++20
-  INCLUDES = -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/KittyMemory -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/Includes -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui -ID:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/ImGui/backends
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
-  OBJECT_FILE_DIR = CMakeFiles\ZyCheatsC.dir
+  INCLUDES = -ID:/GitHub/cops-menu/module/src/main/cpp/KittyMemory -ID:/GitHub/cops-menu/module/src/main/cpp/Includes -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui -ID:/GitHub/cops-menu/module/src/main/cpp/ImGui/backends
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\PrimeTools.dir
 
 
 # =============================================================================
-# Link build statements for SHARED_LIBRARY target ZyCheatsC
+# Link build statements for SHARED_LIBRARY target PrimeTools
 
 
 #############################################
-# Link the shared library D:\Github\Mods\copsmenu\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libZyCheatsC.so
+# Link the shared library D:\GitHub\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libPrimeTools.so
 
-build D$:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so: CXX_SHARED_LIBRARY_LINKER__ZyCheatsC_Debug CMakeFiles/ZyCheatsC.dir/ImGui/imgui.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/imgui_draw.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/imgui_demo.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/imgui_widgets.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/imgui_tables.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/user_interface.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/backends/imgui_impl_opengl3.cpp.o CMakeFiles/ZyCheatsC.dir/ImGui/backends/imgui_impl_android.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyArm64.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyMemory.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyScanner.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/KittyUtils.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/MemoryBackup.cpp.o CMakeFiles/ZyCheatsC.dir/KittyMemory/MemoryPatch.cpp.o CMakeFiles/ZyCheatsC.dir/main.cpp.o CMakeFiles/ZyCheatsC.dir/hook.cpp.o | D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/libs/arm64-v8a/libdobby.a D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/libs/arm64-v8a/libcurl.a C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libGLESv2.so C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libandroid.so C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libEGL.so
+build D$:/GitHub/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libPrimeTools.so: CXX_SHARED_LIBRARY_LINKER__PrimeTools_Debug CMakeFiles/PrimeTools.dir/ImGui/imgui.cpp.o CMakeFiles/PrimeTools.dir/ImGui/imgui_draw.cpp.o CMakeFiles/PrimeTools.dir/ImGui/imgui_demo.cpp.o CMakeFiles/PrimeTools.dir/ImGui/imgui_widgets.cpp.o CMakeFiles/PrimeTools.dir/ImGui/imgui_tables.cpp.o CMakeFiles/PrimeTools.dir/ImGui/user_interface.cpp.o CMakeFiles/PrimeTools.dir/ImGui/backends/imgui_impl_opengl3.cpp.o CMakeFiles/PrimeTools.dir/ImGui/backends/imgui_impl_android.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/KittyArm64.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/KittyMemory.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/KittyScanner.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/KittyUtils.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/MemoryBackup.cpp.o CMakeFiles/PrimeTools.dir/KittyMemory/MemoryPatch.cpp.o CMakeFiles/PrimeTools.dir/main.cpp.o CMakeFiles/PrimeTools.dir/hook.cpp.o | D$:/GitHub/cops-menu/module/src/main/cpp/libs/arm64-v8a/libdobby.a D$:/GitHub/cops-menu/module/src/main/cpp/libs/arm64-v8a/libcurl.a C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libGLESv2.so C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libandroid.so C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/23/libEGL.so
   LANGUAGE_COMPILE_FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -Werror=format -fdata-sections -ffunction-sections -lz -O0  -fno-exceptions -fno-rtti -DkITTYMEMORY_DEBUG -fno-limit-debug-info
   LINK_FLAGS = -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--fatal-warnings -Wl,--gc-sections -Wl,--no-undefined -Qunused-arguments  -ffixed-x18 -Wl,--hash-style=both
-  LINK_LIBRARIES = -llog  D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/libs/arm64-v8a/libdobby.a  D:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/libs/arm64-v8a/libcurl.a  -lGLESv3  -lGLESv2  -landroid  -lEGL  -latomic -lm
-  OBJECT_DIR = CMakeFiles\ZyCheatsC.dir
+  LINK_LIBRARIES = -llog  D:/GitHub/cops-menu/module/src/main/cpp/libs/arm64-v8a/libdobby.a  D:/GitHub/cops-menu/module/src/main/cpp/libs/arm64-v8a/libcurl.a  -lGLESv3  -lGLESv2  -landroid  -lEGL  -latomic -lm
+  OBJECT_DIR = CMakeFiles\PrimeTools.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  SONAME = libZyCheatsC.so
+  SONAME = libPrimeTools.so
   SONAME_FLAG = -Wl,-soname,
-  TARGET_FILE = D:\Github\Mods\copsmenu\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libZyCheatsC.so
-  TARGET_PDB = ZyCheatsC.so.dbg
+  TARGET_FILE = D:\GitHub\cops-menu\module\build\intermediates\cmake\debug\obj\arm64-v8a\libPrimeTools.so
+  TARGET_PDB = PrimeTools.so.dbg
 
 
 #############################################
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D D:\Github\Mods\copsmenu\cops-menu\module\.cxx\cmake\debug\arm64-v8a && C:\Users\chris\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D D:\GitHub\cops-menu\module\.cxx\cmake\debug\arm64-v8a && C:\Users\accsb\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -207,7 +207,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D D:\Github\Mods\copsmenu\cops-menu\module\.cxx\cmake\debug\arm64-v8a && C:\Users\chris\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe --regenerate-during-build -SD:\Github\Mods\copsmenu\cops-menu\module\src\main\cpp -BD:\Github\Mods\copsmenu\cops-menu\module\.cxx\cmake\debug\arm64-v8a"
+  COMMAND = cmd.exe /C "cd /D D:\GitHub\cops-menu\module\.cxx\cmake\debug\arm64-v8a && C:\Users\accsb\AppData\Local\Android\Sdk\cmake\3.18.1\bin\cmake.exe --regenerate-during-build -SD:\GitHub\cops-menu\module\src\main\cpp -BD:\GitHub\cops-menu\module\.cxx\cmake\debug\arm64-v8a"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -217,9 +217,9 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
-build ZyCheatsC: phony D$:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so
+build PrimeTools: phony D$:/GitHub/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libPrimeTools.so
 
-build libZyCheatsC.so: phony D$:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so
+build libPrimeTools.so: phony D$:/GitHub/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libPrimeTools.so
 
 # =============================================================================
 # Folder targets.
@@ -227,9 +227,9 @@ build libZyCheatsC.so: phony D$:/Github/Mods/copsmenu/cops-menu/module/build/int
 # =============================================================================
 
 #############################################
-# Folder: D:/Github/Mods/copsmenu/cops-menu/module/.cxx/cmake/debug/arm64-v8a
+# Folder: D:/GitHub/cops-menu/module/.cxx/cmake/debug/arm64-v8a
 
-build all: phony D$:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libZyCheatsC.so
+build all: phony D$:/GitHub/cops-menu/module/build/intermediates/cmake/debug/obj/arm64-v8a/libPrimeTools.so
 
 # =============================================================================
 # Built-in targets
@@ -238,14 +238,14 @@ build all: phony D$:/Github/Mods/copsmenu/cops-menu/module/build/intermediates/c
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompiler.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompilerABI.c C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompiler.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompilerABI.cpp C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCXXCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompileFeatures.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompilerABI.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineSystem.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeFindBinUtils.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeGenericSystem.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeInitializeConfigs.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeLanguageInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystem.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCXXCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCompilerCommon.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/GNU.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/CMakeCheckCompilerFlag.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/FeatureTesting.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Initialize.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android/Determine-Compiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Linux.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/UnixPaths.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android-legacy.toolchain.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/compiler_id.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/platforms.cmake CMakeCache.txt CMakeFiles/3.18.1-g262b901-dirty/CMakeCCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeCXXCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/CMakeLists.txt
+build build.ninja: RERUN_CMAKE | C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompiler.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompilerABI.c C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompiler.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompilerABI.cpp C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCXXCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompileFeatures.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompilerABI.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineSystem.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeFindBinUtils.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeGenericSystem.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeInitializeConfigs.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeLanguageInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystem.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCXXCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCompilerCommon.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/GNU.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/CMakeCheckCompilerFlag.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/FeatureTesting.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Initialize.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android/Determine-Compiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Linux.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/UnixPaths.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android-legacy.toolchain.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/compiler_id.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/platforms.cmake CMakeCache.txt CMakeFiles/3.18.1-g262b901-dirty/CMakeCCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeCXXCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake D$:/GitHub/cops-menu/module/src/main/cpp/CMakeLists.txt
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompiler.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompilerABI.c C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompiler.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompilerABI.cpp C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCXXCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompileFeatures.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompilerABI.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineSystem.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeFindBinUtils.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeGenericSystem.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeInitializeConfigs.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeLanguageInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystem.cmake.in C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCXXCompiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCompilerCommon.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/GNU.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/CMakeCheckCompilerFlag.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/FeatureTesting.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-C.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-CXX.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Initialize.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android/Determine-Compiler.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Linux.cmake C$:/Users/chris/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/UnixPaths.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android-legacy.toolchain.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/compiler_id.cmake C$:/Users/chris/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/platforms.cmake CMakeCache.txt CMakeFiles/3.18.1-g262b901-dirty/CMakeCCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeCXXCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake D$:/Github/Mods/copsmenu/cops-menu/module/src/main/cpp/CMakeLists.txt: phony
+build C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompiler.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCCompilerABI.c C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompiler.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXCompilerABI.cpp C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCXXInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeCommonLanguageInclude.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCXXCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompileFeatures.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineCompilerABI.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeDetermineSystem.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeFindBinUtils.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeGenericSystem.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeInitializeConfigs.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeLanguageInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystem.cmake.in C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInformation.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeSystemSpecificInitialize.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCXXCompiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/CMakeTestCompilerCommon.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/Clang.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Compiler/GNU.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/CMakeCheckCompilerFlag.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Internal/FeatureTesting.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Clang.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-C.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine-CXX.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Determine.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android-Initialize.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Android/Determine-Compiler.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/Linux.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/cmake/3.18.1/share/cmake-3.18/Modules/Platform/UnixPaths.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android-legacy.toolchain.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/android.toolchain.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/compiler_id.cmake C$:/Users/accsb/AppData/Local/Android/Sdk/ndk/25.0.8775105/build/cmake/platforms.cmake CMakeCache.txt CMakeFiles/3.18.1-g262b901-dirty/CMakeCCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeCXXCompiler.cmake CMakeFiles/3.18.1-g262b901-dirty/CMakeSystem.cmake D$:/GitHub/cops-menu/module/src/main/cpp/CMakeLists.txt: phony
 
 
 #############################################
