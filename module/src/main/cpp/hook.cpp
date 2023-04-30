@@ -58,6 +58,7 @@ bool firsttime = false;
 static int selected = 0;
 static int sub_selected = 10;
 const char *Shader = OBFUSCATE("_PBS_Character_Indirect_Base");
+//const char *Shader = OBFUSCATE("unity_SHC");
 void *TouchControls = nullptr;
 void *pSys = nullptr;
 void *localCharacter = nullptr;
@@ -79,7 +80,6 @@ void *getTransform(void *character) {
     if (character) {
         return *(void **) ((uint64_t) character + 0x70);
     }
-    LOGE("crashed here");
     return nullptr;
 }
 
@@ -501,7 +501,7 @@ void setRotation(void *character, Vector2 rotation) {
         }
     }
     void *closestEnt = nullptr;
-    if (pSys != nullptr && character != nullptr && esp_localCharacter != nullptr && get_IsInitialized(esp_localCharacter) && (pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
+    if (character != nullptr && esp_localCharacter != nullptr && get_IsInitialized(esp_localCharacter) && (pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
         closestEnt = getValidEnt3(cfg, rotation);
     }
 
@@ -534,6 +534,7 @@ void setRotation(void *character, Vector2 rotation) {
                         difference = isInFov(rotation, newAngle, cfg);
                     } else {
                         difference = newAngle - rotation;
+                        cfg.fovValue = 360;
                     }
                 }
             } else {
@@ -541,6 +542,7 @@ void setRotation(void *character, Vector2 rotation) {
                     difference = isInFov(rotation, newAngle, cfg);
                 } else {
                     difference = newAngle - rotation;
+                    cfg.fovValue = 360;
                 }
             }
 
@@ -618,7 +620,7 @@ void CheckCharacterVisiblity(void *obj, bool *visibility) {
     }
 }
 
-std::string hwid = "";
+const char* deviceid = "";
 void(*oldAppManager)(void* obj);
 void AppManager(void* obj){
     if(obj != nullptr){
@@ -627,8 +629,8 @@ void AppManager(void* obj){
             openurls = false;
         }
 
-        if(hwid == "")
-            hwid = getDeviceUniqueIdentifier()->getString();
+        if(deviceid == "")
+            deviceid = getDeviceUniqueIdentifier()->getString().c_str();
 
     }
     oldAppManager(obj);
@@ -1067,9 +1069,9 @@ void loop_authenticate() {
             }
         }
         while (!authenticated) {
-            static int countdown_timer = 30;
+            static int countdown_timer = 15;
             if (!countdown_timer) {
-                countdown_timer = 30;
+                countdown_timer = 15;
                 std::string primetools_key = (*get_for_thread(std::string(OBFUSCATE("https://spdmteam.com/api/primetools/isauth?hwid=")) +
                         getDeviceUniqueIdentifier()->getString()));
 
@@ -1123,7 +1125,7 @@ void DrawKeySystemMenu() {
     ImGui::TextUnformatted(OBFUSCATE("Complete the Key System to access PrimeTools."));
     ImGui::SetCursorPos(ImVec2(20, 120));
     ImGui::TextUnformatted(OBFUSCATE("Key Status: "));
-    ImGui::SetCursorPos(ImVec2(400, 120));
+    ImGui::SetCursorPos(ImVec2(50, 120));
     ImGui::TextUnformatted(keyStatus.c_str());
 
     ImGui::SetCursorPos(ImVec2(15, 170));
@@ -1131,8 +1133,11 @@ void DrawKeySystemMenu() {
         openurls = true;
     }
 
+    ImGui::SetCursorPos(ImVec2(20, 200));
     if(uptodate)
-        ImGui::TextUnformatted("HWID %s", hwid.c_str());
+        ImGui::TextUnformatted(OBFUSCATE("HWID : "));
+        ImGui::SetCursorPos(ImVec2(50, 200));
+        ImGui::TextUnformatted(getDeviceUniqueIdentifier()->getString().c_str());
 
     ImGui::End();
 }
@@ -1549,23 +1554,19 @@ void (*old_glDrawElements)(GLenum mode, GLsizei count, GLenum type, const void *
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices) {
     old_glDrawElements(mode, count, type, indices);
 
-    if (Shaders() > 0) {
-        if (chams) {
-            glDepthRangef(1, 0.5);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_CONSTANT_COLOR, GL_CONSTANT_COLOR);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendColor(255, 255, 255, 1);
-            glDepthFunc(GL_ALWAYS);
-            old_glDrawElements(GL_TRIANGLES, count, type, indices);
-            glColorMask(124, 252, 0, 255);
-            glBlendFunc(GL_DST_COLOR, GL_ONE);
-            glDepthFunc(GL_LESS);
-            glBlendColor(0, 0, 0, 0);
-        }
-
+    if (Shaders() > 0 && chams) {
+        glDepthRangef(1, 0.5);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_CONSTANT_COLOR, GL_CONSTANT_COLOR);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendColor(255, 255, 255, 1);
+        glDepthFunc(GL_ALWAYS);
+        old_glDrawElements(GL_TRIANGLES, count, type, indices);
+        glColorMask(124, 252, 0, 255);
+        glBlendFunc(GL_DST_COLOR, GL_ONE);
+        glDepthFunc(GL_LESS);
+        glBlendColor(0, 0, 0, 0);
         old_glDrawElements(mode, count, type, indices);
-
         glDepthRangef(0.5, 1);
         glColorMask(1, 1, 1, 1);
         glDisable(GL_BLEND);
@@ -1629,7 +1630,6 @@ void *hack_thread(void *arg) {
     if (NULL != sym_input) {
         DobbyHook(sym_input, (void *) myInput, (void **) &origInput);
     }
-
 
     while (true) {
         if (p100Crosshair) {
