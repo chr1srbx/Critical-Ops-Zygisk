@@ -39,14 +39,15 @@
 #include <mutex>
 #include "Include/curl/curl.h"
 #include "Include/json.h"
-#define GamePackageName "com.criticalforceentertainment.criticalops"
+#define GamePackageName OBFUSCATE("com.criticalforceentertainment.criticalops")
 
 static std::mutex esp_mtx;
+static std::mutex aimbot_mtx;
 
 monoString *CreateIl2cppString(const char *str) {
     static monoString *(*CreateIl2cppString)(const char *str, int *startIndex, int *length) =
     (monoString *(*)(const char *str, int *startIndex, int *length)) (get_absolute_address(
-            string2Offset(OBFUSCATE("0x1597BE4"))));
+            string2Offset(OBFUSCATE("0xC8E8A4"))));
     int *startIndex = nullptr;
     int *length = (int *) strlen(str);
     return CreateIl2cppString(str, startIndex, length);
@@ -69,6 +70,8 @@ bool unsafe, recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, spe
         p100Crosshair, tradar, fscope, applied = false, nosway, burstfire, pickup, silentknife, armorpen, chams,
         headhitbox, bodyhitbox, silentknife1, addmone, openurls, ready = false, uptodate = true;
 
+bool hidden, aimbotenabled, espenabled;
+
 float speedval = 5.100000, fovModifier, recoilval, viewmodelfovval, flyval, jumpval = 4.100000, fovValue = 360, bounceval, gundmgm;
 int burstfireval, aimPos = 0, shootControl = 0, trollage;
 
@@ -78,7 +81,7 @@ ImFont *espFont;
 
 void *getTransform(void *character) {
     if (character) {
-        return *(void **) ((uint64_t) character + 0x70);
+        return *(void **) ((uint64_t) character + string2Offset(OBFUSCATE("0x70")));
     }
     return nullptr;
 }
@@ -88,7 +91,7 @@ int get_CharacterTeam(void* character)
     int team = -1;
     if (character)
     {
-        void* player = *(void**)((uint64_t)character + 0x90);
+        void* player = *(void**)((uint64_t)character + string2Offset(OBFUSCATE("0x90")));
         if (player)
         {
             PlayerAdapter* playerAdapter = new PlayerAdapter;
@@ -116,15 +119,15 @@ int get_PlayerTeam(void* player)
 }
 
 std::string get_PlayerUsername(void* player){
-    std::string username = "";
-    std::string clantag = "";
+    std::string username = OBFUSCATE("");
+    std::string clantag = OBFUSCATE("");
     if(player != nullptr){
         PlayerAdapter* playerAdapter = new PlayerAdapter;
         playerAdapter->Player = player;
         username = get_Username(playerAdapter)->getString();
         clantag = get_ClanTag(playerAdapter)->getString();
-        if(clantag != ""){
-            username = "[" + clantag + "]" + " " +  username;
+        if(clantag != std::string(OBFUSCATE(""))){
+            username = std::string(OBFUSCATE("[")) + clantag + std::string(OBFUSCATE("]")) + std::string(OBFUSCATE(" ")) +  username;
         }
         delete playerAdapter;
     }
@@ -168,15 +171,13 @@ int isGame(JNIEnv *env, jstring appDataDir) {
     const char *app_data_dir = env->GetStringUTFChars(appDataDir, nullptr);
     int user = 0;
     static char package_name[256];
-    if (sscanf(app_data_dir, "/data/%*[^/]/%d/%s", &user, package_name) != 2) {
-        if (sscanf(app_data_dir, "/data/%*[^/]/%s", package_name) != 1) {
+    if (sscanf(app_data_dir, OBFUSCATE("/data/%*[^/]/%d/%s"), &user, package_name) != 2) {
+        if (sscanf(app_data_dir, OBFUSCATE("/data/%*[^/]/%s"), package_name) != 1) {
             package_name[0] = '\0';
-            LOGW(OBFUSCATE("can't parse %s"), app_data_dir);
             return 0;
         }
     }
     if (strcmp(package_name, GamePackageName) == 0) {
-        LOGI(OBFUSCATE("detect game: %s"), package_name);
         game_data_dir = new char[strlen(app_data_dir) + 1];
         strcpy(game_data_dir, app_data_dir);
         env->ReleaseStringUTFChars(appDataDir, app_data_dir);
@@ -207,25 +208,23 @@ void *getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
 
     void *localPlayer = getPlayer(pSys, id);
     if (localPlayer == nullptr) return nullptr;
-
     int localTeam = get_PlayerTeam(localPlayer);
     float closestEntDist = 99999.0f;
     void *closestCharacter = nullptr;
     monoList<void **> *characterList = getAllCharacters(pSys);
     if (characterList == nullptr) return nullptr;
-
     for (int i = 0; i < characterList->getSize(); i++) {
         void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
         if (currentCharacter == nullptr) continue;
-
         int curTeam = get_CharacterTeam(currentCharacter);
         int health = get_Health(currentCharacter);
         bool canSet = false;
         Vector2 newAngle;
 
-        if (cfg.aimbot) {
+        if (cfg.aimbot && esp_localCharacter != nullptr) {
             if (get_Health(esp_localCharacter) > 0 && health > 0) {
                 Vector3 localHead = getBonePosition(esp_localCharacter, 10);
+
                 if (getIsCrouched(esp_localCharacter)) {
                     localHead = localHead - Vector3(0, 0.5, 0);
                 }
@@ -267,22 +266,20 @@ void *getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
 
 void GameSystemUpdate(void *obj) {
     if (obj != nullptr) {
-
         if (pSys != obj) {
             std::lock_guard<std::mutex> guard(esp_mtx);
-            LOGE("setting the new obj...");
             pSys = obj;
         }
-        void *GamePlayModule = *(void **) ((uint64_t) obj + 0x80);
+        void *GamePlayModule = *(void **) ((uint64_t) obj + string2Offset(OBFUSCATE("0x80")));
         if (GamePlayModule != nullptr) {
-            void *CameraSystem = *(void **) ((uint64_t) GamePlayModule + 0x30);
+            void *CameraSystem = *(void **) ((uint64_t) GamePlayModule + string2Offset(OBFUSCATE("0x30")));
             if (CameraSystem != nullptr) {
                 if (fov) {
-                    *(float *) ((uint64_t) CameraSystem + 0x8C) = fovModifier;//m_horizontalFieldOfView
+                    *(float *) ((uint64_t) CameraSystem + string2Offset(OBFUSCATE("0x8C"))) = fovModifier; // m_horizontalFieldOfView
                 }
 
                 if (viewmodelfov) {
-                    *(float *) ((uint64_t) CameraSystem + 0x90) = viewmodelfovval;//m_viewModelFieldOfView
+                    *(float *) ((uint64_t) CameraSystem + string2Offset(OBFUSCATE("0x90"))) = viewmodelfovval; // m_viewModelFieldOfView
                 }
             }
         }
@@ -300,109 +297,74 @@ void* event;
 void*(*oldCM)(monoString* message, ChatMessageType yes, bool funny);
 void* CreateEMessage(monoString* message, ChatMessageType yes, bool funny){
 
-    event = oldCM(CreateIl2cppString("suganigadick"), PUBLIC_CHAT, funny);
+    event = oldCM(CreateIl2cppString(OBFUSCATE("suganigadick")), PUBLIC_CHAT, funny);
     return event;
 }
 
 
-void UpdateWeapon(void *obj, float deltatime) {
+void UpdateWeapon(void* obj, float deltatime) {
     if (obj != nullptr) {
-        void *CharacterData = *(void **) ((uint64_t) obj + 0x98);
+        void* CharacterData = *(void**)((uint64_t)obj + string2Offset(OBFUSCATE("0x98")));
         if (CharacterData != nullptr) {
-            void *CharacterSettingsData = *(void **) ((uint64_t) CharacterData + 0x78);
+            void* CharacterSettingsData = *(void**)((uint64_t)CharacterData + string2Offset(OBFUSCATE("0x78")));
             if (CharacterSettingsData != nullptr) {
                 if (speed) {
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x14) = speedval;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x14"))) = speedval;
                 }
 
                 if (jumpheight) {
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x4C) = jumpval;
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x50) = jumpval;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x4C"))) = jumpval;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x50"))) = jumpval;
                 }
 
                 if (noslow) {
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x60) = 0;
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x64) = 0;
-                    *(float *) ((uint64_t) CharacterSettingsData + 0x5C) = 0;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x60"))) = 0;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x64"))) = 0;
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x5C"))) = 0;
                 }
             }
 
-            void *WeaponDefData = *(void **) ((uint64_t) CharacterData + 0x80);
+            void* WeaponDefData = *(void**)((uint64_t)CharacterData + string2Offset(OBFUSCATE("0x80")));
             if (WeaponDefData != nullptr) {
                 //add reload time
                 if (recoil) {
-                    *(float *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0xF0"))) = recoilval;
-                    *(float *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0x100"))) = recoilval;
-                }
-
-                if (moneyreward) {
-                    *(int *) ((uint64_t) WeaponDefData + 0x48) = 100;
-                }
-
-                if (forcebuy) {
-                    *(bool *) ((uint64_t) WeaponDefData + 0x40) = true;
-                    *(int *) ((uint64_t) WeaponDefData + 0x44) = 200;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0xF0"))) = recoilval;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x100"))) = recoilval;
                 }
 
                 if (mindamage) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x50) = mindamage;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x50"))) = mindamage;
                 }
 
                 if (maxdamage) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x4C) = maxdamage;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x4C"))) = maxdamage;
                 }
 
                 if (firerate) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x64) = 1600;
-                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x64"))) = 1600;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x8C"))) = 0;
                 }
 
                 if (burstfire) {
-                    *(int *) ((uint64_t) WeaponDefData + 0x11C) = burstfireval;
-                    *(float *) ((uint64_t) WeaponDefData + 0x120) = 0;
+                    *(int*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x11C"))) = burstfireval;
+                    *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x120"))) = 0;
                 }
 
                 if (ammo) {
-                    *(bool *) ((uint64_t) WeaponDefData + 0x94) = false;
+                    *(bool*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x94"))) = false;
                 }
-
 
                 if (fscope) {
-                    *(int *) ((uint64_t) WeaponDefData + 0x98) = 1;
-                }
-
-                if (wallbang) {
-                    //*(int *) ((uint64_t) WeaponDefData + 0x7C) = 3;
-                }
-
-                if (armorpen) {
-                    *(int *) ((uint64_t) WeaponDefData + 0x80) = 4;
+                    *(int *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0x98"))) = 1;
                 }
 
                 if (pickup) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x88) = 0;
-                    *(float *) ((uint64_t) WeaponDefData + 0x8C) = 0;
-                }
-
-                if (burstfire) {
-                    *(int *) ((uint64_t) WeaponDefData + 0x11C) = burstfireval;
-                    *(int *) ((uint64_t) WeaponDefData + 0x120) = 0;
+                    *(float *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0x88"))) = 0;
+                    *(float *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0x8C"))) = 0;
                 }
 
                 if (shake) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x110) = 0;
-                }
-
-                if (gbounciness) {
-                    *(float *) ((uint64_t) WeaponDefData + 0x14C) = bounceval;
-                }
-
-                if (eoi) {
-                    *(bool *) ((uint64_t) WeaponDefData + 0x140) = true;
-                }
-
-                if (iea) {
-                    *(bool *) ((uint64_t) WeaponDefData + 0x144) = 99999;
+                    *(float *) ((uint64_t) WeaponDefData + string2Offset(OBFUSCATE("0x110"))) = 0;
                 }
             }
         }
@@ -410,17 +372,17 @@ void UpdateWeapon(void *obj, float deltatime) {
     oldUpdateWeapon(obj, deltatime);
 }
 
-void RenderOverlayFlashbang(void *obj) {
+void RenderOverlayFlashbang(void *obj, void* IRender) {
     if (obj != nullptr && flash) {
-        *(float *) ((uint64_t) obj + 0x38) = 0;//m_flashTime
+        *(float *) ((uint64_t) obj + string2Offset(OBFUSCATE("0x38"))) = 0;//m_flashTime
     }
-    oldRenderOverlayFlashbang(obj);
+    oldRenderOverlayFlashbang(obj, IRender);
 }
 
 void set_Spread(void *obj, float value) {
     if (obj != nullptr && scope) {
-        *(float *) ((uint64_t) obj + 0x24) = 0;//m_maxSpread
-        *(float *) ((uint64_t) obj + 0x20) = 0;//m_spreadFactor
+        *(float *) ((uint64_t) obj + string2Offset(OBFUSCATE("0x24"))) = 0;//m_maxSpread
+        *(float *) ((uint64_t) obj + string2Offset(OBFUSCATE("0x20"))) = 0;//m_spreadFactor
     }
     oldset_Spread(obj, value);
 }
@@ -434,28 +396,28 @@ bool isCharacterVisible(void *character, void *pSys) {
     return 0;
 }
 
-void RenderOverlaySmoke(void *obj) {
+void RenderOverlaySmoke(void *obj, void* IRender, void* IEntityDB, Vector3 origin) {
     if (obj != nullptr && smoke) {
-        *(float *) ((uint64_t) obj + 0x20) = 9999;//m_fadeSpeed
+        *(float *) ((uint64_t) obj + string2Offset(OBFUSCATE("0x20"))) = 9999;//m_fadeSpeed
     }
-    oldRenderOverlaySmoke(obj);
+    oldRenderOverlaySmoke(obj, IRender, IEntityDB, origin);
 }
 
 int getCurrentWeaponCategory(void *character) {
-    void *characterData = *(void **) ((uint64_t) character + 0x98);
+    void *characterData = *(void **) ((uint64_t) character + string2Offset(OBFUSCATE("0x98")));
     if (characterData) {
-        void *m_wpn = *(void **) ((uint64_t) characterData + 0x80);
+        void *m_wpn = *(void **) ((uint64_t) characterData + string2Offset(OBFUSCATE("0x80")));
         if (m_wpn) {
-            return *(int *) ((uint64_t) m_wpn + 0x38);
+            return *(int *) ((uint64_t) m_wpn + string2Offset(OBFUSCATE("0x38")));
         }
     }
     return -1;
 }
 
 bool isCharacterShooting(void *character) {
-    void *characterData = *(void **) ((uint64_t) character + 0x98);
+    void *characterData = *(void **) ((uint64_t) character + string2Offset(OBFUSCATE("0x98")));
     if (characterData) {
-        return *(bool *) ((uint64_t) characterData + 0x6C);
+        return *(bool *) ((uint64_t) characterData + string2Offset(OBFUSCATE("0x6C")));
     }
     return 0;
 }
@@ -472,14 +434,16 @@ Vector2 isInFov(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg) {
     return difference;
 }
 
+int currWeapon = -1;
 void setRotation(void *character, Vector2 rotation) {
+    std::lock_guard<std::mutex> guard(aimbot_mtx);
     Vector2 newAngle;
     Vector2 difference;
     difference.X = 0;
     difference.Y = 0;
     AimbotCfg cfg;
     if (esp_localCharacter != nullptr) {
-        int currWeapon = getCurrentWeaponCategory(esp_localCharacter);
+        currWeapon = getCurrentWeaponCategory(esp_localCharacter);
         if (currWeapon != -1) {
             switch (currWeapon) {
                 case 0:
@@ -527,9 +491,18 @@ void setRotation(void *character, Vector2 rotation) {
         newAngle.X = -asin(deltavec.Y / deltLength) * (180.0 / PI);
         newAngle.Y = atan2(deltavec.X, deltavec.Z) * 180.0 / PI;
 
-        if (cfg.aimbot && character == esp_localCharacter) {
-            if (cfg.onShoot) {
-                if (isCharacterShooting(esp_localCharacter)) {
+        if (character != nullptr) {
+            if (cfg.aimbot && character == esp_localCharacter) {
+                if (cfg.onShoot) {
+                    if (isCharacterShooting(esp_localCharacter)) {
+                        if (cfg.fovCheck) {
+                            difference = isInFov(rotation, newAngle, cfg);
+                        } else {
+                            difference = newAngle - rotation;
+                            cfg.fovValue = 360;
+                        }
+                    }
+                } else {
                     if (cfg.fovCheck) {
                         difference = isInFov(rotation, newAngle, cfg);
                     } else {
@@ -537,22 +510,16 @@ void setRotation(void *character, Vector2 rotation) {
                         cfg.fovValue = 360;
                     }
                 }
-            } else {
-                if (cfg.fovCheck) {
-                    difference = isInFov(rotation, newAngle, cfg);
-                } else {
-                    difference = newAngle - rotation;
-                    cfg.fovValue = 360;
-                }
-            }
 
-            if (cfg.aimbotSmooth) {
-                difference = difference / cfg.smoothAmount;
+                if (cfg.aimbotSmooth) {
+                    difference = difference / cfg.smoothAmount;
+                }
             }
         }
     }
 
-    if (cfg.triggerbot && closestEnt != nullptr && esp_localCharacter != nullptr && pSys != nullptr && get_Health(esp_localCharacter) > 0) {
+
+    if (cfg.triggerbot && closestEnt != nullptr && esp_localCharacter != nullptr && pSys != nullptr && get_Health(esp_localCharacter) > 0 && !get_Invulnerable(closestEnt)){
         int hitIndex = 0;
         void *camera = get_camera();
         if (camera != nullptr) {
@@ -564,12 +531,13 @@ void setRotation(void *character, Vector2 rotation) {
             }
         }
     }
-
     oSetRotation(character, rotation + difference);
 }
 
 void GameSystemDestroy(void *obj) {
     oGameSystemDestroy(obj);
+    pistolCfg.aimbot = false; arCFg.aimbot = false; shotgunCfg.aimbot = false; sniperCfg.aimbot = false; smgCfg.aimbot = false;
+    esp = false;
     std::lock_guard<std::mutex> guard(esp_mtx);
     pSys = nullptr;
     localCharacter = nullptr;
@@ -606,9 +574,9 @@ float get_Heightt(void *obj) {
 
 void LoadSettings(void *obj) {
     if (obj != nullptr) {
-        void *GraphicsPorfile = *(void **) ((uint64_t) obj + 0x38);
+        void *GraphicsPorfile = *(void **) ((uint64_t) obj + string2Offset(OBFUSCATE("0x38")));
         if (GraphicsPorfile != nullptr) {
-            *(float *) ((uint64_t) GraphicsPorfile + 0x38) = 100;
+            *(int *) ((uint64_t) GraphicsPorfile + string2Offset(OBFUSCATE("0x30"))) = 100;
         }
     }
 }
@@ -625,11 +593,11 @@ void(*oldAppManager)(void* obj);
 void AppManager(void* obj){
     if(obj != nullptr){
         if(openurls){
-            OpenURL(CreateIl2cppString(("https://www.spdmteam.com/PT-key-system-1?hwid=" + getDeviceUniqueIdentifier()->getString()).c_str()));
+            OpenURL(CreateIl2cppString((std::string(OBFUSCATE("https://www.spdmteam.com/PT-key-system-1?hwid=")) + getDeviceUniqueIdentifier()->getString()).c_str()));
             openurls = false;
         }
 
-        if(deviceid == "")
+        if(deviceid == OBFUSCATE(""))
             deviceid = getDeviceUniqueIdentifier()->getString().c_str();
 
     }
@@ -667,8 +635,8 @@ void* getValidEnt()
 
 void (*oldMeeleHit)(void* obj, void* shooter, Ray ray);
 void MeleeHit(void* obj, void* shooter, Ray ray){
-    if(obj != nullptr && silentknife1 && localCharacter != nullptr){
-        if(shooter == localCharacter && getValidEnt() != nullptr){
+    if(obj != nullptr && silentknife1 && esp_localCharacter != nullptr){
+        if(shooter == esp_localCharacter && getValidEnt() != nullptr){
             ray.origin = get_Position(getTransform(getValidEnt()));
             ray.direction = Vector3(0, 1, 0);
         }
@@ -679,11 +647,29 @@ void MeleeHit(void* obj, void* shooter, Ray ray){
 void GenerateHash(void *obj) {
     oldGenerateHash(obj);
     if (obj != nullptr) {
-        LOGE("GENERATE!");
-        *(monoString **) ((uint64_t) obj + 0x60) = CreateIl2cppString(OBFUSCATE("81C4D6F1A802B49339E4DCCADE4B1263"));
-        //monoString* Hash = *(monoString**)((uint64_t) obj + 0x60);
-        //  LOGE("hash %s", Hash->getString().c_str());
+        *(monoString **) ((uint64_t) obj + string2Offset(OBFUSCATE("0x60"))) = CreateIl2cppString(OBFUSCATE("81C4D6F1A802B49339E4DCCADE4B1263"));
+       // monoString* Hash = *(monoString**)((uint64_t) obj + 0x60);
+       // LOGE("hash %s", Hash->getString().c_str());
     }
+}
+
+double measureFrameTime() {
+    static auto previousTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    double frameTime = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - previousTime).count() / 1000.0;
+    previousTime = currentTime;
+    return frameTime;
+}
+
+int framerate, maxframerate = 0;
+void FPSMeter(void* obj){
+    if(obj != nullptr){
+        framerate = *(int*)((uint64_t) obj + string2Offset(OBFUSCATE("0x20")));
+        if(framerate > maxframerate){
+            maxframerate = framerate;
+        }
+    }
+    oldFPSMeter(obj);
 }
 
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
@@ -692,26 +678,26 @@ HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
     return;
 }
 
-const char *combo_items[3] = {"head", "chest", "stomach"};
+const char *combo_items[3] = {OBFUSCATE("head"), OBFUSCATE("chest"), OBFUSCATE("stomach")};
 
-
-// Initilizers with patterns <3
+// Initilizers with patterns <3 NIGGAS GAYYYYYYYYYYYYY
 void Hooks() {
-   // HOOK("0x155F740", set_Spread, oldset_Spread);// Overlay Scope set spread
-    //HOOK("0x155F420", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // flash render overlay
-   // HOOK("0x155EBDC", RenderOverlaySmoke, oldRenderOverlaySmoke); // smoke render overlay
-    HOOK("0x16507A4", GameSystemUpdate, oldGameSystemUpdate); // GameSystem Update
-    HOOK("0x1767670", UpdateWeapon, oldUpdateWeapon); // character
-    HOOK("0x163D454", FovViewModel, oldFovViewModel); // speed
-    HOOK("0x164C8D0", GameSystemDestroy, oGameSystemDestroy); // GameSystem Destroy
-    HOOK("0x163D414", FovWorld, oldFovWorld); // speed
-    HOOK("0x1763E4C", setRotation, oSetRotation);
-    HOOK("0x159D6B0", get_Heightt, oldget_Height);
-    HOOK("0x18129F0", TouchControlsUpdate, oTouchControlsUpdate); // touchcontrols update
-    HOOK("0x1812308", TouchControlsDestroy, oTouchControlsDestroy); // touchcontrols destroy
-    HOOK("0x1765640", CheckCharacterVisiblity, oldCheckCharacterVisibility);
-    HOOK("0x18F1F6C", GenerateHash, oldGenerateHash);
-    HOOK("0x1652F18", MeleeHit, oldMeeleHit);
+    HOOK("0x13238B4", set_Spread, oldset_Spread);// OverlayScope.set_spread
+    HOOK("0x1323594", RenderOverlayFlashbang, oldRenderOverlayFlashbang); // overlayflashbang.render
+    HOOK("0x1322D50", RenderOverlaySmoke, oldRenderOverlaySmoke); // overlaysmoke.render
+    HOOK("0x14E8E80", GameSystemUpdate, oldGameSystemUpdate); // GameSystem.Update
+    HOOK("0x118896C", UpdateWeapon, oldUpdateWeapon); // character.UpdateWeapon
+    HOOK("0x14D5B30", FovViewModel, oldFovViewModel); // CameraSettings.get_FovViewModel
+    HOOK("0x14E4FAC", GameSystemDestroy, oGameSystemDestroy); // GameSystem.Destroy
+    HOOK("0x14D5AF0", FovWorld, oldFovWorld); // CameraSettings.FovWorld
+    HOOK("0x1185148", setRotation, oSetRotation);//Character.setRotation
+    HOOK("0x16D42F8", get_Heightt, oldget_Height);//Transform.get_Height
+    HOOK("0x19622F4", TouchControlsUpdate, oTouchControlsUpdate); // touchcontrols.update
+    HOOK("0x1961C0C", TouchControlsDestroy, oTouchControlsDestroy); // touchcontrols.ondestroy
+    HOOK("0x118693C", CheckCharacterVisiblity, oldCheckCharacterVisibility);
+    HOOK("0x129E1AC", GenerateHash, oldGenerateHash);
+    HOOK("0x14EB5F4", MeleeHit, oldMeeleHit);
+    HOOK("0x182FC88", FPSMeter, oldFPSMeter);//FPSMeter.Update
     //   HOOK("0x16EFBC0", FindTheNiggasThatShouldBeSentToTheField, ReturnToFindingTheNiggasThatShouldBeSentToTheField);
 //    HOOK("0x1687EC4", CreateEMessage, oldCM);
     //   HOOK("0x199430C", InGameChatMenu_Awake, oInGameChatMenu_Awake);
@@ -722,89 +708,87 @@ void Hooks() {
 void Pointers() {
 //RequestPurchaseSkin = (void(*)(void*, int, int, bool)) get_absolute_address(string2Offset(OBFUSCATE("0x1B80760")));
     get_Width = (int (*)()) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14F2DD0"))); // screen get_Width
+            string2Offset(OBFUSCATE("0x1669CDC"))); // screen.get_Width
     get_Height = (int (*)()) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14F2DF8"))); // screen get_Height
+            string2Offset(OBFUSCATE("0x1669D04"))); // screen.get_Height
     getAllCharacters = (monoList<void **> *(*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x164B934"))); // get_AllCharacters
+            string2Offset(OBFUSCATE("0x14E4010"))); // get_AllCharacters
     getLocalId = (int (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x163F914"))); // get_LocalId
+            string2Offset(OBFUSCATE("0x14D7FF0"))); // get_LocalId
     getPlayer = (void *(*)(void *, int)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x164EC24"))); // GameSystem GetPlayer
+            string2Offset(OBFUSCATE("0x14E7300"))); // GameSystem.GetPlayer
     getLocalPlayer = (void *(*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x163F2F8"))); // GameSystem get_LocalPlayer
+            string2Offset(OBFUSCATE("0x14D79D4"))); // GameSystem.get_LocalPlayer
     getCharacterCount = (int (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x164B944"))); // GameSystem get_CharacterCount
+            string2Offset(OBFUSCATE("0x14E4020"))); // GameSystem.get_CharacterCount
     get_Health = (int (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x17633BC"))); // get_Health
+            string2Offset(OBFUSCATE("0x11846B8"))); // get_Health
     get_Player = (void *(*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x17633A4"))); // Gameplay Character get_Player
+            string2Offset(OBFUSCATE("0x11846A0"))); // Gameplay.Character.get_Player
     get_IsInitialized = (bool (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x176322C"))); // Gameplay Character get_IsInitialized
+            string2Offset(OBFUSCATE("0x1184528"))); // Gameplay.Character.get_IsInitialized
     get_Position = (Vector3(*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1522088"))); // Transform get_position
+            string2Offset(OBFUSCATE("0x1972FE8"))); // Transform.get_position
     get_camera = (void *(*)()) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14FAA94"))); // get camera main
+            string2Offset(OBFUSCATE("0x16719A0"))); // camera.get_main
     WorldToScreen = (Vector3(*)(void *, Vector3, int)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14F9E98"))); // WorldToScreenPoint
+            string2Offset(OBFUSCATE("0x1670DA4"))); // WorldToScreenPoint
     //set_targetFrameRate = (void(*)(int)) get_absolute_address(""); NOT USED
     get_CharacterBodyPart = (void *(*)(void *, int)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1763418"))); // Character GetBodyPart
+            string2Offset(OBFUSCATE("0x1184714"))); // Character.GetBodyPart
     get_LocalCharacter = (void *(*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1641F90"))); // get_LocalCharacter
+            string2Offset(OBFUSCATE("0x14DA66C"))); // get_LocalCharacter
     isHeadBehindWall = (bool (*)(void *, void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x156E1C0"))); // IsHeadBehindWall
+            string2Offset(OBFUSCATE("0x1332334"))); // IsHeadBehindWall
     get_FovWorld = (float (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x163D414"))); // get_FovWorld
+            string2Offset(OBFUSCATE("0x14D5AF0"))); // get_FovWorld
     getIsCrouched = (bool (*)(void *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1763244"))); // ISGrouched
+            string2Offset(OBFUSCATE("0x1184540"))); // ISCrouched
     ScreenPointToRay = (Ray(*)(void *, Vector2, int)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14FA570"))); // ScreenPointToRay
+            string2Offset(OBFUSCATE("0x167147C"))); // ScreenPointToRay
     onInputButtons = (void (*)(void *, int, bool)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1815810"))); // OnInputButton
+            string2Offset(OBFUSCATE("0x1965114"))); // OnInputButton
     TraceShot = (void *(*)(void *, void *, Ray)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1652CE4"))); // TraceShot
-    set_Position = (void (*)(void *, Vector3)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1522128")));
+            string2Offset(OBFUSCATE("0x14EB3C0"))); // TraceShot
     getDeviceUniqueIdentifier = (monoString *(*)()) get_absolute_address(
-            string2Offset(OBFUSCATE("0x14F6380")));
+            string2Offset(OBFUSCATE("0x166D28C")));
     OpenURL = (void (*)(monoString *)) get_absolute_address(
-            string2Offset(OBFUSCATE("0x1521268")));
+            string2Offset(OBFUSCATE("0x19721C8")));//Application.OpenURL
     getTeamIndex = (int (*)(PlayerAdapter *))
-            get_absolute_address(string2Offset(OBFUSCATE("0x1919090")));//PlayerAdapter.teamindex
+            get_absolute_address(string2Offset(OBFUSCATE("0x12D79F4")));//PlayerAdapter.teamindex
     UpdateCharacterHitBuffer = (void (*)(void *, void *, Ray, int *))
-            get_absolute_address(string2Offset(OBFUSCATE("0x16552F8")));//UpdateCharacterHitBuffer
+            get_absolute_address(string2Offset(OBFUSCATE("0x14ED9D4")));//UpdateCharacterHitBuffer
     get_Username = (monoString *(*)(PlayerAdapter *))
-            get_absolute_address(string2Offset(OBFUSCATE("0x19191D8")));//PlayerAdapter.get_Username
+            get_absolute_address(string2Offset(OBFUSCATE("0x12D7B3C")));//PlayerAdapter.get_Username
     get_ClanTag = (monoString *(*)(PlayerAdapter *))
-            get_absolute_address(string2Offset(OBFUSCATE("0x1919528")));//PlayerAdapter.get_ClanTag
+            get_absolute_address(string2Offset(OBFUSCATE("0x12D7E8C")));//PlayerAdapter.get_ClanTag
     CreateMessage = (void *(*)(monoString *, ChatMessageType, bool))
-            get_absolute_address(string2Offset(OBFUSCATE("0x1687EC4")));//RequestSendIngameChatMessage Create
+            get_absolute_address(string2Offset(OBFUSCATE("0x1639768")));//RequestSendIngameChatMessage.Create
     SendMessage = (void (*)(void*))
-            get_absolute_address(string2Offset(OBFUSCATE("0x1993BF0")));//SendMessage
+            get_absolute_address(string2Offset(OBFUSCATE("0x183C114")));//InGameChatMenu.SendMessage
+    get_Invulnerable = (bool (*)(void*))
+            get_absolute_address(string2Offset(OBFUSCATE("0x124E9AC")));//Character.Invulnerable
 }
 
 void Patches() {
-    PATCH_SWITCH("0x19B6524", "1F2003D5C0035FD6", spread);//UpdateSpread
-    PATCH_SWITCH("0x19B64C0", "000080D2C0035FD6", aimpunch);//AimPunchRecover
-    PATCH_SWITCH("0x16537F8", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
-    PATCH_SWITCH("0xCFE5A0", "1F2003D5C0035FD6", killnotes);//SetKillNotification
-    PATCH_SWITCH("0xD33CA4", "200080D2C0035FD6", crosshair);//get_Crosshair
-    PATCH_SWITCH("0x1613EAC", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
-    PATCH_SWITCH("0x1654A28", "1F2003D5", wallbang);//ProcessHitBuffers + 0xB8
-    PATCH_SWITCH("0x1655524", "01F0271E", headhitbox);//UpdateCharacterHitBuffer + 0x21C
-    PATCH_SWITCH("0x163FA74", "E0031FAA",radar);//FetchFollowedCharacterTeamIndex + 0x8C
-    PATCH_SWITCH("0x1653720", "01F0271E", silentknife);//MeleeHit + 0x808
-    // PATCH_SWITCH("0x164E824", "08F0271E", silentknife1);//MeleeHit + 0x244
-    PATCH_SWITCH("0x17656C4", "1F01086B", tradar);//CheckCharacterVisibility + 0x84
-    PATCH_SWITCH("0x159A788", "000080D2C0035FD6",tradar);//Linecast(Vector3 start, Vector3 end, int layerMask)
-    PATCH_SWITCH("0x199B0A4", "000080D2C0035FD6",killnotes);//KillNotification.Init(IPlayer killer, IPlayer victim, Sprite killerWeaponIcon, bool headshot)
-    PATCH("0x18D66BC", "000080D2C0035FD6");//IsFirstMatchStageCompleted
-    PATCH("0x18D717C", "000080D2C0035FD6");//t
-    PATCH("0x18D6834", "000080D2C0035FD6");//t
-    PATCH("0x18D7388", "000080D2C0035FD6");//t
-    PATCH("0x18D6544", "000080D2C0035FD6");//t
-    PATCH("0x18D6464", "000080D2C0035FD6");//t
+    PATCH_SWITCH("0x1250F18", "1F2003D5C0035FD6", spread);//UpdateSpread
+    PATCH_SWITCH("0x1250EB4", "000080D2C0035FD6", aimpunch);//AimPunchRecover
+    PATCH_SWITCH("0x14EBED4", "000080D2C0035FD6", ggod);//GrenadeHitCharacter
+    PATCH_SWITCH("0xD98BD4", "200080D2C0035FD6", crosshair);//get_Crosshair
+    PATCH_SWITCH("0x15803E8", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
+    PATCH_SWITCH("0x14ED104", "1F2003D5", wallbang);//ProcessHitBuffers + 0xB8
+    PATCH_SWITCH("0x14EDBF0", "01F0271E", headhitbox);//UpdateCharacterHitBuffer + 0x21C
+    PATCH_SWITCH("0x14D8150", "E0031FAA",radar);//FetchFollowedCharacterTeamIndex + 0x84
+    PATCH_SWITCH("0x14EBDFC", "01F0271E", silentknife);//MeleeHit + 0x808
+    PATCH_SWITCH("0x11869C0", "1F01086B", tradar);//CheckCharacterVisibility + 0x84
+    PATCH_SWITCH("0x16D13D0", "000080D2C0035FD6",tradar);//Linecast(Vector3 start, Vector3 end, int layerMask)
+    PATCH_SWITCH("0x18435C8", "000080D2C0035FD6",killnotes);//KillNotification.Init(IPlayer killer, IPlayer victim, Sprite killerWeaponIcon, bool headshot)
+    PATCH("0x12CAC38", "000080D2C0035FD6");//IsFirstMatchStageCompleted
+    PATCH("0x12CAAC0", "000080D2C0035FD6");//t
+    PATCH("0x12CB8D4", "000080D2C0035FD6");//t
+    PATCH("0x12CADB0", "000080D2C0035FD6");//t
+    PATCH("0x12CB6C8", "000080D2C0035FD6");//t
+    PATCH("0x12CA9E0", "000080D2C0035FD6");//t
 
     //  PATCH("0x10D7444", "1F2003D5");
     // PATCH("0x1A71B50", "1F2003D5C0035FD6");
@@ -813,15 +797,29 @@ void Patches() {
     //  PATCH("0x1A71A84", "1F2003D5C0035FD6");
 }
 
+float get_cameraFov(void *pSys) {
+    if(pSys != nullptr){
+        void *GameplayModule = *(void **) ((uint64_t) pSys + 0x80);
+        void *CameraSystem = *(void **) ((uint64_t) GameplayModule + 0x30);
+        return *(float *) ((uint64_t) CameraSystem + 0x8C); // m_horizontalFieldOfView
+    }
+}
+
 void ESP() {
     AimbotCfg cfg;
     std::lock_guard<std::mutex> guard(esp_mtx);
-    if (pSys == nullptr || !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
+    if (pSys == nullptr ||
+        !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot ||
+          sniperCfg.aimbot)) {
         return;
     }
 
     int id = getLocalId(pSys);
     if (id == 0) {
+        return;
+    }
+
+    if (pSys == nullptr) {
         return;
     }
 
@@ -837,7 +835,7 @@ void ESP() {
     }
 
     auto cam = get_camera();
-    if(cam == nullptr){
+    if (cam == nullptr) {
         return;
     }
 
@@ -892,131 +890,163 @@ void ESP() {
         float currentEntDist = Vector3::Distance(localPosition, currentCharacterPosition);
 
         espcfg = invisibleCfg;
-        if (espcfg.snapline && transformPos.Z > 0) {
-            DrawLine(ImVec2(glWidth / 2, glHeight),
-                     ImVec2(transformPos.X, transformPos.Y),
-                     ImColor(espcfg.snaplineColor.x,
-                             espcfg.snaplineColor.y,
-                             espcfg.snaplineColor.z,
-                             (255 - currentEntDist * 5.0)),
-                     3);
-        }
 
-        if (espcfg.bone && transformPos.Z > 0) {
-            DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT,
-                      espcfg);
-            DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT,
-                      espcfg);
-            DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
-            DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH,
-                      espcfg);
-            DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
-            DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT,
-                      espcfg);
-            DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT,
-                      espcfg);
-            DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
-            DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
-            Vector3 diff = wschestPos - wsheadPos;
-            Vector3 neck = (chestPos + headPos) / 2;
-            Vector3 wsneck = WorldToScreen(cam, neck, 2);
-            wsneck.Y = glHeight - wsneck.Y;
-            wschestPos.Y = glHeight - wschestPos.Y;
-            wsheadPos.Y = glHeight - wsheadPos.Y;
-            if (wschestPos.Z > 0 && wsneck.Z) {
-                DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
-                         ImVec2(wsneck.X, wsneck.Y),
-                         ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
-                                 espcfg.boneColor.z),
+        if (esp) {
+            if (espcfg.snapline && transformPos.Z > 0) {
+                DrawLine(ImVec2(glWidth / 2, glHeight),
+                         ImVec2(transformPos.X, transformPos.Y),
+                         ImColor(espcfg.snaplineColor.x,
+                                 espcfg.snaplineColor.y,
+                                 espcfg.snaplineColor.z,
+                                 (255 - currentEntDist * 5.0)),
                          3);
             }
 
-            if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
-                float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+            if (espcfg.bone && transformPos.Z > 0) {
+                DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT,
+                          espcfg);
+                DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT,
+                          espcfg);
+                DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
+                DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH,
+                          espcfg);
+                DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
+                DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT,
+                          espcfg);
+                DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT,
+                          espcfg);
+                DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
+                DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
+                Vector3 diff = wschestPos - wsheadPos;
+                Vector3 neck = (chestPos + headPos) / 2;
+                Vector3 wsneck = WorldToScreen(cam, neck, 2);
+                wsneck.Y = glHeight - wsneck.Y;
+                wschestPos.Y = glHeight - wschestPos.Y;
+                wsheadPos.Y = glHeight - wsheadPos.Y;
+                if (wschestPos.Z > 0 && wsneck.Z) {
+                    DrawLine(ImVec2(wschestPos.X, wschestPos.Y),
+                             ImVec2(wsneck.X, wsneck.Y),
+                             ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
+                                     espcfg.boneColor.z),
+                             3);
+                }
+
+                if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
+                    float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
+                    auto background = ImGui::GetBackgroundDrawList();
+
+                    background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y),
+                                          radius / 2,
+                                          IM_COL32(espcfg.boneColor.x * 255,
+                                                   espcfg.boneColor.y * 255,
+                                                   espcfg.boneColor.z * 255,
+                                                   255),
+                                          0, 3.0f);
+                }
+            }
+
+            if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width,
+                                 height,
+                                 ImVec4(espcfg.boxColor.x,
+                                        espcfg.boxColor.y,
+                                        espcfg.boxColor.z, 255), 3);
+            }
+
+            if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12,
+                                       wsAboveHead.Y + height * (1 -
+                                                                 (static_cast<float>(health) /
+                                                                  100.0f)),
+                                       3,
+                                       height *
+                                       (static_cast<float>(health) /
+                                        100.0f),
+                                       HealthToColor(health));
+            }
+
+            if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
+                if (health > 100) {
+                    DrawText(ImVec2(wsAboveHead.X - width / 2 - 17,
+                                    wsAboveHead.Y +
+                                    height * (1 -
+                                              static_cast<float>(health) /
+                                              100.0f) -
+                                    3),
+                             ImVec4(1, 1, 1, 255),
+                             std::to_string(health), espFont);
+                }
+            }
+
+            if (espcfg.distance && transformPos.Z > 0) {
+                DrawText(ImVec2(transformPos.X + width / 2, transformPos.Y - 12),
+                         ImVec4(1, 1, 1, 255),
+                         std::to_string(static_cast<int>(currentEntDist)) + "m", espFont);
+            }
+
+            if (espcfg.name && transformPos.Z > 0 && currentCharacter != nullptr) {
+                void *player = get_Player(currentCharacter);
+                if (player == nullptr)
+                    continue;
+                std::string username = get_PlayerUsername(player);
+                float compensation = strlen(username.c_str()) * 4.0f;
+                DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),
+                         ImVec4(espcfg.nameColor.x, espcfg.nameColor.y, espcfg.nameColor.z, 255),
+                         username, espFont);
+            }
+        }
+    }
+        if (currWeapon != -1) {
+            switch (currWeapon) {
+                case 0:
+                    cfg = pistolCfg;
+                    break;
+                case 1:
+                    cfg = arCFg;
+                    break;
+                case 2:
+                    cfg = smgCfg;
+                    break;
+                case 3:
+                    cfg = shotgunCfg;
+                    break;
+                case 4:
+                    cfg = sniperCfg;
+                    break;
+            }
+
+            if (cfg.drawFov) {
+                float worldFov = get_cameraFov(pSys);
+                float radius =
+                        tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) *
+                        glWidth /
+                        2;
                 auto background = ImGui::GetBackgroundDrawList();
+                float correction = 0;
+                if ((worldFov - 90) < 0) {
+                    correction = worldFov - 90;
+                }
 
-                background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y),
-                                      radius / 2,
-                                      IM_COL32(espcfg.boneColor.x * 255,
-                                               espcfg.boneColor.y * 255,
-                                               espcfg.boneColor.z * 255,
-                                               255),
-                                      0, 3.0f);
+                background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
+                                      (radius) * PI - correction / PI * 2,
+                                      IM_COL32(255, 255, 255, 255), 0, 3.0f);
             }
         }
 
-        if (espcfg.box && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-            DrawOutlinedBox2(wsAboveHead.X - width / 2, wsAboveHead.Y, width,
-                             height,
-                             ImVec4(espcfg.boxColor.x,
-                                    espcfg.boxColor.y,
-                                    espcfg.boxColor.z, 255), 3);
-        }
+        if (p100Crosshair) {
+            ImVec2 Middle = ImVec2(glWidth / 2, glHeight / 2);
 
-        if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-            DrawOutlinedFilledRect(wsAboveHead.X - width / 2 - 12,
-                                   wsAboveHead.Y + height * (1 -
-                                                             (static_cast<float>(health) /
-                                                              100.0f)),
-                                   3,
-                                   height *
-                                   (static_cast<float>(health) /
-                                    100.0f),
-                                   HealthToColor(health));
-        }
-
-        if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
-            if (health < 100) {
-                DrawText(ImVec2(wsAboveHead.X - width / 2 - 17,
-                                wsAboveHead.Y +
-                                height * (1 -
-                                          static_cast<float>(health) /
-                                          100.0f) -
-                                3),
-                         ImVec4(1, 1, 1, 255),
-                         std::to_string(health), espFont);
-            } else {
-                DrawText(ImVec2(wsAboveHead.X - width / 2 - 20,
-                                wsAboveHead.Y +
-                                height * (1 -
-                                          static_cast<float>(health) /
-                                          100.0f) -
-                                3),
-                         ImVec4(1, 1, 1, 255),
-                         std::to_string(health), espFont);
-            }
-        }
-
-        if (espcfg.distance && transformPos.Z > 0) {
-            DrawText(ImVec2(transformPos.X + width / 2, transformPos.Y - 10),
-                     ImVec4(1, 1, 1, 255),
-                     std::to_string(static_cast<int>(currentEntDist)) + "m", espFont);
-        }
-
-        if (espcfg.name && transformPos.Z > 0 && currentCharacter != nullptr) {
-            void *player = get_Player(currentCharacter);
-            if (player == nullptr)
-                continue;
-            std::string username = get_PlayerUsername(player);
-            float compensation = strlen(username.c_str()) * 4.0f;
-            DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20), ImVec4(espcfg.nameColor.x, espcfg.nameColor.y,espcfg.nameColor.z, 255),username,espFont);
+            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x, Middle.y - 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x, Middle.y + 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
+            CoolCrosshair(Middle, ImVec4(255, 255, 255, 255));
         }
     }
-
-    if (p100Crosshair) {
-        ImVec2 Middle = ImVec2(glWidth / 2, glHeight / 2);
-
-        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x, Middle.y - 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x, Middle.y + 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
-        CoolCrosshair(Middle, ImVec4(255, 255, 255, 255));
-    }
-}
 
 static std::string keyStatus = OBFUSCATE("Checking in: ");
 size_t writeFunction(void* ptr, size_t size, size_t nmemb, std::string* data) {
@@ -1060,7 +1090,7 @@ void loop_authenticate() {
             std::string line;
             while (std::getline(iss, line)) {
                 if (line != std::string(OBFUSCATE("false"))) {
-                    trollage = string2Offset(OBFUSCATE("0x124901"));
+                    trollage = string2Offset(OBFUSCATE("0x124AC5"));
                     auto json = nlohmann::json::parse(line);
                     authenticated = json[std::string(OBFUSCATE("authenticated"))];
 
@@ -1081,7 +1111,7 @@ void loop_authenticate() {
                     std::string line;
                     while (std::getline(iss, line)) {
                         if (line != notauth) {
-                            trollage = string2Offset(OBFUSCATE("0x124901"));
+                            trollage = string2Offset(OBFUSCATE("0x124AC5"));
                             auto json = nlohmann::json::parse(line);
                             authenticated = json[std::string(OBFUSCATE("authenticated"))];
                             is_key_found = true;
@@ -1101,7 +1131,7 @@ void loop_authenticate() {
 }
 
 bool isAuth(){
-    if(trollage == 0x124901){
+    if(trollage == 0x124AC5){
         return true;
     }
     return false;
@@ -1125,7 +1155,7 @@ void DrawKeySystemMenu() {
     ImGui::TextUnformatted(OBFUSCATE("Complete the Key System to access PrimeTools."));
     ImGui::SetCursorPos(ImVec2(20, 120));
     ImGui::TextUnformatted(OBFUSCATE("Key Status: "));
-    ImGui::SetCursorPos(ImVec2(50, 120));
+    ImGui::SetCursorPos(ImVec2(100, 120));
     ImGui::TextUnformatted(keyStatus.c_str());
 
     ImGui::SetCursorPos(ImVec2(15, 170));
@@ -1133,10 +1163,10 @@ void DrawKeySystemMenu() {
         openurls = true;
     }
 
-    ImGui::SetCursorPos(ImVec2(20, 200));
+    ImGui::SetCursorPos(ImVec2(20, 300));
     if(uptodate)
         ImGui::TextUnformatted(OBFUSCATE("HWID : "));
-        ImGui::SetCursorPos(ImVec2(50, 200));
+        ImGui::SetCursorPos(ImVec2(20, 350));
         ImGui::TextUnformatted(getDeviceUniqueIdentifier()->getString().c_str());
 
     ImGui::End();
@@ -1174,7 +1204,9 @@ void DrawMenu() {
             selected = 2;
             sub_selected = 2;
         }
-
+        if (custom_interface::tab(OBFUSCATE(" -"), 3 == selected)) {
+            hidden = true;
+        }
         ImGui::EndGroup();
 
         if (selected == 0) {
@@ -1339,7 +1371,7 @@ void DrawMenu() {
             ImGui::EndChild();
 
             ImGui::SetCursorPos(ImVec2(481.5, 74));
-            ImGui::BeginChild("Triggerbot", ImVec2(405.5, 406));
+            ImGui::BeginChild(OBFUSCATE("Triggerbot"), ImVec2(405.5, 406));
             {
                 ImGui::Checkbox(OBFUSCATE("Triggerbot"), &sniperCfg.triggerbot);
             }
@@ -1398,7 +1430,7 @@ void DrawMenu() {
                     if (ImGui::Checkbox(OBFUSCATE("Force Crosshair"), &crosshair)) { Patches(); }
                     if (ImGui::Checkbox(OBFUSCATE("No Aimpunch"), &aimpunch)) { Patches(); }
                     ImGui::Checkbox(OBFUSCATE("Nazi Crosshair"), &p100Crosshair);
-                   // UPDATE LATER if (ImGui::Checkbox(OBFUSCATE("Hide Kill Notifications"), &killnotes)) { Patches(); }
+                    if (ImGui::Checkbox(OBFUSCATE("Spoof Kill Notifications"), &killnotes)) { Patches(); }
                     ImGui::Checkbox(OBFUSCATE("No Camera Shake"), &shake);
 
                     ImGui::Checkbox(OBFUSCATE("No Scope Overlay"), &scope);
@@ -1433,7 +1465,7 @@ void DrawMenu() {
 
             if (sub_selected == 2) {
                 ImGui::SetCursorPos(ImVec2(67, 74));
-                ImGui::BeginChild("Legit", ImVec2(405.5, 406));
+                ImGui::BeginChild(OBFUSCATE("Legit"), ImVec2(405.5, 406));
                 ImGui::Checkbox(OBFUSCATE("Recoil"), &recoil);
                 if (recoil) {
                     ImGui::SliderFloat(OBFUSCATE(" Recoil"), &recoilval, 1.0, 10.0);
@@ -1444,7 +1476,7 @@ void DrawMenu() {
                 ImGui::EndChild();
 
                 ImGui::SetCursorPos(ImVec2(481.5, 74));
-                ImGui::BeginChild("Rage", ImVec2(405.5, 406));
+                ImGui::BeginChild(OBFUSCATE("Rage"), ImVec2(405.5, 406));
                 if (ImGui::Checkbox(OBFUSCATE("Expand Hitbox"), &headhitbox)) { Patches(); };
                 if (ImGui::Checkbox(OBFUSCATE("Wallbang"), &wallbang)) { Patches(); }
                 ImGui::Checkbox(OBFUSCATE("Firerate"), &firerate);
@@ -1456,7 +1488,7 @@ void DrawMenu() {
 
             if (sub_selected == 3) {
                 ImGui::SetCursorPos(ImVec2(67, 74));
-                ImGui::BeginChild("Player Modifications", ImVec2(813, 406));
+                ImGui::BeginChild(OBFUSCATE("Player Modifications"), ImVec2(813, 406));
                 ImGui::Checkbox(OBFUSCATE("Speed"), &speed);
                 if (speed) {
                     ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 20.0);
@@ -1477,6 +1509,25 @@ void DrawMenu() {
     ImGui::End();
 }
 
+void HiddenCircle(){
+    auto draw = ImGui::GetBackgroundDrawList();
+    ImVec2 pos = ImVec2(49.99999, 49.99999);
+    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+    ImVec2 center = ImVec2(49.99999, 49.99999);
+    float radius = 50;
+    ImGui::SetNextWindowSize(ImVec2(50, 90));
+    draw->AddCircleFilled(ImVec2(50, 50), radius, ImColor(255, 255, 255, 70), 32);
+
+    DrawText(ImVec2(23, 34), ImVec4(255, 255, 255, 70), OBFUSCATE("Show"), espFont);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        ImVec2 mouse_pos = ImGui::GetMousePos();
+        float distance = sqrtf((mouse_pos.x - center.x) * (mouse_pos.x - center.x) + (mouse_pos.y - center.y) * (mouse_pos.y - center.y));
+        if (distance <= radius) {
+            hidden = !hidden;
+        }
+    }
+}
+
 void SetupImgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -1484,7 +1535,7 @@ void SetupImgui() {
     glWidth = get_Width();
     glHeight = get_Height();
     io.DisplaySize = ImVec2((float) glWidth, (float) glHeight);
-    ImGui_ImplOpenGL3_Init("#version 100");
+    ImGui_ImplOpenGL3_Init(OBFUSCATE("#version 100"));
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(15.0f);
     io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, 30, 30.0f);
@@ -1507,7 +1558,7 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     ImGui::NewFrame();
 
 
-    if(isAuth() && !ready && uptodate){
+    if(isAuth() && !ready && uptodate && authenticated){
         Hooks();
         Patches();
         ready = true;
@@ -1515,18 +1566,27 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
 
     ESP();
 
-    if(uptodate){
-        if(authenticated)
-            DrawMenu();
-        else
-            DrawKeySystemMenu();
+    if(uptodate && authenticated){
+            if(!hidden)
+                DrawMenu();
+            else
+                HiddenCircle();
+    }
+    else {
+        DrawKeySystemMenu();
     }
 
-    if(uptodate)
-        DrawText(ImVec2(10, 10), ImVec4(255, 255, 255, 255), "PrimeTools BETA", espFont);
-    else
-        DrawText(ImVec2(glWidth / 2, glHeight / 2), ImVec4(255, 255, 255, 255), "Your module version is outdated, Update here : https://discord.gg/uuSwBkEd", espFont);
+    if(maxframerate > 62){
+        DrawText(ImVec2(10, 40), ImVec4(220, 20, 60, 255), OBFUSCATE("You're playing over 60 fps which may cause crashes, Lower the FPS in settings and restart"), espFont);
+    }
 
+    if(uptodate) {
+        if (!hidden)
+            DrawText(ImVec2(10, 10), ImVec4(255, 255, 255, 255), OBFUSCATE("PrimeTools BETA"), espFont);
+    }
+    else{
+        DrawText(ImVec2((glWidth / 2) - 296, glHeight / 2), ImVec4(255, 255, 255, 255), OBFUSCATE("Your module version is outdated, Update here : https://discord.gg/uuSwBkEd") ,espFont);
+    }
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -1573,30 +1633,20 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices
     }
 }
 
-
-
 void *hack_thread(void *arg) {
-    int tries = 0;
     do {
         sleep(1);
-        auto maps = KittyMemory::getMapsByName("split_config.arm64_v8a.apk");
+        auto maps = KittyMemory::getMapsByName(OBFUSCATE("split_config.arm64_v8a.apk"));
         for (std::vector<ProcMap>::iterator it = maps.begin(); it != maps.end(); ++it) {
             auto address = KittyScanner::findHexFirst(it->startAddress, it->endAddress,
-                                                      "7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 C0 F6 66 00 00 00 00 00 40 00 00 00 00 00 00 00 08 DC 3B 02 00 00 00 00",
-                                                      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                                                      OBFUSCATE("7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 03 00 B7 00 01 00 00 00 B0 05 67 00 00 00 00 00 40 00 00 00 00 00 00 00 00 51 3B 02 00 00 00 00"),
+                                                      OBFUSCATE("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
             if (address != 0) {
                 libBaseAddress = address;
                 libBaseEndAddress = it->endAddress;
                 libSize = it->length;
             }
         }
-        if (tries > 10) {
-            auto map = KittyMemory::getLibraryBaseMap("libil2cpp.so");
-            libBaseAddress = map.startAddress;
-            libBaseEndAddress = map.endAddress;
-            unsafe = true;
-        }
-        tries++;
     } while (libBaseAddress == 0);
     auto get_version = (*get_for_thread(std::string(OBFUSCATE("https://cdn.discordapp.com/attachments/1099739822366658732/1099774424225419335/v.txt"))));
     std::vector<std::string> lines;
@@ -1605,27 +1655,26 @@ void *hack_thread(void *arg) {
         std::string line;
         while (std::getline(iss, line)) {
             if (line != std::string(OBFUSCATE("1.38.0f2175"))) {
-                LOGE("NOT UPDATED");
                 uptodate = false;
             }
         }
     }
     if(uptodate){
         Pointers();
-        HOOK("0x19CFA50", LoadSettings, oldLoadSettings);
-        HOOK("0x145FE6C", AppManager, oldAppManager);
+        HOOK("0x12360B0", LoadSettings, oldLoadSettings);
+        HOOK("0x1758DBC", AppManager, oldAppManager);
     }
 
-    auto eglhandle = dlopen("libunity.so", RTLD_LAZY);
-    auto eglSwapBuffers = dlsym(eglhandle, "eglSwapBuffers");
-    auto renderHandle = dlopen("/system/lib64/libGLESv2.so", RTLD_LAZY);
-    auto glDrawElement = dlsym(renderHandle, "glDrawElements");
-    auto glGetUniformLocations = dlsym(renderHandle, "glGetUniformLocation");
+    auto eglhandle = dlopen(OBFUSCATE("libunity.so"), RTLD_LAZY);
+    auto eglSwapBuffers = dlsym(eglhandle, OBFUSCATE("eglSwapBuffers"));
+    auto renderHandle = dlopen(OBFUSCATE("/system/lib64/libGLESv2.so"), RTLD_LAZY);
+    auto glDrawElement = dlsym(renderHandle, OBFUSCATE("glDrawElements"));
+    auto glGetUniformLocations = dlsym(renderHandle, OBFUSCATE("glGetUniformLocation"));
     DobbyHook((void *) eglSwapBuffers, (void *) hook_eglSwapBuffers, (void **) &old_eglSwapBuffers);
     DobbyHook((void *) glDrawElement, (void *) glDrawElements, (void **) &old_glDrawElements);
     DobbyHook((void *) glGetUniformLocations, (void *) glGetUniformLocation, (void **) &old_glGetUniformLocation);
-    void *sym_input = DobbySymbolResolver(("/system/lib/libinput.so"),
-                                          ("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"));
+    void *sym_input = DobbySymbolResolver((OBFUSCATE("/system/lib/libinput.so")),
+                                          (OBFUSCATE("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE")));
 
     if (NULL != sym_input) {
         DobbyHook(sym_input, (void *) myInput, (void **) &origInput);

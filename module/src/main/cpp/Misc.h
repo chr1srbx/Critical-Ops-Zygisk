@@ -85,7 +85,7 @@ uintptr_t string2Offset(const char *c) {
     // All other options exhausted, sizeof(uintptr_t) == sizeof(unsigned long long))
     return strtoull(c, nullptr, base);
 }
-#define HOOK(offset, ptr, orig) hook((void*)get_absolute_address(string2Offset(OBFUSCATE(offset))), (void *)ptr, (void **)&orig)
+#define HOOK(offset, ptr, orig) hook((void*)get_absolute_address(string2Offset(OBFUSCATE(offset))), (void*)ptr, (void **)&orig)
 #define PHOOK(pattern, ptr, orig) Hook((void*)find_pattern(libBaseAddress,libBaseEndAddress,(OBFUSCATE(pattern))), (void *)ptr, (void **)&orig)
 #define PATCH(offset, hex) patchOffset((string2Offset(OBFUSCATE(offset))), OBFUSCATE(hex), true)
 #define PATCH_SWITCH(offset, hex, boolean) patchOffset(string2Offset(OBFUSCATE(offset)), OBFUSCATE(hex), boolean)

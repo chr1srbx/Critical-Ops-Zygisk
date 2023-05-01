@@ -15,7 +15,7 @@ static char *game_data_dir = NULL;
 int isGame(JNIEnv *env, jstring appDataDir);
 void *hack_thread(void *arg);
 void* triggerbot_thread(void* arg);
-#define LOG_TAG "primetools"
+#define LOG_TAG OBFUSCATE("primetools")
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 class MyModule : public zygisk::ModuleBase {
@@ -26,7 +26,6 @@ public:
 
     void preAppSpecialize(AppSpecializeArgs *args) override {
         if (!args || !args->nice_name) {
-            LOGE("Skip unknown process");
             return;
         }
         enable_hack = isGame(env_, args->app_data_dir);
@@ -37,12 +36,10 @@ public:
             int ret;
             pthread_t ntid;
             if ((ret = pthread_create(&ntid, nullptr, hack_thread, nullptr))) {
-                LOGE("can't create thread: %s\n", strerror(ret));
             }
             int ret1;
             pthread_t ntid1;
             if ((ret1 = pthread_create(&ntid1, nullptr, triggerbot_thread, nullptr))) {
-                LOGE("can't create thread: %s\n", strerror(ret1));
             }
         }
     }

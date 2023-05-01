@@ -62,6 +62,7 @@ monoString* (*get_Username)(PlayerAdapter* player);
 monoString* (*get_ClanTag)(PlayerAdapter* player);
 void* (*CreateMessage)(monoString* message, ChatMessageType type, bool commandUIUsed);
 void (*SendMessage) (void* obj);
+bool (*get_Invulnerable) (void* character);
 
 
 // Custom functions
@@ -80,43 +81,25 @@ bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg);
 
 
 // oHooks
-float (*old_get_fieldOfView)(void *instance);
-void* (*oldShaderFind)(std::string name);
 void(*oldGameSystemUpdate)(void* obj);
-void(*oldRenderOverlayFlashbang)(void* obj);
+void(*oldRenderOverlayFlashbang)(void* obj, void* IRender);
 void(*oldset_Spread)(void*obj, float value);
-void(*oldRenderOverlaySmoke)(void* obj);
-void(*oldBackendManager)(void* obj);
+void(*oldRenderOverlaySmoke)(void* obj, void* IRender, void* IEntityDB, Vector3 origin);
 void(*oldUpdateWeapon)(void* obj, float deltatime);
 void(*oSetRotation)(void* obj, Vector2 rotation);
 void (*oGameSystemDestroy)(void* obj);
 EGLBoolean (*old_eglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
 void (*oTouchControlsUpdate)(void* obj);
 void (*oTouchControlsDestroy)(void* obj);
-void* (*oCreateWeapon)(void* pSys, int weaponId, monoString* ownerName, int weaponDefId, int weaponSkinId);
-void (*oDestroyWeapon)(void* pSys, int weaponId);
 float(*oldget_Height)(void* obj);
 float(*oldFovViewModel)(void* obj);
 float(*oldFovWorld)(void* obj);
 void (*oldCheckCharacterVisibility)(void* obj, bool* visibility);
 void(*oldGenerateHash)(void* obj);
-void*(*oldReloadCreate)(void* obj, void* character, float reloadTime, float reloadInsertTime, int reloadType);
-void* (*oldCreateRagdoll)(void* obj, BodyPart bodyPart, Vector3 force);
-void(*oldUpdateGame)(void* obj, float dt);
-
+void(*oldFPSMeter)(void* obj);
 
 // Hooks
-float get_fieldOfView(void *instance);
-void* ShaderFind(std::string name);
 void GameSystemUpdate(void* obj);
-void RenderOverlayFlashbang(void* obj);
-void RenderOverlaySmoke(void* obj);
-void DrawRenderer(void* obj);
-void UpdateAimedCharacter(void* obj);
-float GetCurrentMaxSpeed(void* obj, float speed);
-int GetPlayerMoney(void* obj);
-Vector3 get_gravity();
-Vector3 get_height();
 void Init(void* obj);
 void setRotation(void* obj, Vector2 rotation);
 EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
@@ -130,7 +113,7 @@ void Patches();
 
 
 
-#define LOG_TAG "ZygiskCops"
+#define LOG_TAG OBFUSCATE("prime")
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
