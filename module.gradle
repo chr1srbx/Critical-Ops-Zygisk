@@ -4,6 +4,6 @@ ext {
     moduleName = "Prime Tools Injection"
     moduleAuthor = "Prime Tools Development"
     moduleDescription = "Prime Tools Injection"
-    moduleVersion = "1.38.0f2175"
+    moduleVersion = "1.38.0f2184"
     moduleVersionCode = 1
 }

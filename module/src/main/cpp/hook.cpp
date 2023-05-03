@@ -106,7 +106,7 @@ int get_CharacterTeam(void* character)
 
 int get_PlayerTeam(void* player)
 {
-    int team = -1;
+    int team = std::stoi(OBFUSCATE("-1"));
     if (player)
     {
         PlayerAdapter* playerAdapter = new PlayerAdapter;
@@ -524,8 +524,10 @@ void setRotation(void *character, Vector2 rotation) {
         void *camera = get_camera();
         if (camera != nullptr) {
             Ray ray = ScreenPointToRay(camera, Vector2(glWidth / 2, glHeight / 2), 2);
-            UpdateCharacterHitBuffer(pSys, closestEnt, ray, &hitIndex);
 
+            if(closestEnt != nullptr){
+                UpdateCharacterHitBuffer(pSys, closestEnt, ray, &hitIndex);
+            }
             if (hitIndex && !shootControl) {
                 shootControl = 1;
             }
@@ -609,7 +611,7 @@ void* getValidEnt()
     int id = getLocalId(pSys);
     void *localPlayer = getPlayer(pSys, id);
     int localTeam = get_PlayerTeam(localPlayer);
-    float closestEntDist = 99999.0f;
+    float closestEntDist = 10.0f;
     void* closestCharacter = nullptr;
     monoList<void **> *characterList = getAllCharacters(pSys);
     for (int i = 0; i < characterList->getSize(); i++) {
@@ -636,7 +638,7 @@ void* getValidEnt()
 void (*oldMeeleHit)(void* obj, void* shooter, Ray ray);
 void MeleeHit(void* obj, void* shooter, Ray ray){
     if(obj != nullptr && silentknife1 && esp_localCharacter != nullptr){
-        if(shooter == esp_localCharacter && getValidEnt() != nullptr){
+        if(shooter == esp_localCharacter && getValidEnt() != nullptr ){
             ray.origin = get_Position(getTransform(getValidEnt()));
             ray.direction = Vector3(0, 1, 0);
         }
@@ -651,14 +653,6 @@ void GenerateHash(void *obj) {
        // monoString* Hash = *(monoString**)((uint64_t) obj + 0x60);
        // LOGE("hash %s", Hash->getString().c_str());
     }
-}
-
-double measureFrameTime() {
-    static auto previousTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    double frameTime = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - previousTime).count() / 1000.0;
-    previousTime = currentTime;
-    return frameTime;
 }
 
 int framerate, maxframerate = 0;
@@ -777,7 +771,7 @@ void Patches() {
     PATCH_SWITCH("0xD98BD4", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x15803E8", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
     PATCH_SWITCH("0x14ED104", "1F2003D5", wallbang);//ProcessHitBuffers + 0xB8
-    PATCH_SWITCH("0x14EDBF0", "01F0271E", headhitbox);//UpdateCharacterHitBuffer + 0x21C
+    PATCH_SWITCH("0x14EDBF0", "01F0271E", headhitbox);//UpdateCahracterHitBuffer + 0x21C
     PATCH_SWITCH("0x14D8150", "E0031FAA",radar);//FetchFollowedCharacterTeamIndex + 0x84
     PATCH_SWITCH("0x14EBDFC", "01F0271E", silentknife);//MeleeHit + 0x808
     PATCH_SWITCH("0x11869C0", "1F01086B", tradar);//CheckCharacterVisibility + 0x84
@@ -808,8 +802,7 @@ float get_cameraFov(void *pSys) {
 void ESP() {
     AimbotCfg cfg;
     std::lock_guard<std::mutex> guard(esp_mtx);
-    if (pSys == nullptr ||
-        !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot ||
+    if (pSys == nullptr || !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot ||
           sniperCfg.aimbot)) {
         return;
     }
@@ -855,7 +848,7 @@ void ESP() {
 
         int curTeam = get_CharacterTeam(currentCharacter);
         int health = get_Health(currentCharacter);
-        if (health <= 0 || localTeam == curTeam || curTeam == -1) {
+        if (health <= 0 || localTeam == curTeam || curTeam == std::stoi(OBFUSCATE("-1"))) {
             continue;
         }
 
@@ -1532,8 +1525,15 @@ void SetupImgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    glWidth = get_Width();
-    glHeight = get_Height();
+    if(uptodate){
+        glWidth = get_Width();
+        glHeight = get_Height();
+    }
+    else{
+        glWidth = std::stoi(OBFUSCATE("1920"));
+        glHeight = std::stoi(OBFUSCATE("1080"));
+    }
+
     io.DisplaySize = ImVec2((float) glWidth, (float) glHeight);
     ImGui_ImplOpenGL3_Init(OBFUSCATE("#version 100"));
     ImGui::StyleColorsDark();
@@ -1564,19 +1564,22 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
         ready = true;
     }
 
-    ESP();
+
 
     if(uptodate && authenticated){
-            if(!hidden)
+            ESP();
+            if(!hidden) {
                 DrawMenu();
-            else
+            }
+            else{
                 HiddenCircle();
+            }
     }
-    else {
+    else if(uptodate){
         DrawKeySystemMenu();
     }
 
-    if(maxframerate > 62){
+    if(maxframerate > 62 && uptodate){
         DrawText(ImVec2(10, 40), ImVec4(220, 20, 60, 255), OBFUSCATE("You're playing over 60 fps which may cause crashes, Lower the FPS in settings and restart"), espFont);
     }
 
@@ -1585,7 +1588,7 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
             DrawText(ImVec2(10, 10), ImVec4(255, 255, 255, 255), OBFUSCATE("PrimeTools BETA"), espFont);
     }
     else{
-        DrawText(ImVec2((glWidth / 2) - 296, glHeight / 2), ImVec4(255, 255, 255, 255), OBFUSCATE("Your module version is outdated, Update here : https://discord.gg/uuSwBkEd") ,espFont);
+        DrawText(ImVec2(100, 200), ImVec4(255, 255, 255, 255), OBFUSCATE("Your module version is outdated, Update here : https://discord.gg/8uxxYSn7") ,espFont);
     }
 
     ImGui::EndFrame();
@@ -1605,7 +1608,6 @@ GLint glGetUniformLocation(GLuint program, const GLchar *name) // returns locati
 bool Shaders() {
     GLint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &program);
-
     return old_glGetUniformLocation(program, Shader) != -1;
 }
 
@@ -1648,13 +1650,13 @@ void *hack_thread(void *arg) {
             }
         }
     } while (libBaseAddress == 0);
-    auto get_version = (*get_for_thread(std::string(OBFUSCATE("https://cdn.discordapp.com/attachments/1099739822366658732/1099774424225419335/v.txt"))));
+    auto get_version = (*get_for_thread(std::string(OBFUSCATE("https://cdn.discordapp.com/attachments/1102979543200956538/1103007574137241731/v.txt"))));
     std::vector<std::string> lines;
     std::istringstream iss(get_version);
     if (get_version.size()) {
         std::string line;
         while (std::getline(iss, line)) {
-            if (line != std::string(OBFUSCATE("1.38.0f2175"))) {
+            if (line != std::string(OBFUSCATE("1.38.0f2184"))) {
                 uptodate = false;
             }
         }
