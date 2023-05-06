@@ -63,7 +63,10 @@ monoString* (*get_ClanTag)(PlayerAdapter* player);
 void* (*CreateMessage)(monoString* message, ChatMessageType type, bool commandUIUsed);
 void (*SendMessage) (void* obj);
 bool (*get_Invulnerable) (void* character);
-
+void (*PlayerAdapter_CTOR) (void* obj, void*);
+void (*Clear) (void* obj);
+void (*AddHit) (void* obj, HitData HitData);
+int (*get_ID) (void* obj);
 
 // Custom functions
 void* getTransform(void* character);
@@ -97,6 +100,7 @@ float(*oldFovWorld)(void* obj);
 void (*oldCheckCharacterVisibility)(void* obj, bool* visibility);
 void(*oldGenerateHash)(void* obj);
 void(*oldFPSMeter)(void* obj);
+
 
 // Hooks
 void GameSystemUpdate(void* obj);

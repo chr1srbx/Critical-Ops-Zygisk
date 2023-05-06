@@ -10,6 +10,7 @@
 #include "KittyMemory/MemoryPatch.h"
 #include "KittyMemory/KittyScanner.h"
 #include "Include/obfuscate.h"
+#include "Include/base64.h"
 #include "hook.h"
 
 using KittyMemory::ProcMap;

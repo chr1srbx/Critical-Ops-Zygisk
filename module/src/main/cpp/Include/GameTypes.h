@@ -76,6 +76,28 @@ enum ChatMessageType
     CLAN
 };
 
+struct Enemy
+{
+    void* Character = nullptr;
+    void* Player = nullptr;
+    std::string Name = "";
+    std::string Clan = "";
+    int team = -1;
+    bool local = false;
+};
+std::vector<Enemy> EnemyList;
+
+struct TransformData
+{
+    // Pads may be wrong :(
+    Vector3 pos;
+    int pad_0[2];
+    Vector3 velocity;
+    int pad_1[3];
+    Vector2 rotation;
+};
+
+
 struct ESPCfg
 {
     bool snapline = 0;
@@ -92,14 +114,6 @@ struct ESPCfg
     bool weapon = 0;
     ImVec4 weaponColor = ImColor(255,255,255);
 };
-
-struct TransformData
-{
-     Vector3 position;
-     Vector3 velocity;
-     Vector2 rotation;
-};
-
 struct BurstData
 {
     Ray currentRay;

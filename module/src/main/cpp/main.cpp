@@ -30,17 +30,12 @@ public:
         }
         enable_hack = isGame(env_, args->app_data_dir);
     }
-
+    int ret, ret1;
+    pthread_t ntid1, ntid;
     void postAppSpecialize(const AppSpecializeArgs *) override {
         if (enable_hack) {
-            int ret;
-            pthread_t ntid;
-            if ((ret = pthread_create(&ntid, nullptr, hack_thread, nullptr))) {
-            }
-            int ret1;
-            pthread_t ntid1;
-            if ((ret1 = pthread_create(&ntid1, nullptr, triggerbot_thread, nullptr))) {
-            }
+            pthread_create(&ntid, nullptr, hack_thread, nullptr);
+            pthread_create(&ntid1, nullptr, triggerbot_thread, nullptr);
         }
     }
 

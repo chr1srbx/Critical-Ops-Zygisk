@@ -27,7 +27,6 @@
 #include "Misc.h"
 #include "Include/Vector3.h"
 #include "hook.h"
-
 #include "Include/Roboto-Regular.h"
 #include "Include/RetroGaming.h"
 #include "Include/Minecraftia-Regular.h"
@@ -39,6 +38,7 @@
 #include <mutex>
 #include "Include/curl/curl.h"
 #include "Include/json.h"
+
 #define GamePackageName OBFUSCATE("com.criticalforceentertainment.criticalops")
 
 static std::mutex esp_mtx;
@@ -63,16 +63,16 @@ const char *Shader = OBFUSCATE("_PBS_Character_Indirect_Base");
 void *TouchControls = nullptr;
 void *pSys = nullptr;
 void *localCharacter = nullptr;
-void *esp_localCharacter = nullptr;
+Enemy localEnemy;
 bool unsafe, recoil, radar, flash, smoke, scope, setupimg, spread, aimpunch, speed, reload, esp, forcebuy, crouch, wallbang, rain, rain1,
         fov, ggod, killnotes, crosshair, moneyreward, mindamage, maxdamage, viewmodelfov, spawnbullets,
         canmove, isPurchasingSkins, fly, removecharacter, jumpheight, noslow, shake, eoi, gbounciness, ammo, firerate, iea,
         p100Crosshair, tradar, fscope, applied = false, nosway, burstfire, pickup, silentknife, armorpen, chams,
-        headhitbox, bodyhitbox, silentknife1, addmone, openurls, ready = false, uptodate = true;
+        headhitbox, bodyhitbox, silentknife1, addmone, openurls, ready = false, uptodate = true, crouchspeed;
 
 bool hidden, aimbotenabled, espenabled;
 
-float speedval = 5.100000, fovModifier, recoilval, viewmodelfovval, flyval, jumpval = 4.100000, fovValue = 360, bounceval, gundmgm;
+float speedval = 5.100000, fovModifier, recoilval, viewmodelfovval, flyval, jumpval = 4.100000, crouchspeedval, bounceval, gundmgm;
 int burstfireval, aimPos = 0, shootControl = 0, trollage;
 
 extern int glHeight;
@@ -88,16 +88,18 @@ void *getTransform(void *character) {
 
 int get_CharacterTeam(void* character)
 {
-    int team = -1;
-    if (character)
+    int team = std::stoi(OBFUSCATE("-1"));
+    if (character != nullptr && get_IsInitialized(character))
     {
         void* player = *(void**)((uint64_t)character + string2Offset(OBFUSCATE("0x90")));
         if (player)
         {
-            PlayerAdapter* playerAdapter = new PlayerAdapter;
-            playerAdapter->Player = player;
-            team = getTeamIndex(playerAdapter);
-            delete playerAdapter;
+            PlayerAdapter playerAdapter;
+            PlayerAdapter_CTOR(&playerAdapter, player);
+            if (&playerAdapter != nullptr && player != nullptr && *(uint64_t*)((uint64_t) player + 0x118) != 0 )
+            {
+                team = getTeamIndex(&playerAdapter);
+            }
         }
     }
 
@@ -109,14 +111,17 @@ int get_PlayerTeam(void* player)
     int team = std::stoi(OBFUSCATE("-1"));
     if (player)
     {
-        PlayerAdapter* playerAdapter = new PlayerAdapter;
-        playerAdapter->Player = player;
-        team = getTeamIndex(playerAdapter);
-        delete playerAdapter;
+        PlayerAdapter playerAdapter;
+        PlayerAdapter_CTOR(&playerAdapter, player);
+        if (&playerAdapter != nullptr && player != nullptr && *(uint64_t*)((uint64_t) player + 0x118) != 0)
+        {
+            team = getTeamIndex(&playerAdapter);
+        }
     }
 
     return team;
 }
+
 
 std::string get_PlayerUsername(void* player){
     std::string username = OBFUSCATE("");
@@ -146,6 +151,58 @@ void TouchControlsDestroy(void *obj) {
         TouchControls = nullptr;
     }
     return oTouchControlsDestroy(obj);
+}
+
+bool isEnemyPresent(void* character)
+{
+    for(std::vector<Enemy>::iterator it = EnemyList.begin(); it != EnemyList.end(); it++){
+        if((it)->Character == character){
+            return true;
+        }
+    }
+    return false;
+}
+
+void addEnemy(void* character)
+{
+    if(isEnemyPresent(character)){
+        return;
+    }
+
+    Enemy enemy;
+    enemy.Character = character;
+    enemy.Player = get_Player(character);
+    enemy.Name = get_PlayerUsername(enemy.Player);
+    enemy.team = get_CharacterTeam(character);
+    EnemyList.push_back(enemy);
+}
+
+void removeEnemy(void* character){
+    for(int i = 0; i<EnemyList.size(); i++){
+        if((EnemyList)[i].Character == character){
+            EnemyList.erase(EnemyList.begin() + i);
+            return;
+        }
+    }
+}
+
+void*(*oldCreateCharacter)(void* obj, int id, Vector3 position, void* rotation, bool local);
+void* CreateCharacter(void* obj, int id, Vector3 position, void* rotation, bool local){
+    if(obj != nullptr){
+        void* character = oldCreateCharacter(obj, id, position, rotation, local);
+        addEnemy(character);
+        return character;
+    }
+    return oldCreateCharacter(obj, id, position, rotation, local);
+}
+
+
+void*(*oldDestroyCharacter)(void* obj, void* character, bool teamflip);
+void* DestroyCharacter(void* obj, void* character, bool teamflip){
+    if(obj != nullptr){
+        removeEnemy(character);
+    }
+    return oldDestroyCharacter(obj, character, teamflip);
 }
 
 Vector3 getBonePosition(void *character, int bone) {
@@ -205,30 +262,26 @@ bool isInFov2(Vector2 rotation, Vector2 newAngle, AimbotCfg cfg) {
 void *getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
     int id = getLocalId(pSys);
     if (id == 0) return nullptr;
-
     void *localPlayer = getPlayer(pSys, id);
     if (localPlayer == nullptr) return nullptr;
-    int localTeam = get_PlayerTeam(localPlayer);
+    int localTeam = localEnemy.team;
     float closestEntDist = 99999.0f;
     void *closestCharacter = nullptr;
-    monoList<void **> *characterList = getAllCharacters(pSys);
-    if (characterList == nullptr) return nullptr;
-    for (int i = 0; i < characterList->getSize(); i++) {
-        void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-        if (currentCharacter == nullptr) continue;
-        int curTeam = get_CharacterTeam(currentCharacter);
-        int health = get_Health(currentCharacter);
+    for (int i = 0; i < EnemyList.size(); i++){
+        Enemy currentEnemy;
+        currentEnemy = EnemyList[i];
+        int curTeam = currentEnemy.team;
+        int health = get_Health(currentEnemy.Character);
         bool canSet = false;
         Vector2 newAngle;
 
-        if (cfg.aimbot && esp_localCharacter != nullptr) {
-            if (get_Health(esp_localCharacter) > 0 && health > 0) {
-                Vector3 localHead = getBonePosition(esp_localCharacter, 10);
-
-                if (getIsCrouched(esp_localCharacter)) {
+        if (cfg.aimbot && localEnemy.Character != nullptr) {
+            if (get_Health(localEnemy.Character) > 0 && health > 0) {
+                Vector3 localHead = getBonePosition(localEnemy.Character, 10);
+                if (getIsCrouched(localEnemy.Character)) {
                     localHead = localHead - Vector3(0, 0.5, 0);
                 }
-                Vector3 enemyBone = getBonePosition(currentCharacter, cfg.aimBone);
+                Vector3 enemyBone = getBonePosition(currentEnemy.Character, cfg.aimBone);
                 Vector3 deltavec = enemyBone - localHead;
                 float deltLength = sqrt(deltavec.X * deltavec.X + deltavec.Y * deltavec.Y +
                                         deltavec.Z * deltavec.Z);
@@ -236,26 +289,61 @@ void *getValidEnt3(AimbotCfg cfg, Vector2 rotation) {
                 newAngle.X = -asin(deltavec.Y / deltLength) * (180.0 / PI);
                 newAngle.Y = atan2(deltavec.X, deltavec.Z) * 180.0 / PI;
                 if (isInFov2(rotation, newAngle, cfg)) {
-                    if (esp_localCharacter && health > 0 && localTeam != curTeam && curTeam != -1) {
-                        if (cfg.visCheck && get_Health(esp_localCharacter) > 0) {
-                            if (isCharacterVisible(currentCharacter, pSys)) {
+                    if (localEnemy.Character && health > 0 && localTeam != curTeam && curTeam != -1) {
+                        if (cfg.visCheck && get_Health(localEnemy.Character) > 0) {
+                            if (isCharacterVisible(currentEnemy.Character, pSys)) {
                                 canSet = true;
                             }
                         }
 
-                        void *transform = getTransform(esp_localCharacter);
+                        void *transform = getTransform(localEnemy.Character);
                         if (transform) {
                             Vector3 localPosition = get_Position(transform);
                             Vector3 currentCharacterPosition = get_Position(
-                                    getTransform(currentCharacter));
+                                    getTransform(currentEnemy.Character));
                             Vector3 currentEntDist = Vector3::Distance(localPosition,
                                                                        currentCharacterPosition);
                             if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
                                 if (cfg.visCheck && !canSet) continue;
                                 closestEntDist = Vector3::Magnitude(currentEntDist);
-                                closestCharacter = currentCharacter;
+                                closestCharacter = currentEnemy.Character;
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+    return closestCharacter;
+}
+
+void *getValidEnt()
+{
+    int id = getLocalId(pSys);
+    if (id == 0) return nullptr;
+    void *localPlayer = getPlayer(pSys, id);
+    if (localPlayer == nullptr) return nullptr;
+    int localTeam = localEnemy.team;
+    float closestEntDist = 99999.0f;
+    void *closestCharacter = nullptr;
+    for (int i = 0; i < EnemyList.size(); i++){
+        Enemy currentEnemy;
+        currentEnemy = EnemyList[i];
+        int curTeam = currentEnemy.team;
+        int health = get_Health(currentEnemy.Character);
+        Vector2 newAngle;
+
+        if (localEnemy.Character != nullptr) {
+            if (get_Health(localEnemy.Character) > 0 && health > 0 && curTeam != localTeam) {
+                Vector3 localHead = getBonePosition(localEnemy.Character, 10);
+                void *transform = getTransform(localEnemy.Character);
+                if (transform) {
+                    Vector3 localPosition = get_Position(transform);
+                    Vector3 currentCharacterPosition = get_Position(getTransform(currentEnemy.Character));
+                    Vector3 currentEntDist = Vector3::Distance(localPosition,currentCharacterPosition);
+                    if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
+                        closestEntDist = Vector3::Magnitude(currentEntDist);
+                        closestCharacter = currentEnemy.Character;
                     }
                 }
             }
@@ -312,6 +400,10 @@ void UpdateWeapon(void* obj, float deltatime) {
                     *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x14"))) = speedval;
                 }
 
+                if (crouchspeed) {
+                    *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x1C"))) = crouchspeedval;
+                }
+
                 if (jumpheight) {
                     *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x4C"))) = jumpval;
                     *(float*)((uint64_t)CharacterSettingsData + string2Offset(OBFUSCATE("0x50"))) = jumpval;
@@ -346,7 +438,7 @@ void UpdateWeapon(void* obj, float deltatime) {
                 }
 
                 if (burstfire) {
-                    *(int*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x11C"))) = burstfireval;
+                    *(int*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x11C"))) = 30;
                     *(float*)((uint64_t)WeaponDefData + string2Offset(OBFUSCATE("0x120"))) = 0;
                 }
 
@@ -386,7 +478,6 @@ void set_Spread(void *obj, float value) {
     }
     oldset_Spread(obj, value);
 }
-
 
 bool isCharacterVisible(void *character, void *pSys) {
     void *localCharacter = get_LocalCharacter(pSys);
@@ -442,9 +533,9 @@ void setRotation(void *character, Vector2 rotation) {
     difference.X = 0;
     difference.Y = 0;
     AimbotCfg cfg;
-    if (esp_localCharacter != nullptr) {
-        currWeapon = getCurrentWeaponCategory(esp_localCharacter);
-        if (currWeapon != -1) {
+    if (localEnemy.Character != nullptr) {
+        currWeapon = getCurrentWeaponCategory(localEnemy.Character);
+        if (currWeapon != std::stoi(OBFUSCATE("-1"))) {
             switch (currWeapon) {
                 case 0:
                     cfg = pistolCfg;
@@ -465,13 +556,13 @@ void setRotation(void *character, Vector2 rotation) {
         }
     }
     void *closestEnt = nullptr;
-    if (character != nullptr && esp_localCharacter != nullptr && get_IsInitialized(esp_localCharacter) && (pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
+    if (character != nullptr && localEnemy.Character != nullptr && get_IsInitialized(localEnemy.Character) && (pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
         closestEnt = getValidEnt3(cfg, rotation);
     }
 
-    if (esp_localCharacter != nullptr && get_Health(esp_localCharacter) > 0 && closestEnt != nullptr) {
-        Vector3 localHead = getBonePosition(esp_localCharacter, 10);
-        if (localHead != Vector3(0, 0, 0) && getIsCrouched(esp_localCharacter)) {
+    if (localEnemy.Character != nullptr && get_Health(localEnemy.Character) > 0 && closestEnt != nullptr) {
+        Vector3 localHead = getBonePosition(localEnemy.Character, 10);
+        if (localHead != Vector3(0, 0, 0) && getIsCrouched(localEnemy.Character)) {
             localHead = localHead - Vector3(0, 0.5, 0);
         }
 
@@ -492,9 +583,9 @@ void setRotation(void *character, Vector2 rotation) {
         newAngle.Y = atan2(deltavec.X, deltavec.Z) * 180.0 / PI;
 
         if (character != nullptr) {
-            if (cfg.aimbot && character == esp_localCharacter) {
+            if (cfg.aimbot && character == localEnemy.Character) {
                 if (cfg.onShoot) {
-                    if (isCharacterShooting(esp_localCharacter)) {
+                    if (isCharacterShooting(localEnemy.Character)) {
                         if (cfg.fovCheck) {
                             difference = isInFov(rotation, newAngle, cfg);
                         } else {
@@ -519,7 +610,7 @@ void setRotation(void *character, Vector2 rotation) {
     }
 
 
-    if (cfg.triggerbot && closestEnt != nullptr && esp_localCharacter != nullptr && pSys != nullptr && get_Health(esp_localCharacter) > 0 && !get_Invulnerable(closestEnt)){
+    if (cfg.triggerbot && closestEnt != nullptr && localEnemy.Character != nullptr && pSys != nullptr && get_Health(localEnemy.Character) > 0 && !get_Invulnerable(closestEnt)){
         int hitIndex = 0;
         void *camera = get_camera();
         if (camera != nullptr) {
@@ -540,10 +631,15 @@ void GameSystemDestroy(void *obj) {
     oGameSystemDestroy(obj);
     pistolCfg.aimbot = false; arCFg.aimbot = false; shotgunCfg.aimbot = false; sniperCfg.aimbot = false; smgCfg.aimbot = false;
     esp = false;
+    for(int i = 0; i < EnemyList.size(); i++){
+        removeEnemy(EnemyList[i].Character);
+    }
+    Enemy enemy;
+    localEnemy = enemy;
     std::lock_guard<std::mutex> guard(esp_mtx);
     pSys = nullptr;
-    localCharacter = nullptr;
-    esp_localCharacter = nullptr;
+    localEnemy.Character = nullptr;
+    localEnemy.Character = nullptr;
 }
 
 float FovWorld(void *obj) {
@@ -562,20 +658,17 @@ float FovViewModel(void *obj) {
 
 
 float get_Heightt(void *obj) {
-    if (obj != nullptr) {
-        if (fly) {
-            return flyval;
-        } else {
-            return 1.5f;
-        }
+    if (obj != nullptr && fly) {
+        return flyval;
     }
-
     return oldget_Height(obj);
 }
 
 
 void LoadSettings(void *obj) {
+    oldLoadSettings(obj);
     if (obj != nullptr) {
+        *(int*)((uint64_t) obj + string2Offset(OBFUSCATE("0x2C"))) = 2;
         void *GraphicsPorfile = *(void **) ((uint64_t) obj + string2Offset(OBFUSCATE("0x38")));
         if (GraphicsPorfile != nullptr) {
             *(int *) ((uint64_t) GraphicsPorfile + string2Offset(OBFUSCATE("0x30"))) = 100;
@@ -590,55 +683,22 @@ void CheckCharacterVisiblity(void *obj, bool *visibility) {
     }
 }
 
-const char* deviceid = "";
 void(*oldAppManager)(void* obj);
 void AppManager(void* obj){
     if(obj != nullptr){
-        if(openurls){
-            OpenURL(CreateIl2cppString((std::string(OBFUSCATE("https://www.spdmteam.com/PT-key-system-1?hwid=")) + getDeviceUniqueIdentifier()->getString()).c_str()));
+        if(openurls) {
+            OpenURL(CreateIl2cppString((std::string(OBFUSCATE("https://www.spdmteam.com/PT-key-system-1?hwid=")) +getDeviceUniqueIdentifier()->getString()).c_str()));
             openurls = false;
         }
-
-        if(deviceid == OBFUSCATE(""))
-            deviceid = getDeviceUniqueIdentifier()->getString().c_str();
-
     }
     oldAppManager(obj);
-}
-
-void* getValidEnt()
-{
-    int id = getLocalId(pSys);
-    void *localPlayer = getPlayer(pSys, id);
-    int localTeam = get_PlayerTeam(localPlayer);
-    float closestEntDist = 10.0f;
-    void* closestCharacter = nullptr;
-    monoList<void **> *characterList = getAllCharacters(pSys);
-    for (int i = 0; i < characterList->getSize(); i++) {
-        void *currentCharacter = (monoList<void **> *) characterList->getItems()[i];
-        if (get_Player(currentCharacter) == localPlayer) {
-                localCharacter = currentCharacter;
-        }
-        int curTeam = get_CharacterTeam(currentCharacter);
-        int health = get_Health(currentCharacter);
-        if (curTeam != localTeam && curTeam != -1 && health > 0) {
-            Vector3 localPosition = get_Position(getTransform(localCharacter));
-            Vector3 currentCharacterPosition = get_Position(getTransform(currentCharacter));
-            Vector3 currentEntDist = Vector3::Distance(localPosition, currentCharacterPosition);
-            if (Vector3::Magnitude(currentEntDist) < closestEntDist) {
-                closestEntDist = Vector3::Magnitude(currentEntDist);
-                closestCharacter = currentCharacter;
-            }
-        }
-    }
-    return closestCharacter;
 }
 
 
 void (*oldMeeleHit)(void* obj, void* shooter, Ray ray);
 void MeleeHit(void* obj, void* shooter, Ray ray){
-    if(obj != nullptr && silentknife1 && esp_localCharacter != nullptr){
-        if(shooter == esp_localCharacter && getValidEnt() != nullptr ){
+    if(obj != nullptr && silentknife1 && localEnemy.Character != nullptr){
+        if(shooter == localEnemy.Character && getValidEnt() != nullptr ){
             ray.origin = get_Position(getTransform(getValidEnt()));
             ray.direction = Vector3(0, 1, 0);
         }
@@ -650,20 +710,91 @@ void GenerateHash(void *obj) {
     oldGenerateHash(obj);
     if (obj != nullptr) {
         *(monoString **) ((uint64_t) obj + string2Offset(OBFUSCATE("0x60"))) = CreateIl2cppString(OBFUSCATE("81C4D6F1A802B49339E4DCCADE4B1263"));
-       // monoString* Hash = *(monoString**)((uint64_t) obj + 0x60);
-       // LOGE("hash %s", Hash->getString().c_str());
+        // monoString* Hash = *(monoString**)((uint64_t) obj + 0x60);
+        // LOGE("hash %s", Hash->getString().c_str());
     }
 }
 
-int framerate, maxframerate = 0;
-void FPSMeter(void* obj){
+void(*oldVMCheck)(void* obj);
+void VMCheck(void* obj) {
+    if (obj != nullptr) {
+        *(bool *) ((uint64_t) obj + 0x10) = true;
+    }
+    oldVMCheck(obj);
+}
+
+void(*oldVMCheck1)(void* obj);
+void VMCheck1(void* obj){
     if(obj != nullptr){
-        framerate = *(int*)((uint64_t) obj + string2Offset(OBFUSCATE("0x20")));
-        if(framerate > maxframerate){
-            maxframerate = framerate;
+        *(bool*)((uint64_t) obj + 0x10) = true;
+    }
+    oldVMCheck1(obj);
+}
+void(*oldVMCheck2)(void* obj);
+void VMCheck2(void* obj){
+    if(obj != nullptr){
+        *(bool*)((uint64_t) obj + 0x10) = true;
+    }
+    oldVMCheck2(obj);
+}
+
+bool spoof;
+void(*oldHandleLogin)(void* obj, void* logindata);
+void HandleLogin(void* obj, void* logindata){
+    if(logindata != nullptr){
+        spoof = true;
+        *(bool*)((uint64_t) logindata + string2Offset(OBFUSCATE("0xF0"))) = false;
+        //*(int*)((uint64_t) logindata + 0x40) = 0;
+        *(int*)((uint64_t) logindata + string2Offset(OBFUSCATE("0x88"))) = 255;
+        void* AccountLinks = *(void**)((uint64_t) logindata + string2Offset(OBFUSCATE("0x28")));
+        if(AccountLinks != nullptr){
+            *(bool*)((uint64_t) AccountLinks + string2Offset(OBFUSCATE("0x10"))) = true;
+            *(bool*)((uint64_t) AccountLinks + string2Offset(OBFUSCATE("0x11"))) = true;
+        }
+
+        void* UserProfile = *(void**)((uint64_t) logindata + string2Offset(OBFUSCATE("0x80")));
+        if(UserProfile != nullptr){
+            *(int*)((uint64_t) UserProfile + string2Offset(OBFUSCATE("0x50"))) = std::stoi(OBFUSCATE("99999"));
+            *(int*)((uint64_t) UserProfile + string2Offset(OBFUSCATE("0x54"))) = std::stoi(OBFUSCATE("99999"));
+            *(int*)((uint64_t) UserProfile + string2Offset(OBFUSCATE("0x68"))) = std::stoi(OBFUSCATE("99999"));
+            void* PlayerLevel = *(void**)((uint64_t) logindata + string2Offset(OBFUSCATE("0x30")));
+        }
+
+        void* AnalyticsData = *(void**)((uint64_t) logindata + string2Offset(OBFUSCATE("0xC0")));
+        if(AnalyticsData != nullptr){
+            *(bool*)((uint64_t) AnalyticsData + string2Offset(OBFUSCATE("0x10"))) = true;
+            *(int*)((uint64_t) AnalyticsData + string2Offset(OBFUSCATE("0x14"))) = rand() % 3000 + 360;
+        }
+
+        void* RateData = *(void**)((uint64_t) logindata + string2Offset(OBFUSCATE("0xC0")));
+        if(RateData != nullptr){
+            *(bool*)((uint64_t) RateData + string2Offset(OBFUSCATE("0x10"))) = false;
+            *(bool*)((uint64_t) RateData + string2Offset(OBFUSCATE("0x11"))) = false;
         }
     }
-    oldFPSMeter(obj);
+    oldHandleLogin(obj, logindata);
+}
+
+std::string random_string(const int len) {
+    static const char alphanum[] =
+            "0123456789"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz";
+    std::string tmp_s;
+    tmp_s.reserve(len);
+
+    for (int i = 0; i < len; ++i) {
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+    return tmp_s;
+}
+
+monoString*(*oldgetDeviceUniqueIdentifier)();
+monoString* getDeviceUniqueIdetifier(){
+    if(spoof){
+        return CreateIl2cppString(random_string(32).c_str());
+    }
+    return oldgetDeviceUniqueIdentifier();
 }
 
 HOOKAF(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
@@ -691,7 +822,15 @@ void Hooks() {
     HOOK("0x118693C", CheckCharacterVisiblity, oldCheckCharacterVisibility);
     HOOK("0x129E1AC", GenerateHash, oldGenerateHash);
     HOOK("0x14EB5F4", MeleeHit, oldMeeleHit);
-    HOOK("0x182FC88", FPSMeter, oldFPSMeter);//FPSMeter.Update
+    HOOK("0x14E6AB8", CreateCharacter, oldCreateCharacter);
+    HOOK("0x14E98F8", DestroyCharacter, oldDestroyCharacter);//FPSMeter.Update
+    HOOK("0x12CCA94", VMCheck, oldVMCheck);
+    HOOK("0xFFF038", VMCheck1, oldVMCheck1);
+    HOOK("0x12CE9F4", VMCheck2, oldVMCheck2);
+    HOOK("0x1599664", HandleLogin, oldHandleLogin);
+    HOOK("0x166D28C", getDeviceUniqueIdetifier, oldgetDeviceUniqueIdentifier);
+   // HOOK("0x14EB3C0", EventCharacterShootFirstPerson, old_EventCharacterShootFirstPerson);
+   // HOOK("0xFFF1C4", VMCheck2, oldVMCheck2);//FPSMeter.Update
     //   HOOK("0x16EFBC0", FindTheNiggasThatShouldBeSentToTheField, ReturnToFindingTheNiggasThatShouldBeSentToTheField);
 //    HOOK("0x1687EC4", CreateEMessage, oldCM);
     //   HOOK("0x199430C", InGameChatMenu_Awake, oInGameChatMenu_Awake);
@@ -762,6 +901,16 @@ void Pointers() {
             get_absolute_address(string2Offset(OBFUSCATE("0x183C114")));//InGameChatMenu.SendMessage
     get_Invulnerable = (bool (*)(void*))
             get_absolute_address(string2Offset(OBFUSCATE("0x124E9AC")));//Character.Invulnerable
+    PlayerAdapter_CTOR = (void (*)(void*, void*))
+            get_absolute_address(string2Offset(OBFUSCATE("0x12D79C4")));//PlayerAdapter.PlayerAdapter
+    Clear = (void (*)(void*))
+            get_absolute_address(string2Offset(OBFUSCATE("0x1238AB0")));//ShootData.Clear
+    AddHit = (void (*)(void*, HitData))
+            get_absolute_address(string2Offset(OBFUSCATE("0x1238B44")));//ShootData.AddHit
+    get_ID = (int (*)(void*))
+            get_absolute_address(string2Offset(OBFUSCATE("0x1184404")));//Gameplay.Character.get_ID
+    set_Position = (void(*)(void*, Vector3))
+            get_absolute_address(string2Offset(OBFUSCATE("0x1972FE8")));//Transform.set_Position
 }
 
 void Patches() {
@@ -771,18 +920,19 @@ void Patches() {
     PATCH_SWITCH("0xD98BD4", "200080D2C0035FD6", crosshair);//get_Crosshair
     PATCH_SWITCH("0x15803E8", "1F2003D5C0035FD6", smoke);//SmokeGrenadeEffect
     PATCH_SWITCH("0x14ED104", "1F2003D5", wallbang);//ProcessHitBuffers + 0xB8
-    PATCH_SWITCH("0x14EDBF0", "01F0271E", headhitbox);//UpdateCahracterHitBuffer + 0x21C
+    PATCH_SWITCH("0x14EDC00 ", "01F0271E", headhitbox);//UpdateCahracterHitBuffer + 0x22C
     PATCH_SWITCH("0x14D8150", "E0031FAA",radar);//FetchFollowedCharacterTeamIndex + 0x84
     PATCH_SWITCH("0x14EBDFC", "01F0271E", silentknife);//MeleeHit + 0x808
     PATCH_SWITCH("0x11869C0", "1F01086B", tradar);//CheckCharacterVisibility + 0x84
     PATCH_SWITCH("0x16D13D0", "000080D2C0035FD6",tradar);//Linecast(Vector3 start, Vector3 end, int layerMask)
     PATCH_SWITCH("0x18435C8", "000080D2C0035FD6",killnotes);//KillNotification.Init(IPlayer killer, IPlayer victim, Sprite killerWeaponIcon, bool headshot)
-    PATCH("0x12CAC38", "000080D2C0035FD6");//IsFirstMatchStageCompleted
-    PATCH("0x12CAAC0", "000080D2C0035FD6");//t
+    PATCH("0x14EBDDC", "E003271E");//knife
+    PATCH("0xED1F80", "200080D2C0035FD6");//rankedenabled
+   /* PATCH("0x12CAAC0", "000080D2C0035FD6");//IsFirstMatchStageCompleted
     PATCH("0x12CB8D4", "000080D2C0035FD6");//t
     PATCH("0x12CADB0", "000080D2C0035FD6");//t
     PATCH("0x12CB6C8", "000080D2C0035FD6");//t
-    PATCH("0x12CA9E0", "000080D2C0035FD6");//t
+    PATCH("0x12CA9E0", "000080D2C0035FD6");//t*/
 
     //  PATCH("0x10D7444", "1F2003D5");
     // PATCH("0x1A71B50", "1F2003D5C0035FD6");
@@ -801,9 +951,10 @@ float get_cameraFov(void *pSys) {
 
 void ESP() {
     AimbotCfg cfg;
+
     std::lock_guard<std::mutex> guard(esp_mtx);
-    if (pSys == nullptr || !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot ||
-          sniperCfg.aimbot)) {
+    auto background = ImGui::GetBackgroundDrawList();
+    if (pSys == nullptr || !(esp || pistolCfg.aimbot || shotgunCfg.aimbot || smgCfg.aimbot || arCFg.aimbot || sniperCfg.aimbot)) {
         return;
     }
 
@@ -821,39 +972,38 @@ void ESP() {
         return;
     }
 
-    int localTeam = get_PlayerTeam(localPlayer);
-    monoList<void **> *characterList = getAllCharacters(pSys);
-    if (characterList == nullptr) {
-        return;
-    }
-
     auto cam = get_camera();
     if (cam == nullptr) {
         return;
     }
 
-    for (int i = 0; i < characterList->getSize(); i++) {
-        void *currentCharacter = reinterpret_cast<monoList<void **> *>(characterList)->getItems()[i];
+    for (int i = 0; i < EnemyList.size(); i++) {
+        Enemy currentEnemy = EnemyList[i];
+        void *currentCharacter = currentEnemy.Character;
         if (currentCharacter == nullptr) {
             continue;
         }
-
-        if (get_Player(currentCharacter) == localPlayer) {
-            esp_localCharacter = currentCharacter;
-        }
-
-        if (esp_localCharacter == nullptr || currentCharacter == nullptr) {
+        void *currentPlayer = currentEnemy.Player;
+        if (currentPlayer == nullptr) {
             continue;
         }
 
-        int curTeam = get_CharacterTeam(currentCharacter);
-        int health = get_Health(currentCharacter);
-        if (health <= 0 || localTeam == curTeam || curTeam == std::stoi(OBFUSCATE("-1"))) {
+        if(localPlayer == currentEnemy.Player){
+            localEnemy = currentEnemy;
+        }
+        int health = std::stoi(OBFUSCATE("0")), localTeam = std::stoi(OBFUSCATE("-1")), curTeam = std::stoi(OBFUSCATE("-1"));
+        if(localEnemy.team != std::stoi(OBFUSCATE("-1")) && currentEnemy.team != std::stoi(OBFUSCATE("-1"))){
+            health = get_Health(currentEnemy.Character);
+            localTeam = localEnemy.team;
+            curTeam = currentEnemy.team;
+        }
+
+        if (health <= std::stoi(OBFUSCATE("0")) || localTeam == curTeam || curTeam == std::stoi(OBFUSCATE("-1"))) {
             continue;
         }
 
         void *transform = getTransform(currentCharacter);
-        void *localTransform = getTransform(esp_localCharacter);
+        void *localTransform = getTransform(localEnemy.Character);
         if (transform == nullptr || localTransform == nullptr) {
             continue;
         }
@@ -867,7 +1017,6 @@ void ESP() {
         Vector3 wsheadPos = WorldToScreen(cam, headPos, 2);
         Vector3 aboveHead = headPos + Vector3(0, 0.2, 0);
         Vector3 headEstimate = position + Vector3(0, 1.48, 0);
-
 
         Vector3 wsAboveHead = WorldToScreen(cam, aboveHead, 2);
         Vector3 wsheadEstimate = WorldToScreen(cam, headEstimate, 2);
@@ -891,25 +1040,26 @@ void ESP() {
                          ImColor(espcfg.snaplineColor.x,
                                  espcfg.snaplineColor.y,
                                  espcfg.snaplineColor.z,
-                                 (255 - currentEntDist * 5.0)),
-                         3);
+                                 (255 - currentEntDist * 5.0) / 255),
+                         3, background);
             }
 
-            if (espcfg.bone && transformPos.Z > 0) {
+
+            if (espcfg.bone && transformPos.Z > 0 && currentCharacter != nullptr) {
                 DrawBones(currentCharacter, LOWERLEG_LEFT, UPPERLEG_LEFT,
-                          espcfg);
+                          espcfg, background);
                 DrawBones(currentCharacter, LOWERLEG_RIGHT, UPPERLEG_RIGHT,
-                          espcfg);
-                DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg);
+                          espcfg, background);
+                DrawBones(currentCharacter, UPPERLEG_LEFT, STOMACH, espcfg, background);
                 DrawBones(currentCharacter, UPPERLEG_RIGHT, STOMACH,
-                          espcfg);
-                DrawBones(currentCharacter, STOMACH, CHEST, espcfg);
+                          espcfg, background);
+                DrawBones(currentCharacter, STOMACH, CHEST, espcfg, background);
                 DrawBones(currentCharacter, LOWERARM_LEFT, UPPERARM_LEFT,
-                          espcfg);
+                          espcfg, background);
                 DrawBones(currentCharacter, LOWERARM_RIGHT, UPPERARM_RIGHT,
-                          espcfg);
-                DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg);
-                DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg);
+                          espcfg, background);
+                DrawBones(currentCharacter, UPPERARM_LEFT, CHEST, espcfg, background);
+                DrawBones(currentCharacter, UPPERARM_RIGHT, CHEST, espcfg, background);
                 Vector3 diff = wschestPos - wsheadPos;
                 Vector3 neck = (chestPos + headPos) / 2;
                 Vector3 wsneck = WorldToScreen(cam, neck, 2);
@@ -921,13 +1071,11 @@ void ESP() {
                              ImVec2(wsneck.X, wsneck.Y),
                              ImColor(espcfg.boneColor.x, espcfg.boneColor.y,
                                      espcfg.boneColor.z),
-                             3);
+                             3, background);
                 }
 
                 if (wsheadPos.Z > 0 && wschestPos.Z > 0) {
                     float radius = sqrt(diff.X * diff.X + diff.Y * diff.Y);
-                    auto background = ImGui::GetBackgroundDrawList();
-
                     background->AddCircle(ImVec2(wsheadPos.X, wsheadPos.Y),
                                           radius / 2,
                                           IM_COL32(espcfg.boneColor.x * 255,
@@ -943,7 +1091,7 @@ void ESP() {
                                  height,
                                  ImVec4(espcfg.boxColor.x,
                                         espcfg.boxColor.y,
-                                        espcfg.boxColor.z, 255), 3);
+                                        espcfg.boxColor.z, 255), 3, background);
             }
 
             if (espcfg.healthesp && transformPos.Z > 0 && wsAboveHead.Z > 0) {
@@ -955,7 +1103,7 @@ void ESP() {
                                        height *
                                        (static_cast<float>(health) /
                                         100.0f),
-                                       HealthToColor(health));
+                                       HealthToColor(health), background);
             }
 
             if (espcfg.healthNumber && transformPos.Z > 0 && wsAboveHead.Z > 0) {
@@ -967,14 +1115,14 @@ void ESP() {
                                               100.0f) -
                                     3),
                              ImVec4(1, 1, 1, 255),
-                             std::to_string(health), espFont);
+                             std::to_string(health), espFont, background);
                 }
             }
 
             if (espcfg.distance && transformPos.Z > 0) {
                 DrawText(ImVec2(transformPos.X + width / 2, transformPos.Y - 12),
                          ImVec4(1, 1, 1, 255),
-                         std::to_string(static_cast<int>(currentEntDist)) + "m", espFont);
+                         std::to_string(static_cast<int>(currentEntDist)) + "m", espFont, background);
             }
 
             if (espcfg.name && transformPos.Z > 0 && currentCharacter != nullptr) {
@@ -985,61 +1133,61 @@ void ESP() {
                 float compensation = strlen(username.c_str()) * 4.0f;
                 DrawText(ImVec2(wsheadPos.X - compensation, wsAboveHead.Y - 20),
                          ImVec4(espcfg.nameColor.x, espcfg.nameColor.y, espcfg.nameColor.z, 255),
-                         username, espFont);
+                         username, espFont, background);
             }
         }
     }
-        if (currWeapon != -1) {
-            switch (currWeapon) {
-                case 0:
-                    cfg = pistolCfg;
-                    break;
-                case 1:
-                    cfg = arCFg;
-                    break;
-                case 2:
-                    cfg = smgCfg;
-                    break;
-                case 3:
-                    cfg = shotgunCfg;
-                    break;
-                case 4:
-                    cfg = sniperCfg;
-                    break;
-            }
-
-            if (cfg.drawFov) {
-                float worldFov = get_cameraFov(pSys);
-                float radius =
-                        tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) *
-                        glWidth /
-                        2;
-                auto background = ImGui::GetBackgroundDrawList();
-                float correction = 0;
-                if ((worldFov - 90) < 0) {
-                    correction = worldFov - 90;
-                }
-
-                background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
-                                      (radius) * PI - correction / PI * 2,
-                                      IM_COL32(255, 255, 255, 255), 0, 3.0f);
-            }
+    if (currWeapon != -1) {
+        switch (currWeapon) {
+            case 0:
+                cfg = pistolCfg;
+                break;
+            case 1:
+                cfg = arCFg;
+                break;
+            case 2:
+                cfg = smgCfg;
+                break;
+            case 3:
+                cfg = shotgunCfg;
+                break;
+            case 4:
+                cfg = sniperCfg;
+                break;
         }
 
-        if (p100Crosshair) {
-            ImVec2 Middle = ImVec2(glWidth / 2, glHeight / 2);
+        if (cfg.drawFov && pSys != nullptr) {
+            float worldFov = get_cameraFov(pSys);
+            float radius =
+                    tan(cfg.fovValue * (PI / 180) / 2) / tan(90 / 2) *
+                    glWidth /
+                    2;
+            auto background = ImGui::GetBackgroundDrawList();
+            float correction = 0;
+            if ((worldFov - 90) < 0) {
+                correction = worldFov - 90;
+            }
 
-            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x, Middle.y - 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x + 2, Middle.y - 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x, Middle.y + 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255));
-            CoolCrosshair(Middle, ImVec4(255, 255, 255, 255));
+            background->AddCircle(ImVec2(glWidth / 2, glHeight / 2),
+                                  (radius) * PI - correction / PI * 2,
+                                  IM_COL32(255, 255, 255, 255), 0, 3.0f);
         }
     }
+
+    if (p100Crosshair) {
+        ImVec2 Middle = ImVec2(glWidth / 2, glHeight / 2);
+
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y - 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y + 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x, Middle.y - 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x + 2, Middle.y - 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x, Middle.y + 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(ImVec2(Middle.x - 2, Middle.y + 2), ImVec4(0, 0, 0, 255), background);
+        CoolCrosshair(Middle, ImVec4(255, 255, 255, 255), background);
+    }
+}
 
 static std::string keyStatus = OBFUSCATE("Checking in: ");
 size_t writeFunction(void* ptr, size_t size, size_t nmemb, std::string* data) {
@@ -1082,9 +1230,12 @@ void loop_authenticate() {
         if (primetools_key.size()) {
             std::string line;
             while (std::getline(iss, line)) {
-                if (line != std::string(OBFUSCATE("false"))) {
+                std::string decrypted;
+                Decode(line, decrypted);
+                decrypted = encryptDecrypt(decrypted);
+                if (decrypted != std::string(OBFUSCATE("false"))) {
                     trollage = string2Offset(OBFUSCATE("0x124AC5"));
-                    auto json = nlohmann::json::parse(line);
+                    auto json = nlohmann::json::parse(decrypted);
                     authenticated = json[std::string(OBFUSCATE("authenticated"))];
 
                     is_key_found = true;
@@ -1096,16 +1247,19 @@ void loop_authenticate() {
             if (!countdown_timer) {
                 countdown_timer = 15;
                 std::string primetools_key = (*get_for_thread(std::string(OBFUSCATE("https://spdmteam.com/api/primetools/isauth?hwid=")) +
-                        getDeviceUniqueIdentifier()->getString()));
+                                                              getDeviceUniqueIdentifier()->getString()));
 
                 std::vector<std::string> lines;
                 std::istringstream iss(primetools_key);
                 if (primetools_key.size()) {
                     std::string line;
                     while (std::getline(iss, line)) {
-                        if (line != notauth) {
+                        std::string decrypted;
+                        Decode(line, decrypted);
+                        decrypted = encryptDecrypt(decrypted);
+                        if (decrypted != notauth) {
                             trollage = string2Offset(OBFUSCATE("0x124AC5"));
-                            auto json = nlohmann::json::parse(line);
+                            auto json = nlohmann::json::parse(decrypted);
                             authenticated = json[std::string(OBFUSCATE("authenticated"))];
                             is_key_found = true;
                         }
@@ -1123,8 +1277,9 @@ void loop_authenticate() {
     }).detach();
 }
 
+
 bool isAuth(){
-    if(trollage == 0x124AC5){
+    if(trollage == string2Offset(OBFUSCATE("0x124AC5"))){
         return true;
     }
     return false;
@@ -1148,7 +1303,7 @@ void DrawKeySystemMenu() {
     ImGui::TextUnformatted(OBFUSCATE("Complete the Key System to access PrimeTools."));
     ImGui::SetCursorPos(ImVec2(20, 120));
     ImGui::TextUnformatted(OBFUSCATE("Key Status: "));
-    ImGui::SetCursorPos(ImVec2(100, 120));
+    ImGui::SetCursorPos(ImVec2(170, 120));
     ImGui::TextUnformatted(keyStatus.c_str());
 
     ImGui::SetCursorPos(ImVec2(15, 170));
@@ -1159,8 +1314,8 @@ void DrawKeySystemMenu() {
     ImGui::SetCursorPos(ImVec2(20, 300));
     if(uptodate)
         ImGui::TextUnformatted(OBFUSCATE("HWID : "));
-        ImGui::SetCursorPos(ImVec2(20, 350));
-        ImGui::TextUnformatted(getDeviceUniqueIdentifier()->getString().c_str());
+    ImGui::SetCursorPos(ImVec2(20, 350));
+    ImGui::TextUnformatted(getDeviceUniqueIdentifier()->getString().c_str());
 
     ImGui::End();
 }
@@ -1486,6 +1641,10 @@ void DrawMenu() {
                 if (speed) {
                     ImGui::SliderFloat(OBFUSCATE(" · Speed"), &speedval, 0.0, 20.0);
                 }
+                ImGui::Checkbox(OBFUSCATE("Crouch Speed"), &crouchspeed);
+                if(crouchspeed){
+                    ImGui::SliderFloat(OBFUSCATE(" · Crouch Speed"), &crouchspeedval, 0.0, 20.0);
+                }
                 ImGui::Checkbox(OBFUSCATE("Jump Force"), &jumpheight);
                 if (jumpheight) {
                     ImGui::SliderFloat(OBFUSCATE(" · Force"), &jumpval, 0.0, 7.0);
@@ -1511,7 +1670,7 @@ void HiddenCircle(){
     ImGui::SetNextWindowSize(ImVec2(50, 90));
     draw->AddCircleFilled(ImVec2(50, 50), radius, ImColor(255, 255, 255, 70), 32);
 
-    DrawText(ImVec2(23, 34), ImVec4(255, 255, 255, 70), OBFUSCATE("Show"), espFont);
+    DrawText(ImVec2(23, 34), ImVec4(255, 255, 255, 70), OBFUSCATE("Show"), espFont, draw);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         float distance = sqrtf((mouse_pos.x - center.x) * (mouse_pos.x - center.x) + (mouse_pos.y - center.y) * (mouse_pos.y - center.y));
@@ -1546,6 +1705,16 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     eglQuerySurface(dpy, surface, EGL_WIDTH, &glWidth);
     eglQuerySurface(dpy, surface, EGL_HEIGHT, &glHeight);
 
+    if(pSys == nullptr){
+        pistolCfg.aimbot = false; arCFg.aimbot = false; shotgunCfg.aimbot = false; sniperCfg.aimbot = false; smgCfg.aimbot = false;
+        esp = false;
+    }
+
+    if(isAuth() && !ready && uptodate && authenticated){
+        Hooks();
+        Patches();
+        ready = true;
+    }
 
     if (!setupimg) {
         SetupImgui();
@@ -1557,38 +1726,27 @@ EGLBoolean hook_eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
-
-    if(isAuth() && !ready && uptodate && authenticated){
-        Hooks();
-        Patches();
-        ready = true;
-    }
-
-
-
     if(uptodate && authenticated){
-            ESP();
-            if(!hidden) {
-                DrawMenu();
-            }
-            else{
-                HiddenCircle();
-            }
+        ESP();
+        if(!hidden) {
+            DrawMenu();
+        }
+        else{
+            HiddenCircle();
+        }
     }
     else if(uptodate){
         DrawKeySystemMenu();
     }
 
-    if(maxframerate > 62 && uptodate){
-        DrawText(ImVec2(10, 40), ImVec4(220, 20, 60, 255), OBFUSCATE("You're playing over 60 fps which may cause crashes, Lower the FPS in settings and restart"), espFont);
-    }
+    auto background = ImGui::GetBackgroundDrawList();
 
     if(uptodate) {
         if (!hidden)
-            DrawText(ImVec2(10, 10), ImVec4(255, 255, 255, 255), OBFUSCATE("PrimeTools BETA"), espFont);
+            DrawText(ImVec2(10, 10), ImVec4(255, 255, 255, 255), OBFUSCATE("PrimeTools BETA"), espFont, background);
     }
     else{
-        DrawText(ImVec2(100, 200), ImVec4(255, 255, 255, 255), OBFUSCATE("Your module version is outdated, Update here : https://discord.gg/8uxxYSn7") ,espFont);
+        DrawText(ImVec2(100, 200), ImVec4(255, 255, 255, 255), OBFUSCATE("Your module version is outdated, Update here : https://discord.gg/5vrgkg22qd") ,espFont, background);
     }
 
     ImGui::EndFrame();
@@ -1650,13 +1808,13 @@ void *hack_thread(void *arg) {
             }
         }
     } while (libBaseAddress == 0);
-    auto get_version = (*get_for_thread(std::string(OBFUSCATE("https://cdn.discordapp.com/attachments/1102979543200956538/1103007574137241731/v.txt"))));
+    auto get_version = (*get_for_thread(std::string(OBFUSCATE("https://raw.githubusercontent.com/primedrinkchit/primetooslvers/main/version"))));
     std::vector<std::string> lines;
     std::istringstream iss(get_version);
     if (get_version.size()) {
         std::string line;
         while (std::getline(iss, line)) {
-            if (line != std::string(OBFUSCATE("1.38.0f2184"))) {
+            if (line != std::string(OBFUSCATE("1.38.0f2184_Beta_3"))) {
                 uptodate = false;
             }
         }
@@ -1701,7 +1859,7 @@ void *hack_thread(void *arg) {
 
 void *triggerbot_thread(void *arg) {
     while (true) {
-        if (TouchControls && shootControl && esp_localCharacter && get_Health(esp_localCharacter)) {
+        if (TouchControls && shootControl && localEnemy.Character && get_Health(localEnemy.Character)) {
             onInputButtons(TouchControls, 7, 1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             onInputButtons(TouchControls, 7, 0);
@@ -1711,4 +1869,3 @@ void *triggerbot_thread(void *arg) {
     }
     return nullptr;
 }
-
