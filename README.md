@@ -12,6 +12,6 @@ Has a shitton of features, feel free to skid :)
 
 - Note
 
-I dont know if the menu is patched, don't contact me for help or spoonfeeding.
+I dont know if the menu is patched, i dont remember half of the code here, don't contact me for help or spoonfeeding.
 
 This source code is bad, Made it while I was making Pixel gun.
