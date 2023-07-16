@@ -12,3 +12,4 @@ Has a shitton of features, feel free to skid :)
 - Note
 
 I dont know if the menu is patched, don't contact me for help or spoonfeeeding.
+This source code is bad.
